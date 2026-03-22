@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7601938af4e0f1640a9ea9356abaa8ec, type: 3}
+  m_Name: ElderMoss
+  m_EditorClassIdentifier: Voidborne::NPCDefinition
+  npcId: elder_moss
+  npcName: Elder Moss
+  role: Community leader of Ashfen. Keeper of the old songs and myths of the Maker.
+  modelPrefab: {fileID: 0}
+  idleAnimation: {fileID: 0}
+  defaultDialogue: {fileID: 11400000, guid: 03fc1837cccf6a24dae291868c98dc92, type: 2}
+  worldPosition: {x: 120, y: 0, z: 85}
+  safeholdName: Ashfen
+  associatedQuests: []
+  shopInventory: []

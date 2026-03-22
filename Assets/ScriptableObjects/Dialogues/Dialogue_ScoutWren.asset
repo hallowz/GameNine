@@ -1,0 +1,188 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_ScoutWren
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: Scout Wren
+    text: "You're new. Didn't die on the way in \u2014 good start. I'm Wren. I map
+      VORD patrol routes for fun. Yes, *fun*. Don't judge me."
+    choices:
+    - text: Tell me about the VORD patrols.
+      nextNodeId: patrols
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Any work I can do around here?
+      nextNodeId: quests
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: "The Stronghold to the east \u2014 safe path?"
+      nextNodeId: stronghold_path
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: patrols
+    speakerName: Scout Wren
+    text: Three units sweep the eastern ruins on a 40-minute cycle. There's a 6-minute
+      window starting roughly at dawn where the gap between patrol one and patrol
+      two is wide enough to slip through. Don't be slow.
+    choices:
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: quests
+    speakerName: Scout Wren
+    text: "Actually, yeah. I need someone to plant sensor nullifiers along the northern
+      ridge \u2014 VORD have been expanding their scan radius. Interested?"
+    choices:
+    - text: Count me in.
+      nextNodeId: quest_accept
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: wren_quest_accepted
+        schematicItem: {fileID: 0}
+    - text: Maybe later.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: quest_accept
+    speakerName: Scout Wren
+    text: "Grab the nullifiers from the supply crate by the east gate. Three placements
+      along the northern ridge. Don't let the VORD see you do it \u2014 it defeats
+      the whole point."
+    choices:
+    - text: Understood.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: stronghold_path
+    speakerName: Scout Wren
+    text: "Head east until you hit the dead relay towers, then bear south. The fungal
+      canopy gives cover until the last 200 metres \u2014 after that you're exposed.
+      Move fast or move at dawn. Your call."
+    choices:
+    - text: Thanks.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}

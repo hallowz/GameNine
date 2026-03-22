@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28ad67a78b540f541a4324adcc9e8ed6, type: 3}
+  m_Name: burn_generator
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.Electricity.ElectricityItem
+  itemId: burn_generator
+  displayName: Burn Generator
+  description: "Consumes wood or coal to generate 150W. Loud \u2014 attracts enemies.
+    Produces toxic fumes when enclosed."
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 6
+  maxStackSize: 10
+  weight: 2
+  devicePrefab: {fileID: 6157493408661273930, guid: 826ab92de12094d4bbe66a9c5947165e, type: 3}
+  outputWatts: 150
+  drawWatts: 0
+  snapSize: 0

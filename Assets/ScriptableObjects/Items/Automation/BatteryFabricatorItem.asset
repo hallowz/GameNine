@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5ca4ec0a5836041af527faca5dc402, type: 3}
+  m_Name: BatteryFabricatorItem
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.AutomationItem
+  itemId: BatteryFabricatorItem
+  displayName: Battery Fabricator
+  description: '[Tier 2] Mass-produces Battery Cells. Draws 80 W.'
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 0
+  maxStackSize: 1
+  weight: 1
+  devicePrefab: {fileID: 2481043359262579047, guid: 1184ce9b4ef5c414f99c1810096c0f13, type: 3}
+  tickInterval: 0
+  powerDrawWatts: 80
+  capacity: 0
+  speedLabel: 

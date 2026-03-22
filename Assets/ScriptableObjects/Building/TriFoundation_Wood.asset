@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: TriFoundation_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 1
+  prefab: {fileID: 6381206148677831996, guid: dd80b3cdcfbb2ce429cd79a00a6983af, type: 3}
+  ghostPrefab: {fileID: 3494966094038297726, guid: 3b79de62e78d3334db62910f8209d173, type: 3}
+  inventoryItemId: build_wood_trifoundation
+  canPlaceOnTerrain: 1
+  healthPerTier:
+  - 150
+  - 400
+  - 800

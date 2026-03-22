@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: Wall_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 2
+  prefab: {fileID: 6977908817942487167, guid: 4b4a38a5ee6e8f84795310a9533e951e, type: 3}
+  ghostPrefab: {fileID: 8974515386815833341, guid: 8f42ad54f49f6104f8d4b60493c95385, type: 3}
+  inventoryItemId: build_wood_wall
+  canPlaceOnTerrain: 0
+  healthPerTier:
+  - 150
+  - 400
+  - 800

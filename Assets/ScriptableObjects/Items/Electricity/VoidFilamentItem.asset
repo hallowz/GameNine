@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28ad67a78b540f541a4324adcc9e8ed6, type: 3}
+  m_Name: VoidFilamentItem
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.Electricity.ElectricityItem
+  itemId: VoidFilamentItem
+  displayName: Void Filament Generator
+  description: Channels 2000W from the deep void. Abyssal zone only (Y < -512). Attracts
+    VORD patrols after 5 minutes.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 0
+  maxStackSize: 1
+  weight: 1
+  devicePrefab: {fileID: 7009120987663001849, guid: 7e60b37bb39c76544be7a672b9131b38, type: 3}
+  outputWatts: 2000
+  drawWatts: 0
+  snapSize: 0

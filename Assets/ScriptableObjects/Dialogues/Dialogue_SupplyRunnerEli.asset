@@ -1,0 +1,296 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_SupplyRunnerEli
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: Supply Runner Eli
+    text: "Just got in from the southern run. Vael's patrol moved *again* \u2014
+      had to swing forty degrees west to avoid the scan radius. I swear that General
+      gets smarter every cycle. You a flier?"
+    choices:
+    - text: I am, yes.
+      nextNodeId: flier_yes
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Not yet.
+      nextNodeId: flier_no
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Tell me about Vael's patrol patterns.
+      nextNodeId: vael
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: "Signal Dampener \u2014 can you get me one?"
+      nextNodeId: dampener
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: flier_yes
+    speakerName: Supply Runner Eli
+    text: "Good. I need a relief runner for the northern island chain \u2014 I've
+      been doing double shifts since Marsh got grounded. Pay is modest but the view's
+      incredible."
+    choices:
+    - text: I'll take the run.
+      nextNodeId: run_briefing
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: eli_quest_accepted
+        schematicItem: {fileID: 0}
+    - text: Not right now.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: flier_no
+    speakerName: Supply Runner Eli
+    text: Get a Gyrocopter. Spire's Rest is no place for someone who can't leave
+      in a hurry. I can point you at parts if you're building one.
+    choices:
+    - text: What parts do I need?
+      nextNodeId: gyro_parts
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: gyro_parts
+    speakerName: Supply Runner Eli
+    text: "Rotor Frame, two BasicRotors minimum, a combustion engine, and some glass.
+      I've got spare rotors and an engine head in my supply cache \u2014 you can
+      have them for the right trade."
+    choices:
+    - text: Deal.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: run_briefing
+    speakerName: Supply Runner Eli
+    text: "Three drops \u2014 Outpost Thorn, High Relay, and the Shepherd's Shelf.
+      Cargo is already packed. Don't fly through Sector 7 \u2014 Vael has a stationary
+      scan unit there."
+    choices:
+    - text: Got it.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: vael
+    speakerName: Supply Runner Eli
+    text: "Vael is General THREE \u2014 a sky specialist. Expanded scan radius, rotates
+      unpredictably, and she tracks thermal signatures. A Signal Dampener reduces
+      how far she detects you. Without one, fly high and fast."
+    choices:
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: dampener
+    speakerName: Supply Runner Eli
+    text: "I've got a schematic. You'll need Copper Plate and a Circuit Board \u2014
+      not cheap, but worth every bit. Fits on any vehicle with a utility slot."
+    choices:
+    - text: Give me the schematic.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: eli_dampener_given
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}

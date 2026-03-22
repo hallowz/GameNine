@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05e19e5a73859cd408e79404f69ad67b, type: 3}
+  m_Name: IronDagger
+  m_EditorClassIdentifier: Voidborne::Voidborne.Combat.Melee.MeleeDefinition
+  weaponName: Iron Dagger
+  damage: 18
+  damageType: 1
+  range: 1.8
+  hitRadius: 0.3
+  windupTime: 0.15
+  releaseTime: 0.15
+  recoveryTime: 0.2
+  staminaCost: 8
+  attackSpeed: 1.6
+  maxComboChain: 5
+  comboExhaustionPenalty: 0.2
+  armorPenetration: 0
+  hitStaggerDuration: 0
+  firstPersonModel: {fileID: 0}

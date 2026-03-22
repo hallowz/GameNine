@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebb72d70a0c8c6649aea852911b2156b, type: 3}
+  m_Name: Projectile_ThrowingSpear
+  m_EditorClassIdentifier: Voidborne::Voidborne.Combat.Projectiles.ProjectileDefinition
+  projectileName: Projectile_ThrowingSpear
+  baseDamage: 65
+  launchVelocity: 38
+  gravityMultiplier: 0.4
+  drag: 0.02
+  lifetime: 10
+  penetrationDepth: 0.25
+  bounceOnSurface: 0
+  bounciness: 0.6
+  isRetrievable: 1
+  modelPrefab: {fileID: 0}
+  trailEffectPrefab: {fileID: 0}
+  impactEffectPrefab: {fileID: 0}
+  tumbles: 0
+  tumbleSpeed: 360
+  checkBladeOrientation: 0
+  handleDamageMultiplier: 0.4

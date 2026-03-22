@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: Stairs_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 7
+  prefab: {fileID: 6927366716362119816, guid: cd24cc14f038a0643959fe86370237d1, type: 3}
+  ghostPrefab: {fileID: 2734703075238337325, guid: e25782e2ed19ae84e882e67de40cafba, type: 3}
+  inventoryItemId: build_wood_stairs
+  canPlaceOnTerrain: 0
+  healthPerTier:
+  - 150
+  - 400
+  - 800

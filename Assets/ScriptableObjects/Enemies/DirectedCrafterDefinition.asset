@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c6ebbdf11ee2d4d9014a3d46bb8f1f, type: 3}
+  m_Name: DirectedCrafterDefinition
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.EnemyDefinition
+  enemyName: Directed Crafter
+  category: 1
+  maxHealth: 90
+  moveSpeed: 3.2
+  attackDamage: 10
+  attackRange: 1.6
+  detectionRange: 16
+  armor: 2
+  attackCooldown: 1.8
+  attackWindup: 0.4
+  lootTable:
+  - item: {fileID: 11400000, guid: f77ae618ea0c3aa4cb1611f171d9b550, type: 2}
+    minQuantity: 1
+    maxQuantity: 1
+    dropChance: 0.4
+  - item: {fileID: 11400000, guid: 73246fe07d069714fb9ca9354be17f85, type: 2}
+    minQuantity: 1
+    maxQuantity: 2
+    dropChance: 0.8
+  biomeRestrictions: []
+  minDepthY: -9999
+  maxDepthY: 9999
+  populationCap: 3
+  groupSizeMin: 1
+  groupSizeMax: 1
+  canBeRestored: 1
+  converseLines:
+  - Still making things. The directive says repair. I repair.
+  - I built the water tower on Level 3. I do not know why I remember that.
+  - You should not be here. Leave, and I will not escalate.
+  prefab: {fileID: 1270668128845204542, guid: e70597ea87c7fd5429cdf7fcb3cd8a59, type: 3}

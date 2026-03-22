@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5705183834a0a5445990db4d47de9488, type: 3}
+  m_Name: Rattler_SMG
+  m_EditorClassIdentifier: Voidborne::WeaponItem
+  itemId: rattler_smg
+  displayName: Rattler SMG
+  description: A rattling submachine gun. Low damage per shot, devastating up close.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 2
+  maxStackSize: 1
+  weight: 2
+  gunDefinition: {fileID: 11400000, guid: d3dc991c7ab22664190f8cbd1d704bf8, type: 2}

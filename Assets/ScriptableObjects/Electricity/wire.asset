@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88135ea0bb1ccb642b838b78e0f69502, type: 3}
+  m_Name: copper_wire
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.Electricity.WireItem
+  itemId: copper_wire
+  displayName: Copper Wire
+  description: 'Basic wire. Click a power device, then another to connect. Max 100W
+    throughput, 20m range. Right-click: cancel. X: cut.'
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 1
+  maxStackSize: 20
+  weight: 0.5
+  maxLength: 20
+  wireTier: 0
+  maxThroughputWatts: 100
+  wireColor: {r: 0.85, g: 0.55, b: 0.2, a: 1}
+  wireWidth: 0.04

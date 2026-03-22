@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29a27858b7d236b43a55f4e804b0ce8d, type: 3}
+  m_Name: Buggy_Item
+  m_EditorClassIdentifier: Voidborne::PlaceableItem
+  itemId: buggy_default
+  displayName: Buggy
+  description: A lightweight 4-wheel scout vehicle. Seats 2, fast and nimble.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 2458596323311027634, guid: 9c4f454aec0b4e941825455939c812cf, type: 3}
+  itemType: 6
+  maxStackSize: 1
+  weight: 15
+  prefabToPlace: {fileID: 2458596323311027634, guid: 9c4f454aec0b4e941825455939c812cf, type: 3}
+  categoryLabel: Vehicle

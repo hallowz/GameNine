@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 878d18927b19bdc459badb74a829b3ab, type: 3}
+  m_Name: TorchRecipe
+  m_EditorClassIdentifier: Voidborne::Voidborne.Crafting.CraftingRecipe
+  recipeName: Torch
+  gridWidth: 1
+  gridHeight: 2
+  ingredients:
+  - {fileID: 11400000, guid: 4b381c9fc732cf849960d1496eb87b12, type: 2}
+  - {fileID: 11400000, guid: 471d011891869354194e848e66e58291, type: 2}
+  result:
+    item: {fileID: 11400000, guid: 42f5dca463a282148bb33a584ef7ada1, type: 2}
+    quantity: 4

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5ca4ec0a5836041af527faca5dc402, type: 3}
+  m_Name: fast_conveyor_belt
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.AutomationItem
+  itemId: fast_conveyor_belt
+  displayName: Fast Conveyor Belt
+  description: High-speed belt. Moves items twice as fast. Draws more power.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 6
+  maxStackSize: 64
+  weight: 2
+  devicePrefab: {fileID: 5243198612994498402, guid: 966b4e82015eece45a9ab2a070a95d95, type: 3}
+  tickInterval: 0.2
+  powerDrawWatts: 12
+  capacity: 5
+  speedLabel: Fast (0.2 s)

@@ -1,0 +1,317 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_ElderMoss
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: Elder Moss
+    text: "Stranger... you carry the Maker's Mark. I have not seen its like since
+      the Great Silence fell. You are welcome in Ashfen \u2014 but I have many questions."
+    choices:
+    - text: Who is 'the Maker'?
+      nextNodeId: maker
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Tell me about Ashfen.
+      nextNodeId: ashfen
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: I need to find a Stronghold.
+      nextNodeId: stronghold_hint
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: "The device on my wrist \u2014 do you know what it is?"
+      nextNodeId: cortex_react
+      condition:
+        type: 5
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: maker
+    speakerName: Elder Moss
+    text: "The Maker built the world before the VORD came. The old songs call them
+      the Architect \u2014 a being of impossible knowledge who wove the land itself.
+      We keep the faith because the faith kept us."
+    choices:
+    - text: What happened to the Architect?
+      nextNodeId: maker_fate
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: maker_fate
+    speakerName: Elder Moss
+    text: "No one knows. The songs say the Maker sealed something terrible away \u2014
+      and was sealed with it. Some of us believe the Strongholds are what remains.
+      But the VORD guard them now."
+    choices:
+    - text: I'll find out the truth.
+      nextNodeId: maker_hope
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: maker_hope
+    speakerName: Elder Moss
+    text: Then you carry more than the Mark, Stranger. You carry our hope. Go carefully.
+    choices:
+    - text: Tell me where Stronghold 1 is.
+      nextNodeId: stronghold_hint
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 1
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: ashfen
+    speakerName: Elder Moss
+    text: "We survive in the fungal marshes because the VORD find the spores disruptive
+      to their sensors. Small mercy. We trade with The Delve below when the tunnels
+      are clear \u2014 and sometimes with Spire's Rest, if the sky is quiet."
+    choices:
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: stronghold_hint
+    speakerName: Elder Moss
+    text: "The nearest Stronghold stands in the old ruins to the east \u2014 we call
+      it the Warden's Shell. VORD patrols circle it twice a day. Scout Wren knows
+      the gap in their route."
+    choices:
+    - text: Thank you.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: cortex_react
+    speakerName: Elder Moss
+    text: "...\n\nThat is not just a device, Stranger. That is the Maker's hand.
+      The songs describe it \u2014 the Wrist of the Architect, the instrument of
+      Restoration. The elders thought it was myth.\n\nI need to sit down."
+    choices:
+    - text: I only just found it.
+      nextNodeId: cortex_react2
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: cortex_react2
+    speakerName: Elder Moss
+    text: "Then the Architect's work is not finished. Find the Strongholds. Restore
+      the device. Whatever the VORD truly are \u2014 you may be the only one who
+      can stop them from finishing what they started."
+    choices:
+    - text: I will.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}

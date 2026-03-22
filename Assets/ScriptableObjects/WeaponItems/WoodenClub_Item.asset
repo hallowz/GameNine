@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5705183834a0a5445990db4d47de9488, type: 3}
+  m_Name: WoodenClub_Item
+  m_EditorClassIdentifier: Voidborne::WeaponItem
+  itemId: wooden_club
+  displayName: Wooden Club
+  description: A thick hardwood club. Slow, but sends enemies stumbling with every
+    hit.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  itemType: 2
+  maxStackSize: 1
+  weight: 3
+  gunDefinition: {fileID: 0}
+  meleeDefinition: {fileID: 11400000, guid: cc4c6e4c6538d7041b887b2f10e3c3bb, type: 2}

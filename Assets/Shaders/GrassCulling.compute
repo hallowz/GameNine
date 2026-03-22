@@ -1,0 +1,92 @@
+// GrassCulling.compute — GPU per-blade frustum + distance culling + LOD sorting.
+// Dispatched once per frame by GrassRenderer.
+//
+// LOD bands (distances set by GrassRenderer):
+//   LOD 0: 0 – lod1Dist     → 5-segment geometry blade
+//   LOD 1: lod1Dist – lod2Dist → 3-segment geometry blade
+//   LOD 2: lod2Dist – cullDist → 1-segment triangle blade
+//   Beyond cullDist            → culled
+//
+// Additionally thins blade density at longer ranges to reduce geometry shader load.
+
+#pragma kernel CSMain
+
+struct GrassInstanceData
+{
+    float3 position;
+    float3 normal;
+    float  scale;
+    float  colorVariant;
+};
+
+StructuredBuffer<GrassInstanceData>       _AllBlades;
+AppendStructuredBuffer<GrassInstanceData> _Lod0Out;
+AppendStructuredBuffer<GrassInstanceData> _Lod1Out;
+AppendStructuredBuffer<GrassInstanceData> _Lod2Out;
+
+float3 _CamPos;
+float  _Lod1DistSq;
+float  _Lod2DistSq;
+float  _Lod3DistSq;
+uint   _BladeCount;
+
+float4 _FrustumPlanes[6];
+
+bool IsInFrustum(float3 pos, float margin)
+{
+    for (int i = 0; i < 6; i++)
+    {
+        if (dot(_FrustumPlanes[i].xyz, pos) + _FrustumPlanes[i].w + margin < 0)
+            return false;
+    }
+    return true;
+}
+
+// Fast hash for density thinning
+uint hash(uint x)
+{
+    x ^= x >> 16;
+    x *= 0x45d9f3bu;
+    x ^= x >> 16;
+    return x;
+}
+
+[numthreads(256, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _BladeCount) return;
+
+    GrassInstanceData blade = _AllBlades[id.x];
+
+    // Skip dead/freed blades (scale <= 0 marks invalidated slots)
+    if (blade.scale <= 0) return;
+
+    float3 diff = blade.position - _CamPos;
+    float distSq = dot(diff, diff);
+
+    // Distance cull (cheapest check)
+    if (distSq >= _Lod3DistSq) return;
+
+    // Frustum cull — use blade scale as margin so tall blades aren't clipped
+    if (!IsInFrustum(blade.position, blade.scale * 0.5))
+        return;
+
+    if (distSq < _Lod1DistSq)
+    {
+        _Lod0Out.Append(blade);
+    }
+    else if (distSq < _Lod2DistSq)
+    {
+        // LOD 1: thin to ~75% density
+        uint h = hash(id.x);
+        if ((h & 3u) == 0u) return;
+        _Lod1Out.Append(blade);
+    }
+    else
+    {
+        // LOD 2: thin to ~50% density
+        uint h = hash(id.x);
+        if ((h & 1u) == 0u) return;
+        _Lod2Out.Append(blade);
+    }
+}

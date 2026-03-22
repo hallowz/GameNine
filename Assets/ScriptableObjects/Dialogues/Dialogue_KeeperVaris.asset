@@ -1,0 +1,269 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_KeeperVaris
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: Keeper Varis
+    text: "I've maintained this structure for twenty years. I don't know what it
+      is \u2014 only that it hums when the sky changes and that the VORD leave it
+      alone. That's reason enough to protect it."
+    choices:
+    - text: I know what it is.
+      nextNodeId: reveal
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Tell me about Spire's Rest.
+      nextNodeId: spire
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Any work up here?
+      nextNodeId: quests
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: reveal
+    speakerName: Keeper Varis
+    text: '...
+
+
+      Then tell me. I have earned the right to know what I''ve been
+      guarding.'
+    choices:
+    - text: It's a Stronghold. One of six built by the Architect.
+      nextNodeId: reveal2
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Actually, I'll show you.
+      nextNodeId: reveal_device
+      condition:
+        type: 5
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: reveal2
+    speakerName: Keeper Varis
+    text: "The Architect...\n\nI have kept their work alive without knowing it. Whatever
+      you need from me \u2014 access, protection, knowledge of the structure \u2014
+      it's yours."
+    choices:
+    - text: I need to access the module inside.
+      nextNodeId: module_access
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: varis_ally
+        schematicItem: {fileID: 0}
+    - text: Thank you, Keeper.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: reveal_device
+    speakerName: Keeper Varis
+    text: 'The structure... it''s responding to that device. The lighting just changed.
+      Twenty years and I''ve never seen it do that.
+
+
+      What are you?'
+    choices:
+    - text: Someone trying to finish what the Architect started.
+      nextNodeId: reveal2
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: module_access
+    speakerName: Keeper Varis
+    text: "The inner chamber is through the north gate \u2014 I can open it from
+      here. No one has been inside since I arrived. Whatever is in there has been
+      waiting a long time."
+    choices:
+    - text: Open it.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: spire
+    speakerName: Keeper Varis
+    text: "We live on sky islands because the VORD rarely climb this high. The wind
+      currents between islands are treacherous \u2014 most VORD constructs can't
+      navigate them. Supply Runner Eli keeps us stocked."
+    choices:
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: quests
+    speakerName: Keeper Varis
+    text: We've lost contact with the eastern island outpost. If you have a Gyrocopter
+      or something that flies, I need someone to check on it.
+    choices:
+    - text: I'll look into it.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: varis_quest_accepted
+        schematicItem: {fileID: 0}
+    - text: Not right now.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}

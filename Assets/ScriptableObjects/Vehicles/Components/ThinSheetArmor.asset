@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f679c5b09489aad439a24cb536096fb9, type: 3}
+  m_Name: ThinSheetArmor
+  m_EditorClassIdentifier: Voidborne::Voidborne.Vehicles.ArmorComponent
+  componentName: ThinSheetArmor
+  attachmentType: 2
+  weight: 10
+  craftingIngredients: []
+  craftingAmounts: 
+  modelPrefab: {fileID: 0}
+  damageResistancePerHit: 5
+  additionalWeight: 20

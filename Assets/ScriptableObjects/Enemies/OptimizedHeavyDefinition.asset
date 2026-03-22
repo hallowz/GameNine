@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c6ebbdf11ee2d4d9014a3d46bb8f1f, type: 3}
+  m_Name: OptimizedHeavyDefinition
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.EnemyDefinition
+  enemyName: Optimized Heavy
+  category: 0
+  maxHealth: 320
+  moveSpeed: 2.5
+  attackDamage: 30
+  attackRange: 2.2
+  detectionRange: 15
+  armor: 15
+  attackCooldown: 2.2
+  attackWindup: 0.6
+  lootTable:
+  - item: {fileID: 11400000, guid: 336677b04f913a74f916e7a50d6e9a53, type: 2}
+    minQuantity: 1
+    maxQuantity: 3
+    dropChance: 0.9
+  - item: {fileID: 11400000, guid: 73246fe07d069714fb9ca9354be17f85, type: 2}
+    minQuantity: 1
+    maxQuantity: 2
+    dropChance: 0.7
+  biomeRestrictions: []
+  minDepthY: -9999
+  maxDepthY: 9999
+  populationCap: 4
+  groupSizeMin: 1
+  groupSizeMax: 2
+  canBeRestored: 0
+  converseLines: []
+  prefab: {fileID: 6985478111410532275, guid: b6b4c702aad519c498dd791665aee3e2, type: 3}

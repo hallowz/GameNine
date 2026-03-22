@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: baed9e0ea0d30864e947cbf465c60d34, type: 3}
+  m_Name: Crossbow
+  m_EditorClassIdentifier: Voidborne::Voidborne.Combat.Projectiles.BowDefinition
+  bowName: Crossbow
+  arrowDefinition: {fileID: 11400000, guid: 5a31541240fbc5e419d1fec6570f08a4, type: 2}
+  minDrawTime: 0.05
+  fullDrawTime: 0.4
+  minVelocity: 72
+  maxVelocity: 75
+  spreadAtMinDraw: 1.5
+  spreadAtFullDraw: 0.3
+  wobbleStartDelay: 3
+  wobbleMaxAngle: 3
+  staminaDrainPerSecond: 4
+  drawZoom: 1.3

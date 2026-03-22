@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29a27858b7d236b43a55f4e804b0ce8d, type: 3}
+  m_Name: Hauler_Item
+  m_EditorClassIdentifier: Voidborne::PlaceableItem
+  itemId: hauler_default
+  displayName: Hauler
+  description: A heavy 6-wheel transport truck. Seats 4, dual engines, massive cargo
+    capacity.
+  icon: {fileID: 0}
+  modelPrefab: {fileID: 6872210504533028287, guid: ee5a3b469728afa4fa42a45fa2dfa19a, type: 3}
+  itemType: 6
+  maxStackSize: 1
+  weight: 25
+  prefabToPlace: {fileID: 6872210504533028287, guid: ee5a3b469728afa4fa42a45fa2dfa19a, type: 3}
+  categoryLabel: Vehicle

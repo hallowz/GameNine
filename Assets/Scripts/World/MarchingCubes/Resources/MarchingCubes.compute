@@ -1,0 +1,150 @@
+/*
+	Author: Gus Tahara-Edmonds
+	Date: Summer 2019
+	Purpose: The Marching Cubes algorithm. Takes isosurface data and turns it into a polygonal mesh. Works on the
+	principle that if certain vertices are inside a surface and certain are outside a surface there is a specific set of
+	triangles that properly represents this inside/outside boundary. These set of triangles are stored in a table and so
+	can be very quickly referenced and outputted to be made into a mesh. This version is implemented in HLSL so runs on
+	the GPU and is very optimized. It also applies some basic smoothing.
+
+	Optimisations:
+	  - groupshared 9x9x9 density cache eliminates redundant global texture reads
+	  - Bit-shift case classification instead of pow()
+	  - Early exit for fully solid/air voxels (case 0 and 255)
+	  - Gradient normals computed on GPU (eliminates CPU normal pass)
+*/
+
+#pragma kernel March
+#include "/Includes/MarchTables.compute"
+
+Texture3D<float> densityData;
+float surfaceLevel;
+bool smooth;
+bool invert;
+int pointsPerAxis;
+float scale;
+int lodModifier;
+
+struct Triangle {
+	float3 normalC;
+	float3 vertexC;
+	float3 normalB;
+	float3 vertexB;
+	float3 normalA;
+	float3 vertexA;
+};
+
+AppendStructuredBuffer<Triangle> triangles;
+
+// 9x9x9 groupshared density cache for each 8x8x8 thread group.
+// Each voxel needs density at its 8 corners (offset 0..1 per axis),
+// so the group needs a 9x9x9 block. 729 floats = 2916 bytes.
+groupshared float densityCache[9][9][9];
+
+// Gradient-based surface normal from the density field.
+// Central differences at the nearest grid point, matching the CPU algorithm.
+float3 computeNormal(float3 densityPos) {
+	int3 ip = clamp((int3)round(densityPos), 1, pointsPerAxis - 2);
+	float dx = densityData[ip + int3(1,0,0)] - densityData[ip - int3(1,0,0)];
+	float dy = densityData[ip + int3(0,1,0)] - densityData[ip - int3(0,1,0)];
+	float dz = densityData[ip + int3(0,0,1)] - densityData[ip - int3(0,0,1)];
+	float sqrLen = dx*dx + dy*dy + dz*dz;
+	return sqrLen > 1e-6 ? float3(-dx, -dy, -dz) * rsqrt(sqrLen) : float3(0, 1, 0);
+}
+
+[numthreads(8, 8, 8)]
+void March(uint3 id : SV_DispatchThreadID, uint3 lid : SV_GroupThreadID, uint3 gid : SV_GroupID) {
+
+	// --- Phase 1: Cooperatively load density into groupshared cache ---
+	// 512 threads (8x8x8) load 729 values (9x9x9).
+	uint3 gOrigin = gid * 8;
+
+	// Pass 1: each thread loads one value at its own local position (512 of 729)
+	densityCache[lid.x][lid.y][lid.z] = densityData[(int3)(gOrigin + lid) * lodModifier];
+
+	// Pass 2: first 217 threads load the boundary values where any coordinate = 8
+	// x=8 face: 9*9=81, y=8 strip (x<8): 8*9=72, z=8 strip (x<8,y<8): 8*8=64
+	uint flatIdx = lid.x + lid.y * 8 + lid.z * 64;
+	if (flatIdx < 217) {
+		uint3 cp;
+		if (flatIdx < 81) {
+			cp = uint3(8, flatIdx / 9, flatIdx % 9);
+		} else if (flatIdx < 153) {
+			uint bi = flatIdx - 81;
+			cp = uint3(bi / 9, 8, bi % 9);
+		} else {
+			uint bi = flatIdx - 153;
+			cp = uint3(bi / 8, bi % 8, 8);
+		}
+		densityCache[cp.x][cp.y][cp.z] = densityData[(int3)(gOrigin + cp) * lodModifier];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	// --- Phase 2: Classify voxel using cached density ---
+	int caseNum = 0;
+	float cd[8]; // corner densities
+
+	[unroll]
+	for (int j = 0; j < 8; j++) {
+		uint3 corner = lid + uint3(cubeVertOffsets[j]);
+		float value = densityCache[corner.x][corner.y][corner.z];
+		cd[j] = value;
+		if ((invert && value > surfaceLevel) || (!invert && value < surfaceLevel))
+			caseNum |= (1 << j);
+	}
+
+	// Early exit: fully inside or fully outside — no surface crosses this voxel
+	if (caseNum == 0 || caseNum == 255) return;
+
+	// --- Phase 3: Emit triangles with GPU-computed gradient normals ---
+	for (int i = 0; triangulation[caseNum][i] != -1; i += 3) {
+		int a0 = cornerIndexAFromEdge[triangulation[caseNum][i]];
+		int b0 = cornerIndexBFromEdge[triangulation[caseNum][i]];
+
+		int a1 = cornerIndexAFromEdge[triangulation[caseNum][i + 1]];
+		int b1 = cornerIndexBFromEdge[triangulation[caseNum][i + 1]];
+
+		int a2 = cornerIndexAFromEdge[triangulation[caseNum][i + 2]];
+		int b2 = cornerIndexBFromEdge[triangulation[caseNum][i + 2]];
+
+		Triangle tri;
+		float3 unscaledA, unscaledB, unscaledC;
+
+		if (smooth) {
+			float3 pA0 = (float3)((id + cubeVertOffsets[a0]) * lodModifier);
+			float3 pB0 = (float3)((id + cubeVertOffsets[b0]) * lodModifier);
+			float t0 = (surfaceLevel - cd[a0]) / (cd[b0] - cd[a0]);
+			unscaledA = pA0 + t0 * (pB0 - pA0);
+			tri.vertexA = unscaledA * scale;
+
+			float3 pA1 = (float3)((id + cubeVertOffsets[a1]) * lodModifier);
+			float3 pB1 = (float3)((id + cubeVertOffsets[b1]) * lodModifier);
+			float t1 = (surfaceLevel - cd[a1]) / (cd[b1] - cd[a1]);
+			unscaledB = pA1 + t1 * (pB1 - pA1);
+			tri.vertexB = unscaledB * scale;
+
+			float3 pA2 = (float3)((id + cubeVertOffsets[a2]) * lodModifier);
+			float3 pB2 = (float3)((id + cubeVertOffsets[b2]) * lodModifier);
+			float t2 = (surfaceLevel - cd[a2]) / (cd[b2] - cd[a2]);
+			unscaledC = pA2 + t2 * (pB2 - pA2);
+			tri.vertexC = unscaledC * scale;
+		}
+		else {
+			unscaledA = (float3)id + (float3)(cubeVertOffsets[a0] + cubeVertOffsets[b0]) / 2.0;
+			tri.vertexA = unscaledA * scale;
+
+			unscaledB = (float3)id + (float3)(cubeVertOffsets[a1] + cubeVertOffsets[b1]) / 2.0;
+			tri.vertexB = unscaledB * scale;
+
+			unscaledC = (float3)id + (float3)(cubeVertOffsets[a2] + cubeVertOffsets[b2]) / 2.0;
+			tri.vertexC = unscaledC * scale;
+		}
+
+		tri.normalA = computeNormal(unscaledA);
+		tri.normalB = computeNormal(unscaledB);
+		tri.normalC = computeNormal(unscaledC);
+
+		triangles.Append(tri);
+	}
+}

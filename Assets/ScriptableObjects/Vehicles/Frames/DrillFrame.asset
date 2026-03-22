@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3641481c85a3b4a9068cc4b0a0d8d8, type: 3}
+  m_Name: DrillFrame
+  m_EditorClassIdentifier: Voidborne::Voidborne.Vehicles.VehicleFrame
+  frameName: DrillFrame
+  frameType: 4
+  maxSeatCount: 1
+  attachmentPoints:
+  - pointName: Engine
+    localPosition: {x: 0, y: 0, z: 0.8}
+    attachmentType: 0
+  - pointName: FLSusp
+    localPosition: {x: -0.5, y: -0.3, z: 0.8}
+    attachmentType: 1
+  - pointName: FRSusp
+    localPosition: {x: 0.5, y: -0.3, z: 0.8}
+    attachmentType: 1
+  - pointName: RLSusp
+    localPosition: {x: -0.5, y: -0.3, z: -0.8}
+    attachmentType: 1
+  - pointName: RRSusp
+    localPosition: {x: 0.5, y: -0.3, z: -0.8}
+    attachmentType: 1
+  - pointName: Drill
+    localPosition: {x: 0, y: 0, z: 1.5}
+    attachmentType: 6
+  - pointName: Glazing
+    localPosition: {x: 0, y: 0.5, z: 0.4}
+    attachmentType: 3
+  - pointName: Lamps
+    localPosition: {x: 0, y: 0.4, z: 1}
+    attachmentType: 4
+  baseWeight: 130
+  modelPrefab: {fileID: 0}

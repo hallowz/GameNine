@@ -1,0 +1,256 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_ForgeKeeperTar
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: ForgeKeeper Tar
+    text: "Surface dweller. You're either brave or stupid \u2014 the tunnels sort
+      those out quick. I'm Tar. I keep the forges running and the Delve from collapsing.
+      What do you want?"
+    choices:
+    - text: I need refined materials.
+      nextNodeId: trade
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Can you teach me automation?
+      nextNodeId: automation
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: I proved myself up top. Any work?
+      nextNodeId: quest_check
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: "The Vehicle Workbench \u2014 I need the schematic."
+      nextNodeId: workbench
+      condition:
+        type: 1
+        questId: MSQ_04_TheDelve
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: trade
+    speakerName: ForgeKeeper Tar
+    text: Shop's open. Don't touch anything you're not paying for.
+    choices:
+    - text: Let me see what you have.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 3
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: automation
+    speakerName: ForgeKeeper Tar
+    text: "The belt conveyors, the hoppers, the drill heads \u2014 all mine. Took
+      me six years underground to work it out. I'll share what I know once I know
+      you won't waste it."
+    choices:
+    - text: Fair enough. What do you need?
+      nextNodeId: quest_check
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: quest_check
+    speakerName: ForgeKeeper Tar
+    text: "The lower shaft is flooded with VORD drones. I need the blockage cleared
+      before we can access the deepest ore seam. Clear it out \u2014 then we'll talk."
+    choices:
+    - text: I'll handle it.
+      nextNodeId: quest_accept
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: tar_quest_accepted
+        schematicItem: {fileID: 0}
+    - text: Not right now.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: quest_accept
+    speakerName: ForgeKeeper Tar
+    text: "Lower shaft is two levels down, east tunnel. Watch for the crystallised
+      gas pockets \u2014 a stray shot sets them off. Come back when it's done."
+    choices:
+    - text: On it.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: workbench
+    speakerName: ForgeKeeper Tar
+    text: "You actually cleared that shaft. Didn't think you had it in you.\n\nHere.
+      Vehicle Workbench schematic. I designed it myself \u2014 you'll need a decent
+      forge to assemble it."
+    choices:
+    - text: Thank you, Tar.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 4
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: tar_workbench_given
+        schematicItem: {fileID: 0}

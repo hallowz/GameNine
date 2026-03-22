@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3641481c85a3b4a9068cc4b0a0d8d8, type: 3}
+  m_Name: CycleFrame
+  m_EditorClassIdentifier: Voidborne::Voidborne.Vehicles.VehicleFrame
+  frameName: CycleFrame
+  frameType: 1
+  maxSeatCount: 1
+  attachmentPoints:
+  - pointName: Engine
+    localPosition: {x: 0, y: 0, z: 0.5}
+    attachmentType: 0
+  - pointName: FrontSusp
+    localPosition: {x: 0, y: -0.3, z: 1}
+    attachmentType: 1
+  - pointName: RearSusp
+    localPosition: {x: 0, y: -0.3, z: -1}
+    attachmentType: 1
+  - pointName: Glazing
+    localPosition: {x: 0, y: 0.6, z: 0.3}
+    attachmentType: 3
+  baseWeight: 80
+  modelPrefab: {fileID: 0}

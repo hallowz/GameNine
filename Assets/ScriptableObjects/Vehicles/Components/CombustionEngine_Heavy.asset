@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff829fa3b64f54240bf284537da1f242, type: 3}
+  m_Name: CombustionEngine_Heavy
+  m_EditorClassIdentifier: Voidborne::Voidborne.Vehicles.EngineComponent
+  componentName: CombustionEngine_Heavy
+  attachmentType: 0
+  weight: 60
+  craftingIngredients: []
+  craftingAmounts: 
+  modelPrefab: {fileID: 0}
+  fuelType: 0
+  maxPower: 150
+  noiseLevel: 70
+  overheatsOnSustain: 1
+  overheatTime: 30
+  peakTorqueNm: 450
+  peakTorqueRPM: 2200
+  redlineRPM: 4500
+  idleRPM: 600
+  gearRatios:
+  - 4
+  - 2.8
+  - 2
+  - 1.4
+  - 1
+  - 0.75
+  finalDriveRatio: 4.1
+  engineBrakingFactor: 0.4

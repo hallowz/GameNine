@@ -1,0 +1,59 @@
+// Tree GPU culling compute shader — single combined pass.
+// Writes near trees to _NearOut, far (billboard) trees to _FarOut.
+// Halves dispatch count vs. separate near/far kernels.
+//
+// Uses a crossfade band around the near/far boundary to prevent flickering.
+// Trees in the band are written to BOTH buffers — the shaders handle alpha
+// crossfade based on _NearDistSq and _CrossfadeBandSq.
+
+#pragma kernel CSCombined
+
+struct TreeRenderInstance
+{
+    float3 position;
+    float4 rotation;
+    float  scale;
+};
+
+StructuredBuffer<TreeRenderInstance>       _AllTrees;
+AppendStructuredBuffer<TreeRenderInstance> _NearOut;
+AppendStructuredBuffer<TreeRenderInstance> _FarOut;
+
+float3 _CamPos;
+float  _NearDistSq;
+float  _FarDistSq;
+float  _CrossfadeBandSq;   // (maxDrawDistance + band)² — trees between _NearDistSq and this go to both buffers
+float4 _FrustumPlanes[6];
+uint   _TreeCount;
+
+[numthreads(64, 1, 1)]
+void CSCombined(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _TreeCount) return;
+
+    TreeRenderInstance t = _AllTrees[id.x];
+
+    // Skip invalidated slots (scale zeroed by sub-allocation system)
+    if (t.scale <= 0.0) return;
+
+    float3 d = t.position - _CamPos;
+    float distSq = dot(d, d);
+
+    // Early rejection — beyond far billboard band
+    if (distSq > _FarDistSq) return;
+
+    // Frustum cull (conservative radius for billboard coverage)
+    float radius = t.scale * 8.0;
+    for (int p = 0; p < 6; p++)
+    {
+        if (dot(_FrustumPlanes[p].xyz, t.position) + _FrustumPlanes[p].w < -radius)
+            return;
+    }
+
+    // Crossfade band: trees in [_NearDistSq, _CrossfadeBandSq] go to both buffers.
+    // Shaders use distance-based alpha to smoothly blend between 3D and billboard.
+    if (distSq <= _CrossfadeBandSq)
+        _NearOut.Append(t);
+    if (distSq > _NearDistSq)
+        _FarOut.Append(t);
+}

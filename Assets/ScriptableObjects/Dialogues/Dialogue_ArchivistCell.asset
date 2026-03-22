@@ -1,0 +1,288 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f466d8acd888e47941c8dd5566b0bc, type: 3}
+  m_Name: Dialogue_ArchivistCell
+  m_EditorClassIdentifier: Voidborne::DialogueTree
+  startNodeId: root
+  nodes:
+  - nodeId: root
+    speakerName: Archivist Cell
+    text: "I've been cataloguing the Architect's documents for eleven years. Most
+      of it is partial, corrupted, or written in notation I don't fully understand.
+      But it tells a story \u2014 if you can see the shape of it."
+    choices:
+    - text: What have you found?
+      nextNodeId: findings
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: I have archive fragments with me.
+      nextNodeId: fragment_check
+      condition:
+        type: 6
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: "The Strongholds \u2014 what do they do?"
+      nextNodeId: strongholds
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Farewell.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: findings
+    speakerName: Archivist Cell
+    text: "The Architect feared something they built. The later logs show countdown
+      timers, sealing protocols, what looks like an evacuation that never completed.
+      Whatever the VORD are \u2014 the Architect made them. And then tried to stop
+      them."
+    choices:
+    - text: Made them? How?
+      nextNodeId: vord_origin
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: vord_origin
+    speakerName: Archivist Cell
+    text: "I'm not certain. The notation for their origin is in a cipher I haven't
+      cracked. But the Strongholds seem to be override nodes \u2014 the Architect
+      designed them to shut the VORD down. If only someone could access them."
+    choices:
+    - text: I can. I have the Cortex Device.
+      nextNodeId: cortex_reveal
+      condition:
+        type: 5
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: cortex_reveal
+    speakerName: Archivist Cell
+    text: "The Wrist Terminal... I've only seen it in schematics.\n\nThen you can
+      do what the Architect couldn't finish. Each module restores a portion of the
+      override capacity. Find all six \u2014 and you can shut them all down."
+    choices:
+    - text: That's the plan.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: fragment_check
+    speakerName: Archivist Cell
+    text: "Let me see... yes. *Yes.* This fragment references the same event as Log
+      Entry 7 in my Stronghold file. The timestamp matches \u2014 this was written
+      during the sealing sequence. Where did you find it?"
+    choices:
+    - text: In a Stronghold.
+      nextNodeId: fragment_stronghold
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+    - text: I'm not sure exactly.
+      nextNodeId: fragment_vague
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: fragment_stronghold
+    speakerName: Archivist Cell
+    text: "That confirms the Strongholds are active archive nodes \u2014 the Architect
+      was still writing during the sealing. There may be more fragments inside. Anything
+      you find, bring it to me. I can cross-reference everything."
+    choices:
+    - text: Understood.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: fragment_vague
+    speakerName: Archivist Cell
+    text: "It doesn't matter. It matches. The archive is real \u2014 and it's still
+      out there. Bring me anything else you find."
+    choices:
+    - text: I will.
+      nextNodeId: 
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}
+  - nodeId: strongholds
+    speakerName: Archivist Cell
+    text: "Override nodes for the VORD directive, I believe. Six of them, placed
+      at depth and altitude extremes \u2014 surface, underground, sky. The Architect
+      needed coverage across all biome layers."
+    choices:
+    - text: Back.
+      nextNodeId: root
+      condition:
+        type: 0
+        questId: 
+        item: {fileID: 0}
+        cortexModuleIndex: -1
+        invert: 0
+      action:
+        type: 0
+        quest: {fileID: 0}
+        giveItem:
+          item: {fileID: 0}
+          quantity: 0
+        worldEventId: 
+        schematicItem: {fileID: 0}

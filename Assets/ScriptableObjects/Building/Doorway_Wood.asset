@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: Doorway_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 3
+  prefab: {fileID: 6274484381623351847, guid: ec7688bee64fb0c42bec99dea32be41c, type: 3}
+  ghostPrefab: {fileID: 62597391434552940, guid: 40d39afef684534469b1307f451e48a4, type: 3}
+  inventoryItemId: build_wood_doorway
+  canPlaceOnTerrain: 0
+  healthPerTier:
+  - 150
+  - 400
+  - 800

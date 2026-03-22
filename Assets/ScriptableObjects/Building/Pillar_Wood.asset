@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: Pillar_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 8
+  prefab: {fileID: 3390001817448741794, guid: efb657e0e99a9c34997e5648148ffe8d, type: 3}
+  ghostPrefab: {fileID: 2381351109041154242, guid: 684ad091ed035614691227d7bcd120f2, type: 3}
+  inventoryItemId: build_wood_pillar
+  canPlaceOnTerrain: 0
+  healthPerTier:
+  - 200
+  - 500
+  - 1000

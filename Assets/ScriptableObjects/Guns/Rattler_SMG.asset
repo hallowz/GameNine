@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f08598e03ef5fe4890450923a98de87, type: 3}
+  m_Name: Rattler_SMG
+  m_EditorClassIdentifier: Voidborne::Voidborne.Combat.GunDefinition
+  gunName: Rattler SMG
+  fireRate: 800
+  damage: 18
+  magazineSize: 30
+  reloadTime: 2
+  fireMode: 0
+  bulletType: 0
+  pelletCount: 1
+  recoilPattern:
+  - {x: 0, y: 1.5}
+  - {x: 0.3, y: 1.5}
+  - {x: -0.3, y: 1.5}
+  - {x: 0.4, y: 2}
+  - {x: -0.4, y: 2}
+  - {x: 0.3, y: 2}
+  - {x: -0.3, y: 2}
+  - {x: 0, y: 1.5}
+  spreadStanding: 1.5
+  spreadMoving: 3
+  spreadCrouching: 0.8
+  spreadAirborne: 5
+  range: 50
+  penetration: 0.2
+  adsZoomMultiplier: 1.2
+  equipTime: 0.25
+  modelPrefab1P: {fileID: 0}
+  modelPrefab3P: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  fireSound: {fileID: 8300000, guid: c2e4eb65da372c249b3197a63af69e51, type: 3}
+  reloadSound: {fileID: 8300000, guid: 860bb8b7a1f035b44bc33229317b20c4, type: 3}

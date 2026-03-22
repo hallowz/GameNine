@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c6ebbdf11ee2d4d9014a3d46bb8f1f, type: 3}
+  m_Name: DirectedSentinelDefinition
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.EnemyDefinition
+  enemyName: Directed Sentinel
+  category: 1
+  maxHealth: 110
+  moveSpeed: 3.8
+  attackDamage: 18
+  attackRange: 2
+  detectionRange: 20
+  armor: 4
+  attackCooldown: 1.5
+  attackWindup: 0.3
+  lootTable:
+  - item: {fileID: 11400000, guid: 9bdf4413b1de45842b8858b461f7fed7, type: 2}
+    minQuantity: 1
+    maxQuantity: 1
+    dropChance: 0.6
+  - item: {fileID: 11400000, guid: 3bf839bc14efbaf4f840f5a28b362155, type: 2}
+    minQuantity: 1
+    maxQuantity: 1
+    dropChance: 0.5
+  biomeRestrictions: []
+  minDepthY: -9999
+  maxDepthY: 9999
+  populationCap: 5
+  groupSizeMin: 1
+  groupSizeMax: 2
+  canBeRestored: 1
+  converseLines:
+  - ...this route is still under my protection. State your clearance.
+  - Unauthorised presence. I am giving you one warning. Stand down.
+  - I remember this path. I walked it for years. Why are you here?
+  - "Something \u2014 something is wrong with me. Do not make me act on directive."
+  prefab: {fileID: 1336796102053256389, guid: 901e5f406fe0eb749b597dc85bc6ce36, type: 3}

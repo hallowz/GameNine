@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff829fa3b64f54240bf284537da1f242, type: 3}
+  m_Name: ElectricMotor_Basic
+  m_EditorClassIdentifier: Voidborne::Voidborne.Vehicles.EngineComponent
+  componentName: ElectricMotor_Basic
+  attachmentType: 0
+  weight: 20
+  craftingIngredients: []
+  craftingAmounts: 
+  modelPrefab: {fileID: 0}
+  fuelType: 1
+  maxPower: 60
+  noiseLevel: 5
+  overheatsOnSustain: 0
+  overheatTime: 30
+  peakTorqueNm: 120
+  peakTorqueRPM: 0
+  redlineRPM: 8000
+  idleRPM: 0
+  gearRatios:
+  - 2.8
+  - 1.9
+  - 1.4
+  - 1.1
+  - 0.9
+  - 0.75
+  finalDriveRatio: 3.2
+  engineBrakingFactor: 0.5

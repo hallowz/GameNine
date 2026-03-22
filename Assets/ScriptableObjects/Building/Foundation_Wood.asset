@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af7067f7c282604a8999f9321373f83, type: 3}
+  m_Name: Foundation_Wood
+  m_EditorClassIdentifier: Voidborne::Voidborne.Building.BuildingPieceData
+  pieceType: 0
+  prefab: {fileID: 6414690938099160072, guid: 0d7435e432f78d741b41ac09d0e606db, type: 3}
+  ghostPrefab: {fileID: 4945935593767294996, guid: b9719c15a963b0a40be47d312cca054d, type: 3}
+  inventoryItemId: build_wood_foundation
+  canPlaceOnTerrain: 1
+  healthPerTier:
+  - 150
+  - 400
+  - 800

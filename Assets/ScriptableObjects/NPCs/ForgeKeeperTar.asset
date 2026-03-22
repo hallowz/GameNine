@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7601938af4e0f1640a9ea9356abaa8ec, type: 3}
+  m_Name: ForgeKeeperTar
+  m_EditorClassIdentifier: Voidborne::NPCDefinition
+  npcId: forgekeeper_tar
+  npcName: ForgeKeeper Tar
+  role: Gruff engineer. Maintains The Delve's forges and automation.
+  modelPrefab: {fileID: 0}
+  idleAnimation: {fileID: 0}
+  defaultDialogue: {fileID: 11400000, guid: 2e2cdf27fa0ee1f4b89135c23a5b137b, type: 2}
+  worldPosition: {x: 0, y: -80, z: 20}
+  safeholdName: The Delve
+  associatedQuests: []
+  shopInventory: []

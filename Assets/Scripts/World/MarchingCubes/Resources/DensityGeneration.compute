@@ -1,0 +1,547 @@
+// DensityGeneration.compute
+// Generates the 33x33x33 density field for a single chunk on the GPU.
+// Reads per-column biome parameters from a StructuredBuffer for biome-aware terrain.
+//
+// Kernels:
+//   GenerateDensity       — solid terrain density (surface + caves + ravines + sky islands)
+//   CopyBufferToTexture   — uploads CPU density to texture for MC (rebuild path)
+//
+// Dispatch: (9,9,9) with [numthreads(4,4,4)] -> covers 36 per axis; crop to 33.
+// Buffer index: x + y*33 + z*33*33
+
+#pragma kernel GenerateDensity
+#pragma kernel CopyBufferToTexture
+
+// ---- Per-column biome parameters (uploaded from CPU) -------------------------
+struct BiomeParams
+{
+    float heightScale;
+    float heightFrequency;
+    float caveScale;
+    float caveDensity;
+    float noiseOctaves;
+    float persistence;
+    float lacunarity;
+    float moisture;
+};
+
+StructuredBuffer<BiomeParams> biomeDataBuffer; // 33*33 entries
+
+// ---- Terrain Uniforms -------------------------------------------------------
+float3 chunkWorldOffset;
+float  domainWarpStrength;
+int    worldSeed;
+
+// ---- Output -----------------------------------------------------------------
+RWStructuredBuffer<float> densityBuffer;     // terrain density (GenerateDensity writes)
+RWTexture3D<float>        densityTextureOut; // density texture consumed by MarchingCubes kernel
+RWStructuredBuffer<float> surfaceHeightBuffer; // 33*33 per-column surface height (read back for terrain coloring)
+
+// ---- Input (for CopyBufferToTexture) ----------------------------------------
+StructuredBuffer<float> densityCopySource;   // density uploaded from CPU readback
+
+// ---- Sky zone constants -----------------------------------------------------
+#define SKY_TRANSITION_START 80.0
+#define SKY_START            100.0
+#define SKY_MAX              800.0
+
+// =============================================================================
+//  HLSL Simplex / Gradient Noise
+// =============================================================================
+
+float3 _rand3(float3 c)
+{
+    float j = 4096.0 * sin(dot(c, float3(17.0, 59.4, 15.0)));
+    float3 r;
+    r.z = frac(512.0 * j);
+    j  *= 0.125;
+    r.x = frac(512.0 * j);
+    j  *= 0.125;
+    r.y = frac(512.0 * j);
+    return r - 0.5;
+}
+
+float _simplex3D(float3 p)
+{
+    const float F3 = 0.333333;
+    const float G3 = 0.166667;
+
+    float3 s  = floor(p + dot(p, float3(F3, F3, F3)));
+    float3 x  = p - s + dot(s, float3(G3, G3, G3));
+
+    float3 e  = step(float3(0,0,0), x - x.yzx);
+    float3 i1 = e * (1.0 - e.zxy);
+    float3 i2 = 1.0 - e.zxy * (1.0 - e);
+
+    float3 x1 = x - i1 + G3;
+    float3 x2 = x - i2 + 2.0 * G3;
+    float3 x3 = x - 1.0 + 3.0 * G3;
+
+    float4 w, d;
+    w.x = dot(x,  x);
+    w.y = dot(x1, x1);
+    w.z = dot(x2, x2);
+    w.w = dot(x3, x3);
+    w   = max(0.6 - w, 0.0);
+
+    d.x = dot(_rand3(s),      x);
+    d.y = dot(_rand3(s + i1), x1);
+    d.z = dot(_rand3(s + i2), x2);
+    d.w = dot(_rand3(s + 1.0),x3);
+
+    w *= w;
+    w *= w;
+    d *= w;
+    return dot(d, float4(52,52,52,52));
+}
+
+float _simplex2D(float2 p)
+{
+    return _simplex3D(float3(p.x, p.y, 0.0));
+}
+
+float _seedOff(int channel)
+{
+    return frac((float)(worldSeed * 1619 + channel * 31337) * 0.000001);
+}
+
+// =============================================================================
+//  Fractal Brownian Motion (fBm)
+// =============================================================================
+
+float _fbm2D(float2 pos, float freq, int octaves, float pers, float lac, float seedOff)
+{
+    float warpFreq = freq * 0.5;
+    float2 warpOffset = float2(
+        _simplex2D(pos * warpFreq + float2(seedOff + 17.3, seedOff + 41.7)),
+        _simplex2D(pos * warpFreq + float2(seedOff + 83.1, seedOff + 29.5))
+    ) * domainWarpStrength;
+    float2 warped = pos + warpOffset;
+
+    float value = 0.0;
+    float amp   = 1.0;
+    float f     = freq;
+    float maxAmp = 0.0;
+
+    for (int i = 0; i < octaves; i++)
+    {
+        value  += amp * _simplex2D(warped * f + seedOff);
+        maxAmp += amp;
+        amp    *= pers;
+        f      *= lac;
+    }
+
+    return (maxAmp > 0.0) ? (value / maxAmp) : 0.0;
+}
+
+float _fbm3D(float3 pos, float freq, int octaves, float pers, float lac, float seedOff)
+{
+    float value = 0.0;
+    float amp   = 1.0;
+    float f     = freq;
+    float maxAmp = 0.0;
+
+    for (int i = 0; i < octaves; i++)
+    {
+        value  += amp * _simplex3D(pos * f + seedOff);
+        maxAmp += amp;
+        amp    *= pers;
+        f      *= lac;
+    }
+
+    return (maxAmp > 0.0) ? (value / maxAmp) : 0.0;
+}
+
+// Ridged 2D noise — abs-inverted and squared for sharp ridges
+float _ridged2D(float2 pos, float freq, int octaves, float pers, float lac, float seedOff)
+{
+    float value = 0.0;
+    float amp   = 1.0;
+    float f     = freq;
+    float maxAmp = 0.0;
+
+    for (int i = 0; i < octaves; i++)
+    {
+        float n = _simplex2D(pos * f + seedOff);
+        n = 1.0 - abs(n);
+        n *= n;
+        value  += n * amp;
+        maxAmp += amp;
+        amp    *= pers;
+        f      *= lac;
+    }
+
+    return (maxAmp > 0.0) ? (value / maxAmp) : 0.0;
+}
+
+// =============================================================================
+//  Sky Island Density — floating islands with stalactite bottoms
+// =============================================================================
+
+// Band system constants: ~3.5-chunk island zone + 2-chunk air gap
+#define ISLAND_BAND_THICKNESS 112.0
+#define ISLAND_BAND_GAP        64.0
+#define ISLAND_BAND_SIZE      176.0
+
+float _skyIslandDensity(float3 worldPos)
+{
+    float yy = worldPos.y;
+    float2 xz = worldPos.xz;
+
+    // Which altitude band are we in?
+    float relY = yy - SKY_START;
+    int band = (int)floor(relY / ISLAND_BAND_SIZE);
+    float localY = relY - band * ISLAND_BAND_SIZE; // 0 to ISLAND_BAND_SIZE
+
+    // Gap zone: guaranteed air between bands
+    if (localY > ISLAND_BAND_THICKNESS)
+        return -1.0;
+
+    // Altitude factor for this band (higher bands = bigger islands)
+    float bandCenterY = SKY_START + band * ISLAND_BAND_SIZE + ISLAND_BAND_THICKNESS * 0.5;
+    float altFactor = saturate((bandCenterY - SKY_START) / (SKY_MAX - SKY_START));
+
+    // Sky biome type from large-scale 2D noise (0-4)
+    float skyBiomeSeed = _seedOff(30);
+    float rawBiome = _fbm2D(xz, 0.0003, 2, 0.5, 2.0, skyBiomeSeed);
+    int skyBiomeType = clamp((int)floor(saturate(rawBiome * 0.5 + 0.5) * 5.0), 0, 4);
+
+    // Per-biome parameters (initialize defaults to avoid HLSL warnings)
+    float maskFreq = 0.004;
+    float threshold = 0.35;
+    float islandHalfH = 24.0;
+    float topHeight = 10.0;
+    float stalDepth = 18.0;
+    switch (skyBiomeType)
+    {
+        case 0: // Skyward Spires — small islands, more frequent
+            maskFreq    = lerp(0.010, 0.006, altFactor);
+            threshold   = lerp(0.25, 0.15, altFactor);
+            islandHalfH = lerp(20.0, 32.0, altFactor);
+            topHeight   = lerp(8.0, 14.0, altFactor);
+            stalDepth   = lerp(16.0, 28.0, altFactor);
+            break;
+        case 1: // Drifting Meadows — medium flat grassy
+            maskFreq    = lerp(0.005, 0.003, altFactor);
+            threshold   = lerp(0.15, 0.05, altFactor);
+            islandHalfH = lerp(16.0, 24.0, altFactor);
+            topHeight   = lerp(6.0, 12.0, altFactor);
+            stalDepth   = lerp(14.0, 24.0, altFactor);
+            break;
+        case 2: // Oasis Isles — pools on top
+            maskFreq    = lerp(0.004, 0.0024, altFactor);
+            threshold   = lerp(0.12, 0.02, altFactor);
+            islandHalfH = lerp(18.0, 28.0, altFactor);
+            topHeight   = lerp(8.0, 14.0, altFactor);
+            stalDepth   = lerp(16.0, 28.0, altFactor);
+            break;
+        case 3: // Stormridge Peaks — mountainous
+            maskFreq    = lerp(0.003, 0.0016, altFactor);
+            threshold   = lerp(0.10, 0.00, altFactor);
+            islandHalfH = lerp(24.0, 40.0, altFactor);
+            topHeight   = lerp(16.0, 30.0, altFactor);
+            stalDepth   = lerp(18.0, 32.0, altFactor);
+            break;
+        default: // Ancient Bastions — massive flat-topped mesa
+            maskFreq    = lerp(0.002, 0.001, altFactor);
+            threshold   = lerp(0.05, -0.05, altFactor);
+            islandHalfH = lerp(20.0, 32.0, altFactor);
+            topHeight   = lerp(10.0, 20.0, altFactor);
+            stalDepth   = lerp(16.0, 30.0, altFactor);
+            break;
+    }
+
+    // 2D noise mask — per-band seed so islands don't vertically align
+    float islandSeed = _seedOff(31) + band * 73.7;
+    float stalSeed   = _seedOff(32);
+
+    float islandNoise = _fbm2D(xz, maskFreq, 3, 0.5, 2.0, islandSeed);
+    if (islandNoise <= threshold)
+        return -1.0;
+
+    // Island strength: 0 at XZ edge, 1 at XZ core
+    float rawStr = (islandNoise - threshold) / (1.0 - threshold);
+    float strength = smoothstep(0.0, 1.0, rawStr);
+
+    // XZ distance from island edge — slopes edges instead of vertical walls
+    float xzDist = rawStr * islandHalfH;
+
+    float bandCenter = ISLAND_BAND_THICKNESS * 0.5;
+    float distFromCenter = localY - bandCenter;
+    float halfH = islandHalfH * strength;
+    if (halfH < 4.0) return -1.0;
+
+    // --- STALACTITE ZONE: extends below the main island body ---
+    if (distFromCenter < -halfH)
+    {
+        float below = (-distFromCenter) - halfH;
+        if (below > stalDepth) return -1.0;
+
+        float3 dripPos = float3(worldPos.x, worldPos.y * 3.0, worldPos.z);
+        float dripNoise = _fbm3D(dripPos, 0.03, 2, 0.5, 2.0, stalSeed);
+
+        if (dripNoise < 0.1) return -1.0;
+
+        float stalNorm = below / stalDepth;
+        float taper = (1.0 - stalNorm) * (1.0 - stalNorm);
+        float dripStr = (dripNoise - 0.1) / 0.9;
+        return dripStr * taper * min(xzDist, 1.0) * 15.0;
+    }
+
+    // --- TOP TERRAIN: shapes the top surface ---
+    float topTerrain = _fbm2D(xz, 0.008, 3, 0.5, 2.0, islandSeed + 500.0);
+    if (skyBiomeType == 3)
+    {
+        float ridged = _ridged2D(xz, 0.006, 3, 0.5, 2.0, islandSeed + 600.0);
+        topTerrain = lerp(topTerrain, ridged, 0.6);
+    }
+
+    float terrainOffset = topTerrain * topHeight * strength;
+
+    if (skyBiomeType == 2 && strength > 0.4)
+    {
+        float poolNoise = _fbm2D(xz, 0.012, 2, 0.5, 2.0, islandSeed + 700.0);
+        if (poolNoise > 0.25)
+            terrainOffset -= (poolNoise - 0.25) / 0.75 * 8.0 * strength;
+    }
+
+    float topSurface = halfH + terrainOffset;
+    float botSurface = -halfH;
+
+    if (distFromCenter > topSurface)
+        return -1.0;
+
+    // --- ISLAND BODY: SDF combining vertical and XZ distances ---
+    float distToTop = topSurface - distFromCenter;
+    float distToBot = distFromCenter - botSurface;
+    float vertDist = min(distToTop, distToBot);
+    float den = min(vertDist, xzDist);
+
+    return den;
+}
+
+// =============================================================================
+//  Enhanced Cave Generation — horizontal caverns at depth
+// =============================================================================
+
+float _deepCaveDensity(float3 worldPos, BiomeParams bp, float baseDensity, float depthBelowSurface)
+{
+    float den = baseDensity;
+    float seedOff = _seedOff(1);
+
+    // --- Shallow underground (-128 to -256): wide horizontal caverns ---
+    if (depthBelowSurface > 128.0)
+    {
+        // Y stretched 3x for flat, wide chambers
+        float3 cavPos = float3(worldPos.x, worldPos.y * 3.0, worldPos.z);
+        float cavNoise = _fbm3D(cavPos, 0.005 * bp.caveScale, 2, 0.5, 2.0, _seedOff(7));
+        float cavThresh = 0.35 - bp.caveDensity * 0.4;
+        if (cavNoise > cavThresh)
+        {
+            float intensity = (cavNoise - cavThresh) / (1.0 - cavThresh);
+            den = min(den, -intensity * (70.0 + bp.caveScale * 40.0));
+        }
+
+        // Gentle horizontal worm tunnels (Y stretched 2x)
+        float3 horzPos = float3(worldPos.x, worldPos.y * 2.0, worldPos.z);
+        float caveFreq = 0.016 * bp.caveScale;
+        float h1 = _fbm3D(horzPos, caveFreq, 2, 0.5, 2.0, seedOff + 150.0);
+        float h2 = _fbm3D(horzPos, caveFreq, 2, 0.5, 2.0, seedOff + 227.0);
+        float hd2 = h1 * h1 + h2 * h2;
+        float hRadius = 0.08 + bp.caveDensity * 0.14;
+        if (hd2 < hRadius * hRadius)
+        {
+            float t = 1.0 - sqrt(hd2) / hRadius;
+            den = min(den, -t * 55.0);
+        }
+    }
+
+    // --- Deep underground (> 256 below surface): mega-caverns ---
+    if (depthBelowSurface > 256.0)
+    {
+        float depthFactor = saturate((depthBelowSurface - 256.0) / 256.0);
+
+        // Enormous horizontal caverns — Y stretched 4x
+        float3 megaPos = float3(worldPos.x, worldPos.y * 4.0, worldPos.z);
+        float megaFreq = lerp(0.004, 0.003, depthFactor) * bp.caveScale;
+        float megaNoise = _fbm3D(megaPos, megaFreq, 3, 0.55, 2.0, _seedOff(7) + 500.0);
+        float megaThresh = lerp(0.32, 0.25, depthFactor) - bp.caveDensity * 0.35;
+        if (megaNoise > megaThresh)
+        {
+            float intensity = (megaNoise - megaThresh) / (1.0 - megaThresh);
+            den = min(den, -intensity * (90.0 + bp.caveScale * 50.0 + depthFactor * 30.0));
+        }
+
+        // Wide horizontal tunnel network (Y stretched 2.5x)
+        float deepFreq = lerp(0.012, 0.008, depthFactor) * bp.caveScale;
+        float3 horzPos2 = float3(worldPos.x, worldPos.y * 2.5, worldPos.z);
+        float m1 = _fbm3D(horzPos2, deepFreq, 3, 0.6, 2.0, seedOff);
+        float m2 = _fbm3D(horzPos2, deepFreq, 2, 0.5, 2.0, seedOff + 77.3);
+        float md2 = m1 * m1 + m2 * m2;
+        float mRadius = lerp(0.10, 0.14, depthFactor) + bp.caveDensity * 0.2;
+        if (md2 < mRadius * mRadius)
+        {
+            float t = 1.0 - sqrt(md2) / mRadius;
+            den = min(den, -t * 80.0);
+        }
+
+        // Scattered vertical shafts — gated so only ~15% of XZ has connections
+        float shaftGate = _fbm2D(worldPos.xz, 0.002, 1, 0.5, 2.0, seedOff + 350.0);
+        if (shaftGate > 0.7)
+        {
+            float s1 = _fbm2D(worldPos.xz, 0.006, 2, 0.5, 2.0, seedOff + 400.0);
+            float s2 = _fbm2D(worldPos.xz, 0.006, 2, 0.5, 2.0, seedOff + 477.0);
+            float sd2 = s1 * s1 + s2 * s2;
+            float sRadius = 0.03 + bp.caveDensity * 0.06;
+            if (sd2 < sRadius * sRadius)
+            {
+                float t = 1.0 - sqrt(sd2) / sRadius;
+                den = min(den, -t * 50.0);
+            }
+        }
+    }
+
+    return den;
+}
+
+// =============================================================================
+//  Kernel 0: GenerateDensity — biome-aware terrain with caves, sky islands
+// =============================================================================
+
+[numthreads(4, 4, 4)]
+void GenerateDensity(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= 33u || id.y >= 33u || id.z >= 33u)
+        return;
+
+    int x = (int)id.x;
+    int y = (int)id.y;
+    int z = (int)id.z;
+
+    // Read per-column biome parameters
+    BiomeParams bp = biomeDataBuffer[x + z * 33];
+
+    float3 worldPos = chunkWorldOffset + float3((float)x, (float)y, (float)z);
+
+    // Surface height using biome-specific params
+    float surfSeedOff = _seedOff(0);
+    float surfaceHeight = _fbm2D(worldPos.xz, bp.heightFrequency, (int)bp.noiseOctaves,
+                                  bp.persistence, bp.lacunarity, surfSeedOff)
+                          * bp.heightScale;
+
+    float density = -worldPos.y + surfaceHeight;
+
+    // =========================================================================
+    //  SKY ZONE vs SURFACE ZONE — no early return to keep D3D11 happy
+    // =========================================================================
+    bool isSkyZone = worldPos.y > SKY_TRANSITION_START;
+
+    if (isSkyZone)
+    {
+        // Sky zone: floating islands override base density
+        float skyDen = _skyIslandDensity(worldPos);
+
+        if (worldPos.y >= SKY_START)
+        {
+            density = skyDen;
+        }
+        else
+        {
+            float blend = saturate((worldPos.y - SKY_TRANSITION_START)
+                                 / (SKY_START - SKY_TRANSITION_START));
+            density = lerp(density, skyDen, blend);
+        }
+    }
+    else
+    {
+        // Surface zone: caves, ravines
+
+        float depthBelowSurface = surfaceHeight - worldPos.y;
+
+        // --- Ravines: scarce, max ~200m segments, taper at ends ---
+        float ravineMaxDepth = 60.0 + bp.caveScale * 40.0;
+        float skyProximityFade = saturate((SKY_TRANSITION_START - worldPos.y) / 32.0);
+        if (depthBelowSurface > 0.0 && depthBelowSurface < ravineMaxDepth && skyProximityFade > 0.0)
+        {
+            float ravSeedOff = _seedOff(6);
+
+            // Gate noise breaks ravines into isolated segments.
+            // freq 0.005 → ~200m features; threshold 0.15 → ~40% of area has ravines.
+            float ravGate = _fbm2D(worldPos.xz, 0.005, 1, 0.5, 2.0, ravSeedOff + 500.0);
+            float gateFade = smoothstep(0.15, 0.35, ravGate);
+
+            if (gateFade > 0.0)
+            {
+                float ravNoise = _fbm2D(worldPos.xz, 0.002, 2, 0.5, 2.0, ravSeedOff);
+                float ravValue = abs(ravNoise);
+                float ravWidth = lerp(0.02 + bp.caveScale * 0.01, 0.006, depthBelowSurface / ravineMaxDepth);
+                if (ravValue < ravWidth)
+                {
+                    float falloff = 1.0 - ravValue / ravWidth;
+                    float strength = lerp(45.0, 12.0, depthBelowSurface / ravineMaxDepth);
+                    density = min(density, -falloff * strength * skyProximityFade * gateFade);
+                }
+            }
+        }
+
+        // --- Worm caves ---
+        if (depthBelowSurface > 8.0)
+        {
+            float caveFreq = 0.02 * bp.caveScale;
+            float cave1 = _fbm3D(worldPos, caveFreq, 2, 0.5, 2.0, _seedOff(1));
+            float cave2 = _fbm3D(worldPos, caveFreq, 2, 0.5, 2.0, _seedOff(1) + 77.3);
+            float tubeDist2 = cave1 * cave1 + cave2 * cave2;
+            float tubeRadius = 0.06 + bp.caveDensity * 0.16;
+            if (tubeDist2 < tubeRadius * tubeRadius)
+            {
+                float t = 1.0 - sqrt(tubeDist2) / tubeRadius;
+                float carveStr = 20.0 + bp.caveScale * 20.0;
+                density = min(density, -t * carveStr);
+            }
+        }
+
+        // --- Enhanced caves at depth ---
+        if (depthBelowSurface > 128.0)
+        {
+            density = _deepCaveDensity(worldPos, bp, density, depthBelowSurface);
+        }
+
+    }
+
+    // Write density (all paths)
+    densityBuffer[x + y * 33 + z * 33 * 33] = density;
+    densityTextureOut[int3(x, y, z)]         = density;
+
+    // Write per-column data once (y==0 avoids races)
+    if (y == 0)
+    {
+        int colIdx = x + z * 33;
+
+        if (isSkyZone)
+        {
+            // Sky chunks: sentinel so CPU column-scans for local surface
+            surfaceHeightBuffer[colIdx] = -1e9;
+        }
+        else
+        {
+            surfaceHeightBuffer[colIdx] = surfaceHeight;
+        }
+    }
+}
+
+// =============================================================================
+//  Kernel 1: CopyBufferToTexture — uploads CPU density to texture
+// =============================================================================
+
+[numthreads(4, 4, 4)]
+void CopyBufferToTexture(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= 33u || id.y >= 33u || id.z >= 33u)
+        return;
+
+    int x = (int)id.x;
+    int y = (int)id.y;
+    int z = (int)id.z;
+
+    densityTextureOut[int3(x, y, z)] = densityCopySource[x + y * 33 + z * 33 * 33];
+}
