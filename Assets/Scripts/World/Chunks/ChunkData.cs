@@ -82,6 +82,13 @@ namespace Voidborne.World.Chunks
         public float[] skyExposure;
 
         /// <summary>
+        /// Temporary cache of mesh vertices from the initial mesh build.
+        /// Avoids a second mesh.vertices copy (120KB+) during ore finalization.
+        /// Cleared after finalization to free memory.
+        /// </summary>
+        internal Vector3[] cachedVertices;
+
+        /// <summary>
         /// Pre-classified triangle face buckets for per-face backface culling.
         /// LOD0 only. Null for LOD1+.
         /// </summary>

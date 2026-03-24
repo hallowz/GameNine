@@ -111,6 +111,13 @@ namespace Voidborne.Diagnostics
         private float _totalPerFrameMs;   // average total profiled ms per frame
         private int   _frameCount;        // frames counted in current sample window
 
+        // Frame time tracking — shows non-script overhead (rendering, GPU, GC, Unity internals)
+        private double _frameTimeAccumMs;
+        private double _frameTimePeakMs;
+        private double _displayFrameAvgMs;
+        private double _displayFramePeakMs;
+        private double _displayNonScriptMs;
+
         private static double _tickToMs;
 
         private struct DisplayEntry
@@ -138,6 +145,10 @@ namespace Voidborne.Diagnostics
             if (!_active) return;
 
             _frameCount++;
+            double frameDtMs = Time.unscaledDeltaTime * 1000.0;
+            _frameTimeAccumMs += frameDtMs;
+            if (frameDtMs > _frameTimePeakMs) _frameTimePeakMs = frameDtMs;
+
             _sampleTimer += Time.unscaledDeltaTime;
             if (_sampleTimer >= sampleWindowSeconds)
             {
@@ -192,6 +203,13 @@ namespace Voidborne.Diagnostics
             // Per-frame average: total profiled ms / frames in this window
             _totalPerFrameMs = frames > 0 ? _totalScriptMs / frames : 0f;
 
+            // Frame time tracking
+            _displayFrameAvgMs  = frames > 0 ? _frameTimeAccumMs / frames : 0;
+            _displayFramePeakMs = _frameTimePeakMs;
+            _displayNonScriptMs = _displayFrameAvgMs - _totalPerFrameMs;
+            _frameTimeAccumMs   = 0;
+            _frameTimePeakMs    = 0;
+
             // Sort by total cost (avgMs * callCount) descending
             _display.Sort((a, b) =>
             {
@@ -215,7 +233,7 @@ namespace Voidborne.Diagnostics
                 UnityEngine.Debug.Log($"[ScriptProfiler] #{i + 1} {e.name} | avg={e.avgMs:F3}ms peak={e.peakMs:F3}ms calls={e.callCount} total={totalMs:F2}ms");
             }
 
-            UnityEngine.Debug.Log($"[ScriptProfiler] ── TOTAL: {_totalPerFrameMs:F2}ms/frame ({_totalScriptMs:F1}ms over window) ──");
+            UnityEngine.Debug.Log($"[ScriptProfiler] ── Scripts: {_totalPerFrameMs:F2}ms/frame | Frame: avg={_displayFrameAvgMs:F1}ms peak={_displayFramePeakMs:F1}ms | Non-script: {_displayNonScriptMs:F1}ms/frame ──");
         }
 
         // ── OnGUI ────────────────────────────────────────────────────────────
@@ -260,7 +278,7 @@ namespace Voidborne.Diagnostics
             float cy = y + 6f;
 
             GUI.Label(new Rect(cx, cy, w, lineH),
-                $"SCRIPT PROFILER  [F1 toggle]  {_totalPerFrameMs:F2}ms/frame  (window: {_totalScriptMs:F1}ms/{sampleWindowSeconds:F1}s)", _headerStyle);
+                $"SCRIPT PROFILER  [F1 toggle]  Scripts: {_totalPerFrameMs:F2}ms  Frame: {_displayFrameAvgMs:F1}ms (peak {_displayFramePeakMs:F0}ms)  Non-script: {_displayNonScriptMs:F1}ms", _headerStyle);
             cy += lineH + 2f;
 
             // Column headers

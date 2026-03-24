@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -178,6 +181,159 @@ namespace Voidborne.World.Chunks
                 idxOffset += idxCount;
             }
             mesh.bounds = bounds;
+        }
+
+        /// <summary>
+        /// Result of async compact encoding, ready to be applied to a mesh on the main thread.
+        /// </summary>
+        public struct CompactResult
+        {
+            public CompactVertex[] vertices;
+            public int[] indices;
+            public SubMeshDescriptor[] subMeshDescs;
+            public Bounds bounds;
+            public int vertexCount;
+        }
+
+        /// <summary>
+        /// Asynchronously encodes mesh data into compact vertex format.
+        /// Extracts mesh data on the main thread (returns copies), then runs the
+        /// encoding loop on a background thread. Calls onComplete with the result
+        /// via MainThreadDispatcher so it's time-budgeted.
+        ///
+        /// Call ApplyCompactResult() on the main thread to write the result to the mesh.
+        /// </summary>
+        public static void CompactMeshAsync(Mesh mesh, float[] skyExposureData, Action<CompactResult> onComplete)
+        {
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                onComplete?.Invoke(default);
+                return;
+            }
+
+            // --- Main thread: extract mesh data (returns managed copies) ---
+            int count = mesh.vertexCount;
+            var positions = mesh.vertices;
+            var normals = mesh.normals;
+            var colors = mesh.colors;
+            var uv2 = mesh.uv2;
+
+            var uv3List = new List<Vector4>(count);
+            mesh.GetUVs(3, uv3List);
+            var uv3 = uv3List.ToArray(); // snapshot for background thread
+
+            int subMeshCount = mesh.subMeshCount;
+            var subMeshDescs = new SubMeshDescriptor[subMeshCount];
+            int totalIndices = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                subMeshDescs[s] = mesh.GetSubMesh(s);
+                totalIndices += subMeshDescs[s].indexCount;
+            }
+
+            var allIndices = new int[totalIndices];
+            int offset = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                var subTris = mesh.GetTriangles(s);
+                Array.Copy(subTris, 0, allIndices, offset, subTris.Length);
+                offset += subTris.Length;
+            }
+
+            var bounds = mesh.bounds;
+            var capturedSkyExposure = skyExposureData;
+
+            // --- Background thread: encode vertices (pure math, no Unity API) ---
+            Task.Run(() =>
+            {
+                var compact = new CompactVertex[count];
+
+                for (int i = 0; i < count; i++)
+                {
+                    ref CompactVertex v = ref compact[i];
+
+                    Vector3 pos = positions[i];
+                    v.posX = (half)pos.x;
+                    v.posY = (half)pos.y;
+                    v.posZ = (half)pos.z;
+                    v.posW = (half)0f;
+
+                    Vector3 n = (normals != null && i < normals.Length) ? normals[i] : Vector3.up;
+                    OctEncode(n, out v.normalX, out v.normalY);
+                    v.normalZ = 0;
+                    v.normalW = 0;
+
+                    if (colors != null && i < colors.Length)
+                    {
+                        Color c = colors[i];
+                        v.biomeR = (byte)Mathf.Clamp(Mathf.RoundToInt(c.r * 255f), 0, 255);
+                        v.biomeG = (byte)Mathf.Clamp(Mathf.RoundToInt(c.g * 255f), 0, 255);
+                        v.biomeB = (byte)Mathf.Clamp(Mathf.RoundToInt(c.b * 255f), 0, 255);
+                        v.biomeA = (byte)Mathf.Clamp(Mathf.RoundToInt(c.a * 255f), 0, 255);
+                    }
+
+                    if (uv2 != null && i < uv2.Length)
+                    {
+                        v.oreType = (byte)Mathf.Clamp(Mathf.RoundToInt(uv2[i].x * 255f), 0, 255);
+                        v.oreBlend = (byte)Mathf.Clamp(Mathf.RoundToInt(uv2[i].y * 255f), 0, 255);
+                    }
+
+                    v.skyExposure = (capturedSkyExposure != null && i < capturedSkyExposure.Length)
+                        ? (byte)Mathf.Clamp(Mathf.RoundToInt(capturedSkyExposure[i] * 255f), 0, 255)
+                        : (byte)255;
+
+                    if (i < uv3.Length)
+                    {
+                        Vector4 tint = uv3[i];
+                        v.tintR = (byte)Mathf.Clamp(Mathf.RoundToInt(tint.x * 255f), 0, 255);
+                        v.tintG = (byte)Mathf.Clamp(Mathf.RoundToInt(tint.y * 255f), 0, 255);
+                        v.tintB = (byte)Mathf.Clamp(Mathf.RoundToInt(tint.z * 255f), 0, 255);
+                        v.tintA = (byte)Mathf.Clamp(Mathf.RoundToInt(tint.w * 255f), 0, 255);
+                    }
+                }
+
+                var result = new CompactResult
+                {
+                    vertices = compact,
+                    indices = allIndices,
+                    subMeshDescs = subMeshDescs,
+                    bounds = bounds,
+                    vertexCount = count
+                };
+
+                MainThreadDispatcher.Enqueue(() => onComplete?.Invoke(result));
+            });
+        }
+
+        /// <summary>
+        /// Creates a NEW mesh from a pre-computed CompactResult.
+        /// Returns the new mesh — caller must swap it on the renderer and destroy the old one.
+        /// Using a new mesh avoids a CPU-GPU pipeline stall: calling mesh.Clear() on a mesh
+        /// the GPU is actively rendering forces the CPU to wait for the GPU to finish (10-50ms).
+        /// </summary>
+        public static Mesh CreateCompactMesh(in CompactResult result)
+        {
+            if (result.vertices == null) return null;
+
+            var mesh = new Mesh();
+            mesh.subMeshCount = result.subMeshDescs.Length;
+            mesh.SetVertexBufferParams(result.vertexCount, Descriptors);
+            mesh.SetVertexBufferData(result.vertices, 0, 0, result.vertexCount, 0,
+                MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices);
+            mesh.SetIndexBufferParams(result.indices.Length, IndexFormat.UInt32);
+            mesh.SetIndexBufferData(result.indices, 0, 0, result.indices.Length,
+                MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices);
+
+            int idxOffset = 0;
+            for (int s = 0; s < result.subMeshDescs.Length; s++)
+            {
+                int idxCount = result.subMeshDescs[s].indexCount;
+                mesh.SetSubMesh(s, new SubMeshDescriptor(idxOffset, idxCount, MeshTopology.Triangles),
+                    MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices);
+                idxOffset += idxCount;
+            }
+            mesh.bounds = result.bounds;
+            return mesh;
         }
     }
 }

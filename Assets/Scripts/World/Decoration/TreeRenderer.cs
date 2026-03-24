@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using Voidborne.Diagnostics;
 using Voidborne.World.Biomes;
@@ -352,6 +353,50 @@ namespace Voidborne.World.Decoration
                 if (list.Count == 0) continue;
                 AppendToVariantBuffer(v, chunkPos, list);
             }
+        }
+
+        /// <summary>
+        /// Async version: generates tree instance data on a background thread,
+        /// then uploads to GPU buffers on the main thread via MainThreadDispatcher.
+        /// Prevents 1-3ms main-thread stalls per chunk during fast movement.
+        /// </summary>
+        public void OnChunkActivatedAsync(Vector3Int chunkPos, SurfacePoint[] points)
+        {
+            if (_treeChunks.ContainsKey(chunkPos))
+                OnChunkDeactivating(chunkPos);
+
+            // Snapshot removed trees set for thread safety (rarely modified)
+            var removedSnapshot = new HashSet<Vector2Int>(_removedTrees);
+            var capturedPos = chunkPos;
+            var capturedPoints = points;
+
+            Task.Run(() =>
+            {
+                var chunkData = new TreeChunkData(capturedPos);
+                GenerateTreesThreadSafe(chunkData, capturedPoints, removedSnapshot);
+
+                bool hasAny = false;
+                for (int v = 0; v < VariantCount; v++)
+                {
+                    if (chunkData.perVariant[v].Count > 0) { hasAny = true; break; }
+                }
+                if (!hasAny) return;
+
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    // Guard: chunk may have been unloaded while generating
+                    if (_treeChunks.ContainsKey(capturedPos))
+                        OnChunkDeactivating(capturedPos);
+
+                    _treeChunks[capturedPos] = chunkData;
+                    for (int v = 0; v < VariantCount; v++)
+                    {
+                        var list = chunkData.perVariant[v];
+                        if (list.Count == 0) continue;
+                        AppendToVariantBuffer(v, capturedPos, list);
+                    }
+                });
+            });
         }
 
         public void OnChunkDeactivating(Vector3Int chunkPos)
@@ -942,6 +987,17 @@ namespace Voidborne.World.Decoration
 
         private void GenerateTrees(TreeChunkData chunkData, SurfacePoint[] points)
         {
+            GenerateTreesThreadSafe(chunkData, points, _removedTrees);
+        }
+
+        /// <summary>
+        /// Core tree generation logic — pure math, thread-safe.
+        /// Takes an explicit removed-trees set so it can be called from background threads
+        /// with a snapshot of the main-thread set.
+        /// </summary>
+        private static void GenerateTreesThreadSafe(TreeChunkData chunkData, SurfacePoint[] points,
+            HashSet<Vector2Int> removedTrees)
+        {
             float chunkArea = (ChunkData.SIZE / ScanGridSize) * (ChunkData.SIZE / ScanGridSize);
             float seedTree  = WorldSeed.SeedOffset(ChannelTreePlacement);
 
@@ -986,7 +1042,7 @@ namespace Voidborne.World.Decoration
                 if (variantIndex >= VariantCount) continue;
 
                 // Skip trees that the player has removed
-                if (_removedTrees.Contains(TreeKey(pt.worldPos))) continue;
+                if (removedTrees.Contains(TreeKey(pt.worldPos))) continue;
 
                 // Compute transform (matches WorldTree.Place exactly)
                 float baseRand = ((hash >> 16) & 0xFF) / 255f;
