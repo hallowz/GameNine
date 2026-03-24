@@ -227,9 +227,9 @@ namespace Voidborne.World.Decoration
             var state = new ChunkDecorationState { chunkPos = chunkPos };
             _decoratedChunks[chunkPos] = state;
 
-            treeRenderer?.OnChunkActivated(chunkPos, points);
+            treeRenderer?.OnChunkActivatedAsync(chunkPos, points);
             PlaceRocks(state, points);
-            GenerateGrass(state, chunkPos, points);
+            GenerateGrassAsync(state, chunkPos, points);
 
         }
 
@@ -318,6 +318,15 @@ namespace Voidborne.World.Decoration
 
             if (grassRenderer != null)
                 grassRenderer.OnChunkActivated(chunkPos, points);
+        }
+
+        private void GenerateGrassAsync(ChunkDecorationState state, Vector3Int chunkPos, SurfacePoint[] points)
+        {
+            if (grassRenderer == null)
+                grassRenderer = GrassRenderer.Instance;
+
+            if (grassRenderer != null)
+                grassRenderer.OnChunkActivatedAsync(chunkPos, points);
         }
 
         // ── Deformation response ────────────────────────────────────────────

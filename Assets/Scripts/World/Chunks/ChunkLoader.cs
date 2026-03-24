@@ -100,6 +100,35 @@ namespace Voidborne.World.Chunks
         private Vector3 playerVelocity;
         private Vector3 prevPlayerPos;
 
+        // -------------------------------------------------------------------------
+        //  Incremental ring building for LOD2+ — spreads iteration across frames
+        //  to avoid 25-40ms spikes from iterating thousands of chunk positions.
+        // -------------------------------------------------------------------------
+
+        [Header("Ring Build Budget")]
+        [Tooltip("Max chunk positions processed per frame when building LOD2+ rings. " +
+                 "Lower = smoother frames, higher = faster ring completion.")]
+        [SerializeField] private int ringBuildBatchSize = 1000;
+
+        private class RingBuildState
+        {
+            public int lodLevel;
+            public ChunkGenerationQueue queue;
+            public DirectionalDistance outer, inner;
+            public bool hasInner;
+            public Vector3Int center;
+            public Vector3 playerPos;
+            public bool useDelta;
+            public Vector3Int deltaOffset;
+            public DirectionalDistance prevOuter, prevInner;
+            public Vector3 velDir;
+            public float bias;
+            public int curX, curZ, curY;
+            public bool complete;
+        }
+
+        private RingBuildState _activeRingBuild;
+
         private void Start()
         {
             chunkManager = ChunkManager.Instance;
@@ -241,6 +270,8 @@ namespace Voidborne.World.Chunks
                 {
                     lod2Queued = false;
                     hasLastRing[2] = false;
+                    if (_activeRingBuild != null && _activeRingBuild.lodLevel == 2)
+                        _activeRingBuild = null;
                 }
             }
 
@@ -252,6 +283,8 @@ namespace Voidborne.World.Chunks
                 {
                     lod3Queued = false;
                     hasLastRing[3] = false;
+                    if (_activeRingBuild != null && _activeRingBuild.lodLevel == 3)
+                        _activeRingBuild = null;
                 }
             }
 
@@ -263,6 +296,8 @@ namespace Voidborne.World.Chunks
                 {
                     lod4Queued = false;
                     hasLastRing[4] = false;
+                    if (_activeRingBuild != null && _activeRingBuild.lodLevel == 4)
+                        _activeRingBuild = null;
                 }
             }
         }
@@ -357,72 +392,165 @@ namespace Voidborne.World.Chunks
                 bias = velocityBias;
             }
 
-            for (int x = -outer.negX; x <= outer.posX; x++)
-            for (int z = -outer.negZ; z <= outer.posZ; z++)
-            for (int y = -outer.negY; y <= outer.posY; y++)
+            // LOD2+: defer iteration to incremental processing across frames.
+            // LOD0-1 have small iteration counts (<600) and run immediately.
+            if (lodLevel >= 2)
             {
-                // Skip positions within the inner LOD region
-                if (hasInner && inner.Contains(x, y, z)) continue;
-
-                // Clipmap delta: skip positions that were in the previous ring.
-                // Transform this offset to the old center's frame and check if it
-                // was inside the old (outer - inner) region.
-                if (useDelta)
+                _activeRingBuild = new RingBuildState
                 {
-                    int ox = x + deltaOffset.x;
-                    int oy = y + deltaOffset.y;
-                    int oz = z + deltaOffset.z;
-                    if (prevOuter.Contains(ox, oy, oz) && !(hasInner && prevInner.Contains(ox, oy, oz)))
-                    {
-                        // This position was already queued in the previous ring — skip
-                        // unless the chunk needs a LOD change.
-                        Vector3Int chunkPos2 = new Vector3Int(center.x + x, center.y + y, center.z + z);
-                        ChunkData ex = chunkManager.GetChunk(chunkPos2);
-                        if (ex != null && ex.state == ChunkState.Active && ex.lodLevel == lodLevel)
-                            continue;
-                        if (ex != null && ex.state != ChunkState.Unloaded
-                                       && ex.state != ChunkState.MarkedForUnload
-                                       && !(ex.state == ChunkState.Active && ex.lodLevel != lodLevel))
-                            continue;
-                    }
-                }
-
-                Vector3Int chunkPos = new Vector3Int(
-                    center.x + x,
-                    center.y + y,
-                    center.z + z
-                );
-
-                ChunkData existing = chunkManager.GetChunk(chunkPos);
-                if (existing != null && existing.state != ChunkState.Unloaded
-                                     && existing.state != ChunkState.MarkedForUnload)
-                {
-                    if (existing.state == ChunkState.Active && existing.lodLevel != lodLevel)
-                    {
-                        // LOD mismatch — fall through to enqueue for regeneration.
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-
-                Vector3 chunkWorldCenter = ChunkCoordUtility.ChunkToWorldPos(chunkPos)
-                                           + Vector3.one * (ChunkData.SIZE * 0.5f);
-                Vector3 toChunk = chunkWorldCenter - playerPos;
-                float distSq = toChunk.sqrMagnitude;
-
-                if (bias > 0f && distSq > 0.01f)
-                {
-                    float rawDot = toChunk.x * velDir.x + toChunk.y * velDir.y + toChunk.z * velDir.z;
-                    float invDist = math.rsqrt(distSq);
-                    distSq *= (1f - bias * rawDot * invDist);
-                }
-
-                queue.Enqueue(chunkPos, lodLevel, distSq);
+                    lodLevel    = lodLevel,
+                    queue       = queue,
+                    outer       = outer,
+                    inner       = inner,
+                    hasInner    = hasInner,
+                    center      = center,
+                    playerPos   = playerPos,
+                    useDelta    = useDelta,
+                    deltaOffset = deltaOffset,
+                    prevOuter   = prevOuter,
+                    prevInner   = prevInner,
+                    velDir      = velDir,
+                    bias        = bias,
+                    curX        = -outer.negX,
+                    curZ        = -outer.negZ,
+                    curY        = -outer.negY,
+                    complete    = false
+                };
+                return;
             }
 
+            ProcessRingPositions(queue, lodLevel, outer, inner, hasInner, center, playerPos,
+                useDelta, deltaOffset, prevOuter, prevInner, velDir, bias,
+                -outer.negX, -outer.negZ, -outer.negY, int.MaxValue,
+                out _, out _, out _);
             queue.Sort();
+        }
+
+        /// <summary>
+        /// Processes ring positions starting from (startX, startZ, startY).
+        /// Returns false and outputs the resume cursor if budget is exceeded.
+        /// </summary>
+        private void ProcessRingPositions(
+            ChunkGenerationQueue queue, int lodLevel,
+            DirectionalDistance outer, DirectionalDistance inner, bool hasInner,
+            Vector3Int center, Vector3 playerPos,
+            bool useDelta, Vector3Int deltaOffset,
+            DirectionalDistance prevOuter, DirectionalDistance prevInner,
+            Vector3 velDir, float bias,
+            int startX, int startZ, int startY, int budget,
+            out int resumeX, out int resumeZ, out int resumeY)
+        {
+            int processed = 0;
+            int x = startX;
+            resumeX = x; resumeZ = startZ; resumeY = startY;
+
+            while (x <= outer.posX)
+            {
+                int zStart = (x == startX) ? startZ : -outer.negZ;
+                int z = zStart;
+
+                while (z <= outer.posZ)
+                {
+                    int yStart = (x == startX && z == startZ) ? startY : -outer.negY;
+                    int y = yStart;
+
+                    while (y <= outer.posY)
+                    {
+                        if (processed >= budget)
+                        {
+                            resumeX = x; resumeZ = z; resumeY = y;
+                            return;
+                        }
+                        processed++;
+
+                        // Skip positions within the inner LOD region
+                        if (hasInner && inner.Contains(x, y, z)) { y++; continue; }
+
+                        // Clipmap delta: skip positions that were in the previous ring
+                        if (useDelta)
+                        {
+                            int ox = x + deltaOffset.x;
+                            int oy = y + deltaOffset.y;
+                            int oz = z + deltaOffset.z;
+                            if (prevOuter.Contains(ox, oy, oz) && !(hasInner && prevInner.Contains(ox, oy, oz)))
+                            {
+                                Vector3Int chunkPos2 = new Vector3Int(center.x + x, center.y + y, center.z + z);
+                                ChunkData ex = chunkManager.GetChunk(chunkPos2);
+                                if (ex != null && ex.state == ChunkState.Active && ex.lodLevel == lodLevel)
+                                    { y++; continue; }
+                                if (ex != null && ex.state != ChunkState.Unloaded
+                                               && ex.state != ChunkState.MarkedForUnload
+                                               && !(ex.state == ChunkState.Active && ex.lodLevel != lodLevel))
+                                    { y++; continue; }
+                            }
+                        }
+
+                        Vector3Int chunkPos = new Vector3Int(center.x + x, center.y + y, center.z + z);
+
+                        ChunkData existing = chunkManager.GetChunk(chunkPos);
+                        if (existing != null && existing.state != ChunkState.Unloaded
+                                             && existing.state != ChunkState.MarkedForUnload)
+                        {
+                            if (!(existing.state == ChunkState.Active && existing.lodLevel != lodLevel))
+                                { y++; continue; }
+                        }
+
+                        Vector3 chunkWorldCenter = ChunkCoordUtility.ChunkToWorldPos(chunkPos)
+                                                   + Vector3.one * (ChunkData.SIZE * 0.5f);
+                        Vector3 toChunk = chunkWorldCenter - playerPos;
+                        float distSq = toChunk.sqrMagnitude;
+
+                        if (bias > 0f && distSq > 0.01f)
+                        {
+                            float rawDot = toChunk.x * velDir.x + toChunk.y * velDir.y + toChunk.z * velDir.z;
+                            float invDist = math.rsqrt(distSq);
+                            distSq *= (1f - bias * rawDot * invDist);
+                        }
+
+                        queue.Enqueue(chunkPos, lodLevel, distSq);
+                        y++;
+                    }
+                    z++;
+                }
+                x++;
+            }
+
+            // Signal completion: set resume past the end
+            resumeX = outer.posX + 1;
+            resumeZ = 0;
+            resumeY = 0;
+        }
+
+        /// <summary>
+        /// Continues an in-progress incremental ring build. Processes up to
+        /// ringBuildBatchSize positions per call. Returns true when complete.
+        /// </summary>
+        private bool ContinueLodRingBuild()
+        {
+            if (_activeRingBuild == null || _activeRingBuild.complete) return true;
+
+            var s = _activeRingBuild;
+            ProcessRingPositions(s.queue, s.lodLevel, s.outer, s.inner, s.hasInner,
+                s.center, s.playerPos, s.useDelta, s.deltaOffset, s.prevOuter, s.prevInner,
+                s.velDir, s.bias, s.curX, s.curZ, s.curY, ringBuildBatchSize,
+                out s.curX, out s.curZ, out s.curY);
+
+            if (s.curX > s.outer.posX)
+            {
+                s.queue.Sort();
+                s.complete = true;
+                _activeRingBuild = null;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns true if the ring build for the given LOD is complete (or was never started).
+        /// </summary>
+        private bool IsRingBuildComplete(int lodLevel)
+        {
+            return _activeRingBuild == null || _activeRingBuild.lodLevel != lodLevel || _activeRingBuild.complete;
         }
 
         /// <summary>
@@ -435,11 +563,16 @@ namespace Voidborne.World.Chunks
         {
             if (chunkManager == null) return;
 
-            // Build LOD1/LOD2/LOD3 queues one per frame to avoid spikes from
-            // multiple QueueLodRing calls in the same frame (each iterates hundreds
-            // to thousands of chunk positions with dictionary lookups + distance calcs).
-            if (lod0Queued)
+            // Continue any in-progress incremental ring build (LOD2+).
+            // Don't start new ring builds while one is in progress.
+            if (_activeRingBuild != null && !_activeRingBuild.complete)
             {
+                ContinueLodRingBuild();
+            }
+            else if (lod0Queued)
+            {
+                // Build LOD1-4 queues one per frame. LOD0-1 build immediately
+                // (small iteration count). LOD2+ use incremental processing.
                 if (!lod1Queued)
                     QueueLodRing(1);
                 else if (!lod2Queued)
@@ -468,6 +601,7 @@ namespace Voidborne.World.Chunks
                     if (lod2Queued) { lod2Queued = false; hasLastRing[2] = false; }
                     if (lod3Queued) { lod3Queued = false; hasLastRing[3] = false; }
                     if (lod4Queued) { lod4Queued = false; hasLastRing[4] = false; }
+                    _activeRingBuild = null; // cancel any in-progress build
                 }
             }
 
@@ -488,7 +622,8 @@ namespace Voidborne.World.Chunks
                     freeSlots = chunkManager.FreeGenerationSlots;
                     slotsForLower = Mathf.Min(freeSlots, maxLodLowerSlots);
 
-                    if (slotsForLower > 0 && lod2Queue.Count > 0)
+                    // Only drain LOD2+ after their incremental ring build completes
+                    if (slotsForLower > 0 && lod2Queue.Count > 0 && IsRingBuildComplete(2))
                         DrainQueue(lod2Queue, slotsForLower);
 
                     // LOD3 only after LOD2 queue is fully drained
@@ -497,7 +632,7 @@ namespace Voidborne.World.Chunks
                         freeSlots = chunkManager.FreeGenerationSlots;
                         slotsForLower = Mathf.Min(freeSlots, maxLodLowerSlots);
 
-                        if (slotsForLower > 0 && lod3Queue.Count > 0)
+                        if (slotsForLower > 0 && lod3Queue.Count > 0 && IsRingBuildComplete(3))
                             DrainQueue(lod3Queue, slotsForLower);
 
                         // LOD4 only after LOD3 queue is fully drained
@@ -506,7 +641,7 @@ namespace Voidborne.World.Chunks
                             freeSlots = chunkManager.FreeGenerationSlots;
                             slotsForLower = Mathf.Min(freeSlots, maxLodLowerSlots);
 
-                            if (slotsForLower > 0 && lod4Queue.Count > 0)
+                            if (slotsForLower > 0 && lod4Queue.Count > 0 && IsRingBuildComplete(4))
                                 DrainQueue(lod4Queue, slotsForLower);
                         }
                     }

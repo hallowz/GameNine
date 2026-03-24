@@ -122,6 +122,10 @@ namespace Voidborne.Player
                 ChunkData chunk = ChunkManager.Instance.GetChunk(playerChunk);
                 if (chunk == null || chunk.state != ChunkState.Active)
                 {
+                    if (Time.frameCount % 60 == 0)
+                        Debug.Log($"[FPController] FROZEN: pos={transform.position} chunk={playerChunk} " +
+                                  $"data={(chunk == null ? "NULL" : chunk.state.ToString())} " +
+                                  $"activeChunks={ChunkManager.Instance.ActiveChunkObjectCount}");
                     velocity = Vector3.zero;
                     RuntimeProfiler.End(s_prof);
                     return;

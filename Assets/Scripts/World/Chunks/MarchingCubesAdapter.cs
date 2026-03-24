@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,10 @@ namespace Voidborne.World.Chunks
     /// </summary>
     public class MarchingCubesAdapter
     {
+        // Profiling token for readback callbacks (fire via Unity sync context, outside Update)
+        private static readonly Diagnostics.RuntimeProfiler.Token s_profReadback =
+            Diagnostics.RuntimeProfiler.Register("MC.ReadbackCB");
+
         private const int VOXELS_PER_AXIS = ChunkData.SIZE;                                      // 32
         private const int POINTS_PER_AXIS = VOXELS_PER_AXIS + 1;                                 // 33
         private const int POINTS_VOLUME   = POINTS_PER_AXIS * POINTS_PER_AXIS * POINTS_PER_AXIS; // 35937
@@ -65,10 +70,16 @@ namespace Voidborne.World.Chunks
             public readonly ComputeBuffer densityBuffer;
             public readonly ComputeBuffer biomeBuffer;
             public readonly ComputeBuffer surfaceHeightBuffer;
-            // Readback results
-            public float[]    densityData;
-            public float[]    surfaceHeightData;
-            public Triangle[] triangleData;
+            // Readback results — density and surface heights are pre-allocated (fixed size)
+            // to avoid per-readback managed array allocations that trigger GC.
+            // Triangle mesh data is built directly from NativeArray in the readback callback
+            // into pooled arrays — eliminates the massive Triangle[].ToArray() LOH allocation.
+            public readonly float[] densityData      = new float[POINTS_VOLUME];
+            public readonly float[] surfaceHeightData = new float[POINTS_PER_AXIS * POINTS_PER_AXIS];
+            public Triangle[] trianglePooled;     // pooled copy from readback (returned in TryFinalize)
+            public int        trianglePooledCount; // actual triangle count (pooled array may be larger)
+            public bool hasDensityData;
+            public bool hasSurfaceHeightData;
 
             // Completion flags (set independently as each readback finishes)
             public bool densityReady;
@@ -111,9 +122,12 @@ namespace Voidborne.World.Chunks
                 inFlight            = false;
                 cancelled           = false;
                 // generationId is NOT reset — it only increments so stale callbacks can detect reuse
-                densityData         = null;
-                surfaceHeightData   = null;
-                triangleData        = null;
+                // densityData/surfaceHeightData are pre-allocated and reused — NOT nulled out.
+                hasDensityData       = false;
+                hasSurfaceHeightData = false;
+                if (trianglePooled != null) ArrayPool<Triangle>.Shared.Return(trianglePooled);
+                trianglePooled       = null;
+                trianglePooledCount  = 0;
                 densityReady        = false;
                 surfaceHeightsReady = false;
                 trianglesReady      = false;
@@ -328,11 +342,11 @@ namespace Voidborne.World.Chunks
 
             // Biome precomputation runs on a background thread (1089 noise lookups).
             // The slot is reserved (inFlight=true) so it won't be grabbed by another call.
-            // GPU dispatch happens on main thread via ctx.Post after biome data is ready.
+            // GPU dispatch happens on main thread via MainThreadDispatcher after biome data
+            // is ready, so it's time-budgeted alongside all other main-thread chunk work.
             var capturedWorldPos = worldPos;
             int capturedLod      = chunk.lodLevel;
             int capturedGenId    = slot.generationId;
-            var ctx              = SynchronizationContext.Current;
 
             Task.Run(() =>
             {
@@ -356,7 +370,7 @@ namespace Voidborne.World.Chunks
                     };
                 }
 
-                ctx.Post(_ => DispatchGenerationGPU(slot, biomeParams, capturedWorldPos, capturedLod, capturedGenId), null);
+                MainThreadDispatcher.Enqueue(() => DispatchGenerationGPU(slot, biomeParams, capturedWorldPos, capturedLod, capturedGenId));
             });
 
             return true;
@@ -403,11 +417,16 @@ namespace Voidborne.World.Chunks
 
             AsyncGPUReadback.Request(slot.densityBuffer, req =>
             {
-                if (slot.generationId != genId) return; // stale — slot was reused
+                Diagnostics.RuntimeProfiler.Begin(s_profReadback);
+                if (slot.generationId != genId) { Diagnostics.RuntimeProfiler.End(s_profReadback); return; }
                 if (!req.hasError)
-                    slot.densityData = req.GetData<float>().ToArray();
+                {
+                    req.GetData<float>().CopyTo(slot.densityData);
+                    slot.hasDensityData = true;
+                }
                 slot.densityReady = true;
                 TryFinalize(slot);
+                Diagnostics.RuntimeProfiler.End(s_profReadback);
             });
 
             if (isLod)
@@ -418,11 +437,16 @@ namespace Voidborne.World.Chunks
             {
                 AsyncGPUReadback.Request(slot.surfaceHeightBuffer, req =>
                 {
-                    if (slot.generationId != genId) return;
+                    Diagnostics.RuntimeProfiler.Begin(s_profReadback);
+                    if (slot.generationId != genId) { Diagnostics.RuntimeProfiler.End(s_profReadback); return; }
                     if (!req.hasError)
-                        slot.surfaceHeightData = req.GetData<float>().ToArray();
+                    {
+                        req.GetData<float>().CopyTo(slot.surfaceHeightData);
+                        slot.hasSurfaceHeightData = true;
+                    }
                     slot.surfaceHeightsReady = true;
                     TryFinalize(slot);
+                    Diagnostics.RuntimeProfiler.End(s_profReadback);
                 });
             }
 
@@ -440,11 +464,13 @@ namespace Voidborne.World.Chunks
 
             AsyncGPUReadback.Request(slot.triCountBuffer, countReq =>
             {
-                if (slot.generationId != genId) return; // stale
+                Diagnostics.RuntimeProfiler.Begin(s_profReadback);
+                if (slot.generationId != genId) { Diagnostics.RuntimeProfiler.End(s_profReadback); return; }
                 if (countReq.hasError)
                 {
                     slot.trianglesReady = true;
                     TryFinalize(slot);
+                    Diagnostics.RuntimeProfiler.End(s_profReadback);
                     return;
                 }
 
@@ -452,19 +478,31 @@ namespace Voidborne.World.Chunks
 
                 if (count <= 0)
                 {
-                    slot.triangleData   = Array.Empty<Triangle>();
+                    slot.trianglePooled      = null;
+                    slot.trianglePooledCount = 0;
                     slot.trianglesReady = true;
                     TryFinalize(slot);
+                    Diagnostics.RuntimeProfiler.End(s_profReadback);
                     return;
                 }
+                Diagnostics.RuntimeProfiler.End(s_profReadback);
 
                 AsyncGPUReadback.Request(slot.triangleBuffer, count * TRIANGLE_STRIDE, 0, triReq =>
                 {
-                    if (slot.generationId != genId) return; // stale
+                    Diagnostics.RuntimeProfiler.Begin(s_profReadback);
+                    if (slot.generationId != genId) { Diagnostics.RuntimeProfiler.End(s_profReadback); return; }
                     if (!triReq.hasError)
-                        slot.triangleData = triReq.GetData<Triangle>().ToArray();
+                    {
+                        var nativeTris = triReq.GetData<Triangle>();
+                        int numTris    = nativeTris.Length;
+                        var triCopy    = ArrayPool<Triangle>.Shared.Rent(numTris);
+                        Unity.Collections.NativeArray<Triangle>.Copy(nativeTris, triCopy, numTris);
+                        slot.trianglePooled      = triCopy;
+                        slot.trianglePooledCount = numTris;
+                    }
                     slot.trianglesReady = true;
                     TryFinalize(slot);
+                    Diagnostics.RuntimeProfiler.End(s_profReadback);
                 });
             });
         }
@@ -480,76 +518,171 @@ namespace Voidborne.World.Chunks
                 return;
             }
 
-            var triangleData      = slot.triangleData;
-            var densityData       = slot.densityData;
-            var surfaceHeightData = slot.surfaceHeightData;
-            var cb                = slot.onComplete;
+            var triPooled      = slot.trianglePooled;
+            int triPooledCount = slot.trianglePooledCount;
+            var cb             = slot.onComplete;
+
+            // Density and surface height arrays are pre-allocated in the slot and reused.
+            // Copy them before Reset() since the slot may be reused for a new generation
+            // before the callback fires. Use ArrayPool to avoid LOH allocations (density is
+            // 143KB which exceeds the 85KB LOH threshold and triggers Gen2 GC).
+            float[] densityData = null;
+            if (slot.hasDensityData)
+            {
+                densityData = ArrayPool<float>.Shared.Rent(POINTS_VOLUME);
+                System.Array.Copy(slot.densityData, densityData, POINTS_VOLUME);
+            }
+            float[] surfaceHeightData = null;
+            if (slot.hasSurfaceHeightData)
+            {
+                int shLen = POINTS_PER_AXIS * POINTS_PER_AXIS;
+                surfaceHeightData = ArrayPool<float>.Shared.Rent(shLen);
+                System.Array.Copy(slot.surfaceHeightData, surfaceHeightData, shLen);
+            }
+
+            // Clear triangle pooled ref from slot before Reset (we've taken ownership)
+            slot.trianglePooled = null;
             slot.Reset();
 
-            // Capture the main-thread sync context before handing off to a Task.
-            // BuildMeshArrays is pure CPU work and can run on a thread-pool thread.
-            // Only Mesh construction (Unity API) needs main thread.
-            var ctx = SynchronizationContext.Current;
+            // BuildMeshArrays runs on a background thread (pure CPU math).
+            // Mesh construction (Unity API) is enqueued via MainThreadDispatcher.
+            // Empty chunks (0 triangles): triPooled is null — skip background
+            // mesh building entirely and fire the callback with null mesh directly.
+            if (triPooled == null || triPooledCount <= 0)
+            {
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    cb?.Invoke(null, densityData, surfaceHeightData);
+                });
+                return;
+            }
+
             Task.Run(() =>
             {
-                var (verts, indices, normals) = BuildMeshArrays(triangleData);
-                ctx.Post(_ =>
+                var pooled = BuildMeshArraysFromPooled(triPooled, triPooledCount);
+                ArrayPool<Triangle>.Shared.Return(triPooled);
+
+                MainThreadDispatcher.Enqueue(() =>
                 {
                     Mesh mesh = null;
-                    if (verts != null)
+                    if (pooled.valid)
                     {
+                        int count = pooled.vertexCount;
                         mesh = new Mesh { indexFormat = IndexFormat.UInt32 };
-                        mesh.SetVertices(verts);
-                        mesh.SetTriangles(indices, 0);
-                        if (normals != null) mesh.SetNormals(normals);
-                        else mesh.RecalculateNormals();
-                        mesh.RecalculateBounds();
+                        mesh.SetVertices(pooled.vertices, 0, count);
+                        mesh.SetIndices(pooled.indices, 0, count, MeshTopology.Triangles, 0);
+                        mesh.SetNormals(pooled.normals, 0, count);
+                        mesh.bounds = pooled.bounds;
+                        pooled.ReturnToPool();
                     }
                     cb?.Invoke(mesh, densityData, surfaceHeightData);
-                }, null);
+                });
             });
         }
 
         /// <summary>
-        /// Pure CPU work — safe to run on any thread.
-        /// Assembles vertex/index/normal arrays from GPU triangle data.
-        /// Normals are computed on the GPU (gradient-based) and included in the Triangle struct.
+        /// Holds pooled mesh arrays. Call ReturnToPool() after applying to a Mesh.
+        /// Arrays are rented from ArrayPool to avoid LOH allocations (>85KB) that
+        /// trigger non-incremental Gen2 GC pauses even with incremental GC enabled.
         /// </summary>
-        private static (Vector3[] verts, int[] indices, Vector3[] normals) BuildMeshArrays(
-            Triangle[] triangles)
+        private struct PooledMeshArrays
+        {
+            public Vector3[] vertices;
+            public int[]     indices;
+            public Vector3[] normals;
+            public int       vertexCount; // actual count (pooled arrays may be larger)
+            public bool      valid;
+            public Bounds    bounds;      // pre-computed on background thread
+
+            public void ReturnToPool()
+            {
+                if (vertices != null) ArrayPool<Vector3>.Shared.Return(vertices);
+                if (indices  != null) ArrayPool<int>.Shared.Return(indices);
+                if (normals  != null) ArrayPool<Vector3>.Shared.Return(normals);
+                vertices = null;
+                indices  = null;
+                normals  = null;
+            }
+        }
+
+        /// <summary>
+        /// Pure CPU work — safe to run on any thread.
+        /// Assembles vertex/index/normal arrays from GPU triangle data using pooled arrays.
+        /// Caller must call result.ReturnToPool() after applying to a Mesh.
+        /// </summary>
+        /// <summary>
+        /// Overload for pooled triangle arrays where the actual count may differ from array length.
+        /// </summary>
+        private static PooledMeshArrays BuildMeshArraysFromPooled(Triangle[] triangles, int numTris)
+        {
+            if (triangles == null || numTris <= 0)
+                return default;
+            return BuildMeshArraysInternal(triangles, numTris);
+        }
+
+        private static PooledMeshArrays BuildMeshArrays(Triangle[] triangles)
         {
             if (triangles == null || triangles.Length == 0)
-                return (null, null, null);
+                return default;
+            return BuildMeshArraysInternal(triangles, triangles.Length);
+        }
 
-            int numTris  = triangles.Length;
-            var vertices = new Vector3[numTris * 3];
-            var indices  = new int[numTris * 3];
-            var normals  = new Vector3[numTris * 3];
+        private static PooledMeshArrays BuildMeshArraysInternal(Triangle[] triangles, int numTris)
+        {
+            int count    = numTris * 3;
+            var vertices = ArrayPool<Vector3>.Shared.Rent(count);
+            var indices  = ArrayPool<int>.Shared.Rent(count);
+            var normals  = ArrayPool<Vector3>.Shared.Rent(count);
+
+            // Track min/max for bounds computation on background thread
+            // (avoids RecalculateBounds iterating all vertices again on main thread)
+            Vector3 bmin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 bmax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
             for (int i = 0; i < numTris; i++)
                 for (int j = 0; j < 3; j++)
                 {
                     int idx       = i * 3 + j;
                     indices[idx]  = idx;
-                    vertices[idx] = triangles[i][j];
+                    Vector3 v     = triangles[i][j];
+                    vertices[idx] = v;
                     normals[idx]  = triangles[i].GetNormal(j);
+
+                    if (v.x < bmin.x) bmin.x = v.x;
+                    if (v.y < bmin.y) bmin.y = v.y;
+                    if (v.z < bmin.z) bmin.z = v.z;
+                    if (v.x > bmax.x) bmax.x = v.x;
+                    if (v.y > bmax.y) bmax.y = v.y;
+                    if (v.z > bmax.z) bmax.z = v.z;
                 }
 
-            return (vertices, indices, normals);
+            Vector3 center = (bmin + bmax) * 0.5f;
+            Vector3 size   = bmax - bmin;
+
+            return new PooledMeshArrays
+            {
+                vertices    = vertices,
+                indices     = indices,
+                normals     = normals,
+                vertexCount = count,
+                valid       = true,
+                bounds      = new Bounds(center, size)
+            };
         }
 
         // Kept for the sync fallback path only
         private Mesh BuildMesh(Triangle[] triangles)
         {
-            var (verts, indices, normals) = BuildMeshArrays(triangles);
-            if (verts == null) return null;
+            var pooled = BuildMeshArrays(triangles);
+            if (!pooled.valid) return null;
 
+            int count = pooled.vertexCount;
             Mesh mesh = new Mesh { indexFormat = IndexFormat.UInt32 };
-            mesh.SetVertices(verts);
-            mesh.SetTriangles(indices, 0);
-            if (normals != null) mesh.SetNormals(normals);
-            else mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
+            mesh.SetVertices(pooled.vertices, 0, count);
+            mesh.SetIndices(pooled.indices, 0, count, MeshTopology.Triangles, 0);
+            mesh.SetNormals(pooled.normals, 0, count);
+            mesh.bounds = pooled.bounds;
+            pooled.ReturnToPool();
             return mesh;
         }
 
@@ -619,25 +752,33 @@ namespace Voidborne.World.Chunks
                         return;
                     }
 
-                    var trianglesCopy = triReq.GetData<Triangle>().ToArray();
-                    var ctx           = SynchronizationContext.Current;
+                    // Copy into pooled array (fast memcpy), process on background thread
+                    var nativeTris = triReq.GetData<Triangle>();
+                    int numTris    = nativeTris.Length;
+                    var triCopy    = ArrayPool<Triangle>.Shared.Rent(numTris);
+                    nativeTris.CopyTo(triCopy);
+                    int capturedNumTris = numTris;
+
                     Task.Run(() =>
                     {
-                        var (verts, indices, normals) = BuildMeshArrays(trianglesCopy);
-                        ctx.Post(_ =>
+                        var pooled = BuildMeshArraysFromPooled(triCopy, capturedNumTris);
+                        ArrayPool<Triangle>.Shared.Return(triCopy);
+
+                        MainThreadDispatcher.Enqueue(() =>
                         {
                             Mesh mesh = null;
-                            if (verts != null)
+                            if (pooled.valid)
                             {
+                                int vc = pooled.vertexCount;
                                 mesh = new Mesh { indexFormat = IndexFormat.UInt32 };
-                                mesh.SetVertices(verts);
-                                mesh.SetTriangles(indices, 0);
-                                if (normals != null) mesh.SetNormals(normals);
-                                else mesh.RecalculateNormals();
-                                mesh.RecalculateBounds();
+                                mesh.SetVertices(pooled.vertices, 0, vc);
+                                mesh.SetIndices(pooled.indices, 0, vc, MeshTopology.Triangles, 0);
+                                mesh.SetNormals(pooled.normals, 0, vc);
+                                mesh.bounds = pooled.bounds;
+                                pooled.ReturnToPool();
                             }
                             onComplete?.Invoke(mesh);
-                        }, null);
+                        });
                     });
                 });
             });

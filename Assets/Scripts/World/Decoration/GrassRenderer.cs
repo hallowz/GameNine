@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using Voidborne.Diagnostics;
 using Voidborne.World.Biomes;
@@ -260,6 +261,41 @@ namespace Voidborne.World.Decoration
 
             // Sub-allocate: append to end of GPU buffer
             AppendToBuffer(chunkPos, blades);
+        }
+
+        /// <summary>
+        /// Async version: generates grass blade data on a background thread,
+        /// then uploads to GPU buffer on the main thread via MainThreadDispatcher.
+        /// Prevents 2-5ms main-thread stalls per chunk during fast movement.
+        /// </summary>
+        public void OnChunkActivatedAsync(Vector3Int chunkPos, SurfacePoint[] points)
+        {
+            if (_grassChunks.ContainsKey(chunkPos))
+                OnChunkDeactivating(chunkPos);
+
+            // Capture for background thread
+            var capturedPos = chunkPos;
+            var capturedPoints = points;
+
+            Task.Run(() =>
+            {
+                var blades = GenerateBlades(capturedPos, capturedPoints);
+                if (blades == null || blades.Length == 0) return;
+
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    // Guard: chunk may have been unloaded while generating
+                    if (_grassChunks.ContainsKey(capturedPos))
+                        OnChunkDeactivating(capturedPos);
+
+                    _grassChunks[capturedPos] = new GrassChunkData
+                    {
+                        chunkPos = capturedPos,
+                        blades   = blades
+                    };
+                    AppendToBuffer(capturedPos, blades);
+                });
+            });
         }
 
         public void OnChunkDeactivating(Vector3Int chunkPos)
