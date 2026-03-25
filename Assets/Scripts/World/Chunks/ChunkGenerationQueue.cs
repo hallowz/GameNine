@@ -37,6 +37,12 @@ namespace Voidborne.World.Chunks
         public int Count => entries.Count - cursor;
 
         /// <summary>
+        /// Total entries enqueued since last Clear (including consumed ones).
+        /// Used to estimate how much of the queue has drained.
+        /// </summary>
+        public int TotalEnqueued => entries.Count;
+
+        /// <summary>
         /// Add a chunk position with the given priority (distance to player).
         /// Does nothing if the position is already in the queue.
         /// Call Sort() after batch-adding entries.

@@ -80,18 +80,17 @@ namespace Voidborne.World.Chunks
             {
                 // Bake collision data on a background thread (saves 5-50ms main thread stall).
                 // Physics.BakeMesh is thread-safe in Unity 2022.2+/Unity 6.
-                // NOTE: We intentionally do NOT clear meshCollider.sharedMesh here.
-                // The old collider remains active during the bake so the player doesn't
-                // fall through the world. It's swapped atomically when the bake finishes.
+                meshCollider.sharedMesh = null;
                 int meshId = mesh.GetInstanceID();
                 Mesh capturedMesh = mesh;
                 MeshCollider capturedCollider = meshCollider;
                 Task.Run(() =>
                 {
                     Physics.BakeMesh(meshId, false);
-                    // Priority queue: collider assignment is ~0.01ms but must not be
-                    // delayed by the budgeted queue or the player falls through terrain.
-                    MainThreadDispatcher.EnqueuePriority(() =>
+                    // Use ChunkCallbackQueue with high priority instead of unbounded ctx.Post.
+                    // This ensures collider assignments are budgeted and don't compete
+                    // with mesh generation callbacks for main-thread time.
+                    ChunkCallbackQueue.EnqueueHigh(() =>
                     {
                         // Guard: chunk may have been recycled/destroyed during bake
                         if (capturedCollider != null && capturedMesh != null)
@@ -129,18 +128,6 @@ namespace Voidborne.World.Chunks
         /// properties needed. This method is kept as a no-op for backward compatibility.
         /// </summary>
         public static void ApplyBiomeColorsToMaterial(Material material) { }
-
-        /// <summary>
-        /// Swap only the render mesh (MeshFilter + MeshRenderer) without touching the collider.
-        /// Used when upgrading to compact vertex format — the collider was already baked
-        /// from the standard-precision mesh and must not be re-baked with Float16 positions
-        /// (PhysX cannot handle half-precision vertex data).
-        /// </summary>
-        public void SwapRenderMesh(Mesh mesh)
-        {
-            meshFilter.sharedMesh = mesh;
-            meshRenderer.enabled = mesh != null;
-        }
 
         /// <summary>
         /// Toggle MeshRenderer visibility for occlusion culling.
