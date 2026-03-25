@@ -50,11 +50,7 @@ namespace Voidborne.World.Chunks
 
         [Header("Callback Throttle")]
         [Tooltip("Max ore job completions processed per frame. Prevents spike when many chunks finish simultaneously.")]
-        [SerializeField] private int maxOreCompletionsPerFrame = 4;
-
-        [Tooltip("Time budget (ms) for processing deferred main-thread callbacks per frame. " +
-                 "Higher values make chunks appear faster but increase stutter risk.")]
-        [SerializeField] private float callbackBudgetMs = 3f;
+        [SerializeField] private int maxOreCompletionsPerFrame = 2;
 
         [Header("Decoration")]
         [Tooltip("WorldDecorationManager that places trees, rocks, grass on active chunks.")]
@@ -364,9 +360,6 @@ namespace Voidborne.World.Chunks
             // Initialize effective LOD0 distance to static value
             _effectiveLod0Distance = lod0Distance;
 
-            // Configure the main-thread callback dispatcher budget
-            MainThreadDispatcher.BudgetMs = callbackBudgetMs;
-
             // Initialize the chunk pool
             chunkPool = new ChunkPool(chunkParent, defaultChunkMaterial);
 
@@ -507,6 +500,9 @@ namespace Voidborne.World.Chunks
                 chunks.Clear();
                 chunkObjects.Clear();
 
+                // Clear any pending callbacks from background threads
+                ChunkCallbackQueue.Clear();
+
                 Instance = null;
             }
         }
@@ -597,7 +593,6 @@ namespace Voidborne.World.Chunks
                     var        renderer = chunkGO.GetComponent<ChunkRenderer>();
                     renderer.ApplyMesh(null);
                     chunkGO.SetActive(true);
-                    data.state = ChunkState.Active;
                     return;
                 }
 
@@ -860,7 +855,11 @@ namespace Voidborne.World.Chunks
             _sortPlayerChunk = playerChunk;
             chunksToRemove.Sort(_unloadSortComparison);
 
-            for (int i = 0; i < chunksToRemove.Count; i++)
+            // Cap removals per call to prevent spikes when many chunks go out of range
+            // at once (e.g., teleporting or fast vehicle). Remaining will be caught next check.
+            int maxRemovalsPerCall = 16;
+            int removalCount = Mathf.Min(chunksToRemove.Count, maxRemovalsPerCall);
+            for (int i = 0; i < removalCount; i++)
             {
                 RemoveChunk(chunksToRemove[i]);
             }
@@ -868,7 +867,9 @@ namespace Voidborne.World.Chunks
             // Sort downgrades furthest first (uses cached delegate)
             chunksToDowngrade.Sort(_downgradeComparison);
 
-            for (int i = 0; i < chunksToDowngrade.Count; i++)
+            int maxDowngradesPerCall = 4;
+            int downgradeCount = Mathf.Min(chunksToDowngrade.Count, maxDowngradesPerCall);
+            for (int i = 0; i < downgradeCount; i++)
             {
                 // LoadChunk returns false when GPU slots are full — stop and retry next frame
                 if (!LoadChunk(chunksToDowngrade[i].position, chunksToDowngrade[i].targetLod))
@@ -955,87 +956,40 @@ namespace Voidborne.World.Chunks
         }
 
         private static readonly RuntimeProfiler.Token s_prof = RuntimeProfiler.Register("ChunkManager.Update");
+        private static readonly RuntimeProfiler.Token s_profDispatcher = RuntimeProfiler.Register("  CM.Dispatcher");
 
         // Cached face mask to avoid recomputing every frame
         private int lastFaceMask = 0x3F; // all visible initially
         private Vector3 lastCameraFwd;
 
-        // Stopwatch for overall Update budget — prevents compound spikes from
-        // dispatcher + ore finalization + UV2 activation exceeding frame time.
-        private readonly System.Diagnostics.Stopwatch _updateSw = new System.Diagnostics.Stopwatch();
-
-        [Header("Update Budget")]
-        [Tooltip("Total time budget (ms) for ChunkManager.Update per frame. " +
-                 "Prevents compound spikes when many async operations complete simultaneously.")]
-        [SerializeField] private float updateBudgetMs = 6f;
-
-        // Sub-phase profiling tokens — visible in RuntimeProfiler to pinpoint spikes
-        private static readonly RuntimeProfiler.Token s_profDispatch  = RuntimeProfiler.Register("  CM.Dispatcher");
-        private static readonly RuntimeProfiler.Token s_profRegen     = RuntimeProfiler.Register("  CM.Regen");
-        private static readonly RuntimeProfiler.Token s_profOreJobs   = RuntimeProfiler.Register("  CM.OreJobs");
-        private static readonly RuntimeProfiler.Token s_profUV2Jobs   = RuntimeProfiler.Register("  CM.UV2+Activate");
-        private static readonly RuntimeProfiler.Token s_profOcclusion = RuntimeProfiler.Register("  CM.Occlusion");
-
-        /// <summary>
-        /// Returns true if the chunk the player is currently standing in is not yet Active.
-        /// When true, all processing budgets are lifted so the player's chunk activates ASAP
-        /// and the freeze check in FirstPersonController releases.
-        /// </summary>
-        private bool IsPlayerChunkPending()
-        {
-            var pm = Voidborne.Player.PlayerManager.Instance;
-            if (pm == null || pm.PlayerTransform == null) return false;
-            Vector3Int playerChunk = ChunkCoordUtility.WorldToChunkPos(pm.PlayerTransform.position);
-            if (!chunks.TryGetValue(playerChunk, out ChunkData data)) return true;
-            return data.state != ChunkState.Active;
-        }
-
         private void Update()
         {
             RuntimeProfiler.Begin(s_prof);
-            _updateSw.Restart();
 
-            // When the player's chunk isn't Active yet, lift all budgets so the
-            // activation pipeline runs at full speed. The player is frozen during this
-            // time (FirstPersonController freeze check), so frame time doesn't matter —
-            // getting the chunk Active ASAP is the priority.
-            bool urgentMode = IsPlayerChunkPending();
+            // Start the per-frame time budget — all chunk loops check this before each item.
+            ChunkFrameBudget.BeginFrame();
 
-            RuntimeProfiler.Begin(s_profDispatch);
-            if (urgentMode)
-                MainThreadDispatcher.ProcessQueueUnbounded();
-            else
-                MainThreadDispatcher.ProcessQueue();
-            RuntimeProfiler.End(s_profDispatch);
+            // Process the MainThreadDispatcher first — GPU readback callbacks (mesh creation)
+            // are enqueued here by MarchingCubesAdapter. This MUST run or chunks stay in
+            // Generating state forever.
+            RuntimeProfiler.Begin(s_profDispatcher);
+            MainThreadDispatcher.ProcessQueue();
+            // Also process our ChunkCallbackQueue for biome/UV2 callbacks from Task.Run
+            ChunkCallbackQueue.ProcessBudgeted();
+            RuntimeProfiler.End(s_profDispatcher);
 
-            RuntimeProfiler.Begin(s_profRegen);
             ProcessRegenerationQueue();
-            RuntimeProfiler.End(s_profRegen);
+            ProcessPendingOreJobs();
+            ProcessPendingUV2Jobs();
+            ProcessReadyPayloads();
 
-            // All remaining phases respect the update budget to prevent compound spikes,
-            // UNLESS we're in urgent mode (player chunk not yet Active).
-            if (urgentMode || _updateSw.Elapsed.TotalMilliseconds < updateBudgetMs)
-            {
-                RuntimeProfiler.Begin(s_profOreJobs);
-                ProcessPendingOreJobs();
-                RuntimeProfiler.End(s_profOreJobs);
-            }
-
-            if (urgentMode || _updateSw.Elapsed.TotalMilliseconds < updateBudgetMs)
-            {
-                RuntimeProfiler.Begin(s_profUV2Jobs);
-                ProcessPendingUV2Jobs();
-                RuntimeProfiler.End(s_profUV2Jobs);
-            }
-
-            if (Time.frameCount % 10 == 0 && _updateSw.Elapsed.TotalMilliseconds < updateBudgetMs)
-            {
-                RuntimeProfiler.Begin(s_profOcclusion);
+            // Occlusion culling: only run every 10 frames and only when camera moves
+            if (Time.frameCount % 10 == 0)
                 UpdateOcclusionCulling();
-                RuntimeProfiler.End(s_profOcclusion);
-            }
 
-            _updateSw.Stop();
+            // Adapt budget based on actual frame time
+            ChunkFrameBudget.AdaptBudget(Time.unscaledDeltaTime * 1000f);
+
             RuntimeProfiler.End(s_prof);
         }
 
@@ -1119,22 +1073,10 @@ namespace Voidborne.World.Chunks
         /// copies OreField data and disposes NativeArrays immediately (prevents
         /// TempJob leak warnings). Queues the chunk for deferred finalization.
         /// </summary>
-        [Header("Ore Job Budget")]
-        [Tooltip("Max ore jobs completed per frame. Each completion disposes ~8 NativeArrays " +
-                 "and copies palette data. Limiting prevents spikes when many jobs finish at once.")]
-        [SerializeField] private int maxOreJobCompletionsPerFrame = 6;
-
         private void ProcessPendingOreJobs()
         {
-            // Phase 1: Complete ore jobs and queue for finalization.
-            // Limited to maxOreJobCompletionsPerFrame to spread NativeArray disposal
-            // and PaletteStorage copy work across frames (each job disposes ~8 NativeArrays).
-            int completed = 0;
             for (int i = pendingOreJobs.Count - 1; i >= 0; i--)
             {
-                if (completed >= maxOreJobCompletionsPerFrame)
-                    break;
-
                 PendingOreJob job = pendingOreJobs[i];
 
                 if (!job.handle.IsCompleted) continue;
@@ -1168,11 +1110,9 @@ namespace Voidborne.World.Chunks
                 int lastOre = pendingOreJobs.Count - 1;
                 if (i < lastOre) pendingOreJobs[i] = pendingOreJobs[lastOre];
                 pendingOreJobs.RemoveAt(lastOre);
-                completed++;
             }
 
-            // Phase 2: Process deferred ore finalization with a per-frame budget.
-            // This is the heavy work: decorations, UV2, mesh activation.
+            // Phase 2: Process deferred ore finalization within frame budget.
             // Sort by LOD (LOD0 first) then distance to player (closest first) so nearby
             // terrain always activates before distant terrain — prevents gaps and fall-through.
             if (pendingOreFinalization.Count > 1)
@@ -1186,18 +1126,14 @@ namespace Voidborne.World.Chunks
                 pendingOreFinalization.Sort(_oreFinalizationComparison);
             }
 
-            // FinalizeOreChunk kicks off background biome computation + captures arrays
-            // for Task.Run. Each call allocates ~8 managed arrays (mesh.vertices, ToArray()
-            // copies, neighbor fields). Processing too many per frame triggers GC pauses
-            // (10-50ms). Limit to maxOreCompletionsPerFrame to spread allocations across frames.
             int finalized = 0;
             int oreIdx = 0;
             while (oreIdx < pendingOreFinalization.Count)
             {
+                // Budget check removed — maxOreCompletionsPerFrame is the correct throttle.
+                // ChunkFrameBudget was starving this loop after MainThreadDispatcher consumed it.
                 if (maxOreCompletionsPerFrame > 0 && finalized >= maxOreCompletionsPerFrame)
-                    break;
-                if (_updateSw.Elapsed.TotalMilliseconds >= updateBudgetMs)
-                    break;
+                    break; // defer remaining to next frame
 
                 ChunkData chunk = pendingOreFinalization[oreIdx];
                 oreIdx++;
@@ -1218,170 +1154,255 @@ namespace Voidborne.World.Chunks
         /// Per-chunk finalization phase 1: surface point ore types + UV2 job scheduling.
         /// The UV2 Burst job runs asynchronously; completion and mesh activation happen
         /// in ProcessPendingUV2Jobs on the next frame(s).
+        ///
+        /// Uses cached vertices from the finalize payload instead of reading mesh.vertices.
+        /// Biome recompute is offloaded to a background thread — results are applied
+        /// when the UV2 job completes (one frame later, invisible difference).
         /// </summary>
         private void FinalizeOreChunk(ChunkData chunk)
         {
-            // Terrain types (grass/dirt/rock) are now assigned by VoxelClassificationJob
-            // alongside biome and ore data — no separate PlaceTerrainTypes call needed.
-
             Vector3Int cp = chunk.chunkPosition;
 
             if (chunk.lodLevel <= 1)
                 UpdateSurfacePointOreTypes(chunk);
 
             Mesh mesh = chunk.mesh;
-            if (mesh == null)
-            {
-                ActivateChunk(chunk);
-                return;
-            }
 
-            byte[] biomeArr = chunk.BiomeField?.ToArray();
-            byte[] oreArr   = chunk.OreField?.ToArray();
-
-            // Fast path: no biome or ore data — activate immediately
-            if (biomeArr == null && oreArr == null)
+            // Schedule ore UV2 asynchronously using cached vertices from payload.
+            if (mesh != null && chunk.OreField != null)
             {
-                ActivateChunk(chunk);
-                return;
-            }
+                // Use cached vertices from payload — avoids mesh.vertices GPU readback
+                var payload = chunk.finalizePayload;
+                if (payload?.vertices != null)
+                {
+                    _cachedVertexList.Clear();
+                    var verts = payload.vertices;
+                    for (int i = 0; i < verts.Length; i++)
+                        _cachedVertexList.Add(verts[i]);
+                }
+                else
+                {
+                    _cachedVertexList.Clear();
+                    mesh.GetVertices(_cachedVertexList);
+                }
 
-            // Capture neighbor ore fields for LOD0 only — ore UV2 blending between
-            // neighboring chunks is invisible at LOD1+ distance. Skipping saves 6 × 32KB
-            // of array allocations per LOD1+ chunk (~576KB/frame at 4 chunks/frame).
-            byte[][] neighborFields = null;
-            if (oreArr != null && chunk.lodLevel == 0)
-            {
-                neighborFields = new byte[6][];
+                byte[] oreField = chunk.OreField.ToArray();
+
                 for (int n = 0; n < 6; n++)
                 {
                     ChunkData neighbor = GetChunk(cp + OreNeighborOffsets[n]);
-                    neighborFields[n] = neighbor?.OreField?.ToArray();
+                    _cachedNeighborFields[n] = neighbor?.OreField?.ToArray();
                 }
-            }
 
-            // Use cached vertices from the initial mesh build when available,
-            // avoiding a second mesh.vertices allocation (~120KB per chunk).
-            Vector3[] verts       = chunk.cachedVertices ?? mesh.vertices;
-            chunk.cachedVertices  = null; // release cache — no longer needed
-            Vector3 worldOrigin   = chunk.WorldPosition;
-            var capturedChunk     = chunk;
-            var capturedMesh      = mesh;
-            var capturedOreArr    = oreArr;
-            var capturedNeighbors = neighborFields;
-
-            // Run biome recomputation on background thread, then schedule UV2
-            // on main thread via MainThreadDispatcher. This avoids the per-vertex
-            // biome lookup stalling the main thread (was ~1-2ms per chunk).
-            Task.Run(() =>
-            {
-                Color[] texWeights = null;
-                Vector4[] tints    = null;
-                if (biomeArr != null)
-                    ChunkMeshBuilder.ComputeBiomeData(verts, worldOrigin, biomeArr,
-                        out texWeights, out tints);
-
-                MainThreadDispatcher.Enqueue(() =>
+                var oreNeighbors = new ChunkMeshBuilder.NeighborOreFields
                 {
-                    // Guard: chunk may have been unloaded during background computation
-                    if (!chunks.TryGetValue(capturedChunk.chunkPosition, out ChunkData live)
-                        || live != capturedChunk)
-                        return;
-                    if (capturedMesh == null) return;
+                    fields = _cachedNeighborFields
+                };
 
-                    // Apply recomputed biome colors (pooled arrays from ComputeBiomeData)
-                    if (texWeights != null)
+                var jobData = ChunkMeshBuilder.ScheduleOreUV2Job(_cachedVertexList, oreField, oreNeighbors);
+
+                // Offload biome recompute to background thread.
+                // The initial biome colors from mesh generation are visible until this completes.
+                var capturedVerts = payload?.vertices;
+                var capturedWorldPos = chunk.WorldPosition;
+                var capturedPayload = payload;
+
+                if (capturedVerts != null && chunk.BiomeField != null)
+                {
+                    byte[] biomeArr = chunk.BiomeField.ToArray();
+
+                    System.Threading.Tasks.Task.Run(() =>
                     {
-                        int vc = capturedMesh.vertexCount;
-                        capturedMesh.SetColors(texWeights, 0, vc);
-                        capturedMesh.SetUVs(3, tints, 0, vc);
-                        System.Buffers.ArrayPool<Color>.Shared.Return(texWeights);
-                        System.Buffers.ArrayPool<Vector4>.Shared.Return(tints);
-                    }
-
-                    // Schedule ore UV2 job (Burst — runs on worker threads)
-                    if (capturedOreArr != null)
-                    {
-                        _cachedVertexList.Clear();
-                        capturedMesh.GetVertices(_cachedVertexList);
-
-                        var oreNeighbors = new ChunkMeshBuilder.NeighborOreFields
+                        ChunkMeshBuilder.ComputeBiomeData(capturedVerts, capturedWorldPos,
+                            biomeArr, out Color[] texWeights, out Vector4[] tints);
+                        if (capturedPayload != null)
                         {
-                            fields = capturedNeighbors
-                        };
+                            capturedPayload.finalTexWeights = texWeights;
+                            capturedPayload.finalTints = tints;
+                            capturedPayload.biomeRecomputeReady = true;
+                        }
+                    });
+                }
 
-                        var jobData = ChunkMeshBuilder.ScheduleOreUV2Job(
-                            _cachedVertexList, capturedOreArr, oreNeighbors);
-                        pendingUV2Jobs.Add(new PendingUV2Job
-                        {
-                            chunk = capturedChunk, jobData = jobData
-                        });
-                    }
-                    else
-                    {
-                        ActivateChunk(capturedChunk);
-                    }
-                });
-            });
+                pendingUV2Jobs.Add(new PendingUV2Job { chunk = chunk, jobData = jobData });
+
+                for (int n = 0; n < 6; n++)
+                    _cachedNeighborFields[n] = null;
+            }
+            else
+            {
+                // No mesh or no ore data — activate immediately without UV2.
+                ActivateChunk(chunk);
+            }
         }
 
         /// <summary>
         /// Polls pending UV2 jobs and activates chunks once their Burst job completes.
-        /// Budgeted to maxOreCompletionsPerFrame activations to prevent spikes when
-        /// many UV2 jobs finish simultaneously.
+        /// Budgeted by both maxOreCompletionsPerFrame and ChunkFrameBudget to prevent
+        /// spikes when many UV2 jobs finish simultaneously.
         /// </summary>
         private void ProcessPendingUV2Jobs()
         {
             int activated = 0;
             for (int i = pendingUV2Jobs.Count - 1; i >= 0; i--)
             {
+                // Budget check removed — maxOreCompletionsPerFrame handles throttling.
+                // ChunkFrameBudget was starving this loop, preventing chunk activation.
+
                 PendingUV2Job pending = pendingUV2Jobs[i];
 
                 if (!pending.jobData.Handle.IsCompleted) continue;
 
-                // Complete and apply UV2 data (pooled array from OreUV2JobData)
+                // Complete and apply UV2 data
                 Vector2[] uv2 = pending.jobData.Complete();
-                int uv2Count  = pending.jobData.ResultCount;
 
                 // Guard: chunk may have been unloaded while the job was in flight
                 if (chunks.TryGetValue(pending.chunk.chunkPosition, out ChunkData live)
                     && live == pending.chunk && pending.chunk.mesh != null)
                 {
-                    pending.chunk.mesh.SetUVs(1, uv2, 0, uv2Count);
+                    Mesh m = pending.chunk.mesh;
+                    int meshVerts = m.vertexCount;
+
+                    // Apply UV2 ore data — guard against size mismatch from stale payload
+                    if (uv2.Length == meshVerts)
+                    {
+                        m.uv2 = uv2;
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogWarning(
+                            $"[ChunkMgr] UV2 size mismatch at {pending.chunk.chunkPosition}: " +
+                            $"uv2={uv2.Length} mesh={meshVerts} payload={pending.chunk.finalizePayload?.vertexCount ?? -1} " +
+                            $"lod={pending.chunk.lodLevel}");
+                        // Resize UV2 to match — zero-fill extra slots
+                        uv2 = new Vector2[meshVerts];
+                    }
+
+                    // Store UV2 in payload for background CompactVertex processing
+                    var payload = pending.chunk.finalizePayload;
+                    if (payload != null)
+                        payload.oreUV2 = uv2;
+
+                    // Apply biome recompute if ready (computed on background thread)
+                    if (payload != null && payload.biomeRecomputeReady
+                        && payload.finalTexWeights != null)
+                    {
+                        if (payload.finalTexWeights.Length == meshVerts)
+                        {
+                            m.colors = payload.finalTexWeights;
+                            m.SetUVs(3, payload.finalTints);
+                            // Update payload for CompactVertex
+                            payload.texWeights = payload.finalTexWeights;
+                            payload.tints = payload.finalTints;
+                        }
+                        else
+                        {
+                            UnityEngine.Debug.LogWarning(
+                                $"[ChunkMgr] Biome recompute size mismatch at {pending.chunk.chunkPosition}: " +
+                                $"colors={payload.finalTexWeights.Length} mesh={meshVerts}");
+                        }
+                    }
+
                     ActivateChunk(pending.chunk);
                     activated++;
                 }
-                System.Buffers.ArrayPool<Vector2>.Shared.Return(uv2);
 
                 // Swap-with-last removal — O(1)
                 int last = pendingUV2Jobs.Count - 1;
                 if (i < last) pendingUV2Jobs[i] = pendingUV2Jobs[last];
                 pendingUV2Jobs.RemoveAt(last);
 
-                // Budget: time-based + count cap. Check elapsed time from the
-                // parent Update() stopwatch to prevent compound spikes when
-                // ActivateChunk work (UV2 expansion, decoration setup) is heavy.
+                // Budget: defer remaining activations to next frame
                 if (maxOreCompletionsPerFrame > 0 && activated >= maxOreCompletionsPerFrame)
-                    break;
-                if (_updateSw.Elapsed.TotalMilliseconds >= updateBudgetMs)
                     break;
             }
         }
 
         /// <summary>
+        /// Placeholder for future fully-background payload processing.
+        /// Currently data is applied in ProcessPendingUV2Jobs → ActivateChunk.
+        /// </summary>
+        private void ProcessReadyPayloads()
+        {
+            // Reserved for future use: when CompactVertex packing is moved to
+            // background threads, this method will poll payload.isReady and
+            // apply the pre-built compact data to the mesh.
+        }
+
+        /// <summary>
         /// Applies the mesh (with UV2 baked) to the chunk GameObject and activates it.
         /// Shared by the async UV2 path and the no-mesh fast path.
+        ///
+        /// Uses payload data to avoid reading back from the mesh. For LOD0, CompactVertex
+        /// packing uses cached arrays. For LOD1+, UV2 expansion uses cached ore data.
         /// </summary>
         private void ActivateChunk(ChunkData chunk)
         {
+            var payload = chunk.finalizePayload;
+            float[] skyExp = payload?.skyExposure ?? chunk.skyExposure;
+
+            // LOD0: compact vertex format using dedicated shader variant
+            if (chunk.lodLevel == 0 && chunk.mesh != null)
+            {
+                try
+                {
+                    // Use background-thread-safe CompactFromArrays if payload has all data
+                    if (payload?.vertices != null && payload.texWeights != null)
+                    {
+                        var compact = CompactVertex.CompactFromArrays(
+                            payload.vertices,
+                            payload.normals,
+                            payload.texWeights,
+                            payload.oreUV2,
+                            payload.tints,
+                            skyExp,
+                            payload.vertexCount);
+
+                        // Apply compact data to mesh. We still need submesh info from the mesh.
+                        ApplyCompactToMesh(chunk.mesh, compact, payload.vertexCount);
+                    }
+                    else
+                    {
+                        // Fallback: use original CompactMesh (reads from mesh)
+                        CompactVertex.CompactMesh(chunk.mesh, skyExp);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[ChunkManager] CompactMesh failed: {e.Message}");
+                }
+            }
+            else if (chunk.mesh != null && skyExp != null)
+            {
+                // LOD1+: inject sky exposure into UV2.z for the standard shader.
+                // Use payload ore UV2 if available to avoid mesh.uv2 readback.
+                Vector2[] uv2 = payload?.oreUV2;
+                int count = chunk.mesh.vertexCount;
+
+                // Reuse static buffer to avoid per-chunk allocation
+                if (_uv2ExpandBuffer == null || _uv2ExpandBuffer.Length < count)
+                    _uv2ExpandBuffer = new Vector4[count];
+
+                for (int i = 0; i < count; i++)
+                {
+                    Vector2 ore = (uv2 != null && i < uv2.Length) ? uv2[i] : Vector2.zero;
+                    float sky = (i < skyExp.Length) ? skyExp[i] : 1f;
+                    _uv2ExpandBuffer[i] = new Vector4(ore.x, ore.y, sky, 0f);
+                }
+                chunk.mesh.SetUVs(2, new System.Collections.Generic.List<Vector4>(
+                    new System.ArraySegment<Vector4>(_uv2ExpandBuffer, 0, count)));
+            }
+
             GameObject chunkGO  = CreateChunkGameObject(chunk);
             var        renderer = chunkGO.GetComponent<ChunkRenderer>();
             Mesh oldMesh = renderer.CurrentMesh;
 
-            // Make the chunk visible immediately with standard material.
-            // LOD0 compact encoding and LOD1+ UV2 expansion run asynchronously
-            // and upgrade the mesh/material once ready (avoids 10-50ms main-thread stalls).
-            renderer.SetMaterial(defaultChunkMaterial);
+            // LOD0 uses compact shader variant, LOD1+ uses standard shader
+            if (chunk.lodLevel == 0 && compactChunkMaterial != null)
+                renderer.SetMaterial(compactChunkMaterial);
+            else
+                renderer.SetMaterial(defaultChunkMaterial);
+
             renderer.ApplyMesh(chunk.mesh);
             chunkGO.SetActive(true);
             if (oldMesh != null && oldMesh != chunk.mesh)
@@ -1389,36 +1410,14 @@ namespace Voidborne.World.Chunks
 
             chunk.state = ChunkState.Active;
 
-            // Inject sky exposure into UV2 for both LOD0 and LOD1+ (standard shader).
-            // Compact vertex format is disabled — the async double-mesh-creation it required
-            // added more overhead (GPU stalls, physics errors, GFX memory bloat) than
-            // the VRAM savings justified. All LODs now use the standard shader.
-            if (chunk.mesh != null && chunk.skyExposure != null)
-            {
-                // LOD1+: expand UV2 (ore data) + sky exposure into Vector4 on background thread.
-                var capturedUV2  = chunk.mesh.uv2;
-                var capturedSky  = chunk.skyExposure;
-                int count        = chunk.mesh.vertexCount;
-                var capturedMesh = chunk.mesh;
+            // Clean up payload to free memory — data has been applied to the mesh
+            if (payload != null)
+                payload.Clear();
+            chunk.finalizePayload = null;
 
-                Task.Run(() =>
-                {
-                    var uv2Expanded = new Vector4[count];
-                    for (int i = 0; i < count; i++)
-                    {
-                        Vector2 ore = (capturedUV2 != null && i < capturedUV2.Length)
-                            ? capturedUV2[i] : Vector2.zero;
-                        float sky = (i < capturedSky.Length) ? capturedSky[i] : 1f;
-                        uv2Expanded[i] = new Vector4(ore.x, ore.y, sky, 0f);
-                    }
-
-                    MainThreadDispatcher.Enqueue(() =>
-                    {
-                        if (capturedMesh != null)
-                            capturedMesh.SetUVs(2, uv2Expanded);
-                    });
-                });
-            }
+            // Region batching disabled — causes z-fighting double rendering.
+            // if (chunk.lodLevel >= 1)
+            //     regionManager.OnChunkActivated(chunk);
 
             if (chunk.lodLevel == 0)
             {
@@ -1427,6 +1426,59 @@ namespace Voidborne.World.Chunks
             }
             else if (chunk.lodLevel <= 3)
                 decorationManager?.OnBillboardChunkActivated(chunk);
+        }
+
+        // Reusable buffer for LOD1+ UV2 expansion — avoids per-chunk allocation
+        private Vector4[] _uv2ExpandBuffer;
+
+        /// <summary>
+        /// Apply pre-built CompactVertex data to a mesh, preserving submesh structure.
+        /// Only reads submesh/index data from the mesh (cheap), never reads vertex data.
+        /// </summary>
+        private static void ApplyCompactToMesh(Mesh mesh, CompactVertex[] compact, int count)
+        {
+            int subMeshCount = mesh.subMeshCount;
+            var subMeshDescs = new UnityEngine.Rendering.SubMeshDescriptor[subMeshCount];
+            int totalIndices = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                subMeshDescs[s] = mesh.GetSubMesh(s);
+                totalIndices += subMeshDescs[s].indexCount;
+            }
+
+            var allIndices = new int[totalIndices];
+            int offset = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                var subTris = mesh.GetTriangles(s);
+                System.Array.Copy(subTris, 0, allIndices, offset, subTris.Length);
+                offset += subTris.Length;
+            }
+
+            var bounds = mesh.bounds;
+
+            mesh.Clear();
+            mesh.subMeshCount = subMeshCount;
+            mesh.SetVertexBufferParams(count, CompactVertex.Descriptors);
+            mesh.SetVertexBufferData(compact, 0, 0, count, 0,
+                UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds
+                | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
+            mesh.SetIndexBufferParams(allIndices.Length, UnityEngine.Rendering.IndexFormat.UInt32);
+            mesh.SetIndexBufferData(allIndices, 0, 0, allIndices.Length,
+                UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds
+                | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
+
+            int idxOffset = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                int idxCount = subMeshDescs[s].indexCount;
+                mesh.SetSubMesh(s, new UnityEngine.Rendering.SubMeshDescriptor(idxOffset, idxCount,
+                    MeshTopology.Triangles),
+                    UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds
+                    | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
+                idxOffset += idxCount;
+            }
+            mesh.bounds = bounds;
         }
 
         /// <summary>
@@ -1599,6 +1651,7 @@ namespace Voidborne.World.Chunks
             // Sample density on background thread using the density function
             var capturedData = data;
             var capturedPos = chunkPos;
+            var ctx = System.Threading.SynchronizationContext.Current;
 
             System.Threading.Tasks.Task.Run(() =>
             {
@@ -1661,7 +1714,7 @@ namespace Voidborne.World.Chunks
                     capturedData.densityField, biomeArr, step, biomeColorLookup);
 
                 // Post to main thread for mesh creation
-                MainThreadDispatcher.Enqueue(() =>
+                ctx.Post(_ =>
                 {
                     if (!chunks.ContainsKey(capturedPos) || chunks[capturedPos] != capturedData)
                         return;
@@ -1689,15 +1742,15 @@ namespace Voidborne.World.Chunks
                     renderer.ApplyMesh(mesh);
                     chunkGO.SetActive(true);
                     capturedData.state = ChunkState.Active;
-                });
+                }, null);
                 }
                 catch (System.Exception e)
                 {
-                    MainThreadDispatcher.Enqueue(() =>
+                    ctx.Post(_ =>
                     {
                         Debug.LogWarning($"[ChunkManager] LOD4 greedy mesh failed: {e.Message}");
                         capturedData.state = ChunkState.Unloaded;
-                    });
+                    }, null);
                 }
             });
 

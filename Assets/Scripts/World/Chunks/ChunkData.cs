@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using Voidborne.World.Biomes;
 
 namespace Voidborne.World.Chunks
@@ -15,6 +16,75 @@ namespace Voidborne.World.Chunks
         public float           roadInfluence;
         public bool            underwater;
         public byte            oreType;
+    }
+
+    /// <summary>
+    /// Pre-computed data for chunk activation. Populated entirely on background
+    /// threads — the main thread only reads from this to write into the Mesh.
+    /// This ensures the main thread never reads back from a Mesh or allocates.
+    /// </summary>
+    public class ChunkFinalizePayload
+    {
+        // Vertices captured once during async mesh generation callback.
+        // All subsequent operations use this cached copy instead of mesh.vertices.
+        public Vector3[] vertices;
+        public Vector3[] normals;
+        public int vertexCount;
+
+        // Biome data — computed on background thread (initial pass)
+        public Color[] texWeights;
+        public Vector4[] tints;
+
+        // Sky exposure — computed on background thread
+        public float[] skyExposure;
+
+        // Surface points for decoration — computed on background thread
+        public SurfacePoint[] surfacePoints;
+
+        // Ore UV2 — computed by Burst job
+        public Vector2[] oreUV2;
+
+        // LOD1+ UV2 expanded to Vector4 — computed on background thread
+        public Vector4[] expandedUV2;
+
+        // LOD0 compact vertex data — computed on background thread
+        public CompactVertex[] compactVertices;
+
+        // Submesh data captured from mesh for CompactMesh background processing
+        public SubMeshDescriptor[] subMeshDescs;
+        public int[][] subMeshTriangles;
+        public Bounds meshBounds;
+
+        // Signals that all background processing is complete and data is ready
+        // for the main thread to apply.
+        public volatile bool isReady;
+
+        // Signals that the biome recompute (post-VoxelClassification) is complete.
+        public volatile bool biomeRecomputeReady;
+
+        // Final biome data after VoxelClassificationJob (replaces initial biome data)
+        public Color[] finalTexWeights;
+        public Vector4[] finalTints;
+
+        public void Clear()
+        {
+            vertices = null;
+            normals = null;
+            vertexCount = 0;
+            texWeights = null;
+            tints = null;
+            skyExposure = null;
+            surfacePoints = null;
+            oreUV2 = null;
+            expandedUV2 = null;
+            compactVertices = null;
+            subMeshDescs = null;
+            subMeshTriangles = null;
+            finalTexWeights = null;
+            finalTints = null;
+            isReady = false;
+            biomeRecomputeReady = false;
+        }
     }
 
     /// <summary>
@@ -82,17 +152,16 @@ namespace Voidborne.World.Chunks
         public float[] skyExposure;
 
         /// <summary>
-        /// Temporary cache of mesh vertices from the initial mesh build.
-        /// Avoids a second mesh.vertices copy (120KB+) during ore finalization.
-        /// Cleared after finalization to free memory.
-        /// </summary>
-        internal Vector3[] cachedVertices;
-
-        /// <summary>
         /// Pre-classified triangle face buckets for per-face backface culling.
         /// LOD0 only. Null for LOD1+.
         /// </summary>
         public DirectionalSubmeshBuilder.FaceBuckets faceBuckets;
+
+        /// <summary>
+        /// Pre-computed finalization data. Populated entirely on background threads
+        /// so the main thread only does cheap mesh writes during activation.
+        /// </summary>
+        public ChunkFinalizePayload finalizePayload;
 
         /// <summary>
         /// World-space position of this chunk's origin corner.

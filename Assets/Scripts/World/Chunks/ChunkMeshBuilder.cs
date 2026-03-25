@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,11 +91,6 @@ namespace Voidborne.World.Chunks
                     chunk.gpuSurfaceHeights = gpuHeights;
                 }
 
-                // Return pooled readback arrays — data has been copied into chunk fields above.
-                // These arrays were rented from ArrayPool in MarchingCubesAdapter.TryFinalize.
-                if (density33 != null)       ArrayPool<float>.Shared.Return(density33);
-                if (surfaceHeights33 != null) ArrayPool<float>.Shared.Return(surfaceHeights33);
-
                 if (mesh == null)
                 {
                     chunk.mesh         = null;
@@ -107,16 +101,23 @@ namespace Voidborne.World.Chunks
                     return;
                 }
 
-                // 2. Schedule Burst ore UV2 job on main thread (non-blocking),
-                //    then biome colors + surface points on thread pool.
-                //    LOD chunks skip ore UV2 and surface points (no decorations/ore at distance).
+                // 2. Capture mesh data ONCE — this is the only time we ever read from the mesh.
+                //    All subsequent operations use these cached arrays via the payload.
                 var capturedVerts      = mesh.vertices;
-                chunk.cachedVertices   = capturedVerts; // cache for FinalizeOreChunk (avoids 2nd mesh.vertices copy)
+                var capturedNormals    = mesh.normals;
                 var capturedWorldOrigin = worldOrigin;
                 var capturedOreField   = chunk.OreField?.ToArray();
                 var capturedDensity    = chunk.densityField;
                 var capturedLod        = chunk.lodLevel;
                 var capturedHeights    = chunk.gpuSurfaceHeights;
+
+                // Store captured data in the finalize payload so no other code
+                // ever needs to call mesh.vertices again.
+                var payload = new ChunkFinalizePayload();
+                payload.vertices = capturedVerts;
+                payload.normals = capturedNormals;
+                payload.vertexCount = capturedVerts.Length;
+                chunk.finalizePayload = payload;
 
                 // Schedule Burst job on main thread — runs on worker threads in parallel
                 OreUV2JobData? oreJob = (capturedLod == 0 && capturedOreField != null)
@@ -131,25 +132,33 @@ namespace Voidborne.World.Chunks
                     float[] skyExp = ComputeSkyExposure(capturedVerts, capturedHeights, capturedDensity, capturedWorldOrigin);
                     SurfacePoint[] surfPts = capturedLod <= 3 ? ComputeSurfacePoints(capturedHeights, capturedWorldOrigin, capturedDensity, capturedOreField) : null;
 
-                    MainThreadDispatcher.Enqueue(() =>
+                    // Store initial biome data in payload for background reuse
+                    payload.texWeights = texWeights;
+                    payload.tints = tints;
+                    payload.skyExposure = skyExp;
+                    payload.surfacePoints = surfPts;
+
+                    // Post to callback queue instead of unbounded ctx.Post
+                    ChunkCallbackQueue.Enqueue(() =>
                     {
                         if (mesh == null)
                         {
                             oreJob?.Complete(); // dispose NativeArrays even if mesh was destroyed
-                            ArrayPool<Color>.Shared.Return(texWeights);
-                            ArrayPool<Vector4>.Shared.Return(tints);
                             return;
                         }
                         int vc = mesh.vertexCount;
-                        mesh.SetColors(texWeights, 0, vc);
-                        mesh.SetUVs(3, tints, 0, vc);
-                        ArrayPool<Color>.Shared.Return(texWeights);
-                        ArrayPool<Vector4>.Shared.Return(tints);
+                        if (texWeights.Length == vc)
+                            mesh.colors = texWeights;
+                        if (tints.Length == vc)
+                            mesh.SetUVs(3, tints);
                         if (oreJob.HasValue)
                         {
-                            var oreUV2 = oreJob.Value.Complete();
-                            mesh.SetUVs(1, oreUV2, 0, oreJob.Value.ResultCount);
-                            ArrayPool<Vector2>.Shared.Return(oreUV2);
+                            Vector2[] uv2 = oreJob.Value.Complete();
+                            if (uv2.Length == vc)
+                                mesh.uv2 = uv2;
+                            else
+                                UnityEngine.Debug.LogWarning(
+                                    $"[ChunkMeshBuilder] GenAsync UV2 mismatch: uv2={uv2.Length} mesh={vc} captured={capturedVerts.Length}");
                         }
                         chunk.skyExposure   = skyExp;
                         chunk.mesh          = mesh;
@@ -186,11 +195,8 @@ namespace Voidborne.World.Chunks
                 var verts = mesh.vertices;
                 ComputeBiomeData(verts, chunk.WorldPosition, biomeArr, out Color[] texWeights, out Vector4[] tints);
                 Vector2[] uv2    = ComputeOreUV2(verts, oreArr);
-                int vc = mesh.vertexCount;
-                mesh.SetColors(texWeights, 0, vc);
-                mesh.SetUVs(3, tints, 0, vc);
-                ArrayPool<Color>.Shared.Return(texWeights);
-                ArrayPool<Vector4>.Shared.Return(tints);
+                mesh.colors = texWeights;
+                mesh.SetUVs(3, tints);
                 mesh.uv2    = uv2;
                 // CPU fallback: compute surface heights from density field if GPU heights aren't available
                 float[] heights = chunk.gpuSurfaceHeights ?? ComputeSurfaceHeightsFromDensity(chunk.densityField, chunk.WorldPosition.y);
@@ -228,11 +234,19 @@ namespace Voidborne.World.Chunks
                 }
 
                 var capturedVerts    = mesh.vertices;
+                var capturedNormals  = mesh.normals;
                 var capturedWorldPos = chunk.WorldPosition;
                 var capturedOreField = chunk.OreField?.ToArray();
                 var capturedDensity  = chunk.densityField;
                 // Rebuild path: density changed from deformation, recompute heights from current density
                 var capturedHeights  = ComputeSurfaceHeightsFromDensity(capturedDensity, capturedWorldPos.y);
+
+                // Cache in payload for downstream use
+                var payload = new ChunkFinalizePayload();
+                payload.vertices = capturedVerts;
+                payload.normals = capturedNormals;
+                payload.vertexCount = capturedVerts.Length;
+                chunk.finalizePayload = payload;
 
                 // Schedule Burst job on main thread before going to thread pool
                 OreUV2JobData? oreJob = capturedOreField != null
@@ -247,18 +261,26 @@ namespace Voidborne.World.Chunks
                     float[] skyExp = ComputeSkyExposure(capturedVerts, capturedHeights, capturedDensity, capturedWorldPos);
                     SurfacePoint[] surfPts = ComputeSurfacePoints(capturedHeights, capturedWorldPos, capturedDensity, capturedOreField);
 
-                    MainThreadDispatcher.Enqueue(() =>
+                    payload.texWeights = texWeights;
+                    payload.tints = tints;
+                    payload.skyExposure = skyExp;
+                    payload.surfacePoints = surfPts;
+
+                    ChunkCallbackQueue.Enqueue(() =>
                     {
                         int vc = mesh.vertexCount;
-                        mesh.SetColors(texWeights, 0, vc);
-                        mesh.SetUVs(3, tints, 0, vc);
-                        ArrayPool<Color>.Shared.Return(texWeights);
-                        ArrayPool<Vector4>.Shared.Return(tints);
+                        if (texWeights.Length == vc)
+                            mesh.colors = texWeights;
+                        if (tints.Length == vc)
+                            mesh.SetUVs(3, tints);
                         if (oreJob.HasValue)
                         {
-                            var oreUV2 = oreJob.Value.Complete();
-                            mesh.SetUVs(1, oreUV2, 0, oreJob.Value.ResultCount);
-                            ArrayPool<Vector2>.Shared.Return(oreUV2);
+                            Vector2[] uv2 = oreJob.Value.Complete();
+                            if (uv2.Length == vc)
+                                mesh.uv2 = uv2;
+                            else
+                                UnityEngine.Debug.LogWarning(
+                                    $"[ChunkMeshBuilder] Rebuild UV2 mismatch: uv2={uv2.Length} mesh={vc}");
                         }
                         chunk.skyExposure   = skyExp;
                         chunk.mesh          = mesh;
@@ -753,8 +775,8 @@ namespace Voidborne.World.Chunks
             }
 
             int vertCount = vertices.Length;
-            textureWeights = ArrayPool<Color>.Shared.Rent(vertCount);
-            biomeTints     = ArrayPool<Vector4>.Shared.Rent(vertCount);
+            textureWeights = new Color[vertCount];
+            biomeTints     = new Vector4[vertCount];
 
             // Get the lookup table for biome visual properties
             BiomeLookupTable lookupTable = BiomeMap.GetLookupTable();
@@ -764,7 +786,6 @@ namespace Voidborne.World.Chunks
             const int CACHE_SIZE = 256;
             const int CACHE_MASK = CACHE_SIZE - 1;
             var cache = new CachedBiomeColumn[CACHE_SIZE];
-            var neighbors = new byte[6]; // reused across iterations
 
             for (int i = 0; i < vertCount; i++)
             {
@@ -790,6 +811,7 @@ namespace Voidborne.World.Chunks
                     ? biomeField[voxelIdx] : (byte)0;
 
                 // Sample 6 face-adjacent voxels for edge blending
+                byte[] neighbors = new byte[6];
                 int nc = 0;
                 if (vx > 0)        neighbors[nc++] = biomeField[voxelIdx - 1];
                 if (vx < SIZE - 1) neighbors[nc++] = biomeField[voxelIdx + 1];
@@ -1143,16 +1165,12 @@ namespace Voidborne.World.Chunks
             public NativeArray<byte>   Ore;
             public NativeArray<byte>   NeighborPacked;
 
-            /// <summary>Number of valid elements in the result array (pooled arrays may be larger).</summary>
-            public int ResultCount { get; private set; }
-
             public Vector2[] Complete()
             {
                 Handle.Complete();
 
                 int len = UV2.Length;
-                ResultCount = len;
-                var result = ArrayPool<Vector2>.Shared.Rent(len);
+                var result = new Vector2[len];
                 for (int i = 0; i < len; i++)
                 {
                     float2 v = UV2[i];

@@ -282,6 +282,66 @@ namespace Voidborne.World.Chunks
         }
 
         /// <summary>
+        /// Export to a pre-existing byte array. Zero-allocation version of ToArray().
+        /// Buffer must be at least VOLUME (32768) bytes long.
+        /// </summary>
+        public void ToArray(byte[] buffer)
+        {
+            switch (mode)
+            {
+                case Mode.Single:
+                    for (int i = 0; i < VOLUME; i++)
+                        buffer[i] = singleValue;
+                    break;
+
+                case Mode.Palette:
+                    for (int i = 0; i < VOLUME; i++)
+                    {
+                        int byteIdx = i >> 1;
+                        int nibble = (i & 1) == 0
+                            ? packedData[byteIdx] & 0x0F
+                            : (packedData[byteIdx] >> 4) & 0x0F;
+                        buffer[i] = palette[nibble];
+                    }
+                    break;
+
+                default: // Direct
+                    System.Array.Copy(directData, buffer, VOLUME);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Export directly into a NativeArray for Burst job interop.
+        /// Zero managed allocation — writes directly into native memory.
+        /// </summary>
+        public void FillNativeArray(NativeArray<byte> target)
+        {
+            switch (mode)
+            {
+                case Mode.Single:
+                    for (int i = 0; i < VOLUME; i++)
+                        target[i] = singleValue;
+                    break;
+
+                case Mode.Palette:
+                    for (int i = 0; i < VOLUME; i++)
+                    {
+                        int byteIdx = i >> 1;
+                        int nibble = (i & 1) == 0
+                            ? packedData[byteIdx] & 0x0F
+                            : (packedData[byteIdx] >> 4) & 0x0F;
+                        target[i] = palette[nibble];
+                    }
+                    break;
+
+                default: // Direct
+                    NativeArray<byte>.Copy(directData, target, VOLUME);
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Fill all voxels with the given value (resets to Single mode).
         /// </summary>
         public void Fill(byte value)
