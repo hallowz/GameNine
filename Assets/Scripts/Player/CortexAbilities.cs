@@ -69,6 +69,9 @@ public class CortexAbilities : MonoBehaviour
     private UnityEngine.CharacterController _charController;
     private CortexWheelUI                _wheel;
 
+    // Cached collider buffer for Physics.OverlapSphereNonAlloc (avoids GC allocs)
+    private readonly Collider[] _overlapBuffer = new Collider[32];
+
     // Cooldown timers indexed by module (0–5). Counts down to 0.
     private readonly float[] _cooldownTimers = new float[CortexDevice.ModuleCount];
 
@@ -208,9 +211,10 @@ public class CortexAbilities : MonoBehaviour
         Vector3 origin    = transform.position + Vector3.up;
         Vector3 direction = transform.forward;
 
-        Collider[] hits = Physics.OverlapSphere(origin, PulseRange, enemyLayerMask);
-        foreach (Collider col in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(origin, PulseRange, _overlapBuffer, enemyLayerMask);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = _overlapBuffer[i];
             Vector3 toEnemy = (col.transform.position - origin).normalized;
             float   angle   = Vector3.Angle(direction, toEnemy);
             if (angle > PulseHalfAngle) continue;
@@ -330,13 +334,13 @@ public class CortexAbilities : MonoBehaviour
         if (!_conductorFullyCharged) return;
 
         // Find up to 3 nearby enemies and arc to them.
-        Collider[] hits = Physics.OverlapSphere(transform.position, ConductorArcRange, enemyLayerMask);
-        int        arcs = 0;
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, ConductorArcRange, _overlapBuffer, enemyLayerMask);
+        int arcs = 0;
 
-        foreach (Collider col in hits)
+        for (int i = 0; i < hitCount; i++)
         {
             if (arcs >= ConductorArcTargets) break;
-            if (col.TryGetComponent(out EnemyEntity enemy))
+            if (_overlapBuffer[i].TryGetComponent(out EnemyEntity enemy))
             {
                 enemy.TakeDamage(new DamageInfo { Amount = ConductorArcDamage, Type = DamageType.Generic });
                 enemy.DisableMechanical(ConductorDisableDuration);
