@@ -26,7 +26,7 @@ float  _CrossfadeBandSq;   // (maxDrawDistance + band)² — trees between _Near
 float4 _FrustumPlanes[6];
 uint   _TreeCount;
 
-[numthreads(64, 1, 1)]
+[numthreads(256, 1, 1)]
 void CSCombined(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _TreeCount) return;

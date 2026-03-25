@@ -145,6 +145,12 @@ namespace Voidborne.World.Decoration
         // ── Tree removal tracking ──────────────────────────────────────────
         private readonly HashSet<Vector2Int> _removedTrees = new HashSet<Vector2Int>();
 
+        // Cached snapshot for background threads — rebuilt only when _removedTrees changes.
+        // Avoids allocating a new HashSet copy on every OnChunkActivatedAsync call.
+        private volatile HashSet<Vector2Int> _removedSnapshot;
+        private int _removedVersion;
+        private int _snapshotVersion = -1;
+
         // ── Meshes extracted from prefabs ──────────────────────────────────
         private Mesh[] _trunkMeshes;
         private Mesh[] _foliageMeshes;
@@ -365,8 +371,13 @@ namespace Voidborne.World.Decoration
             if (_treeChunks.ContainsKey(chunkPos))
                 OnChunkDeactivating(chunkPos);
 
-            // Snapshot removed trees set for thread safety (rarely modified)
-            var removedSnapshot = new HashSet<Vector2Int>(_removedTrees);
+            // Reuse cached snapshot — only rebuild when removals change
+            if (_snapshotVersion != _removedVersion)
+            {
+                _removedSnapshot = new HashSet<Vector2Int>(_removedTrees);
+                _snapshotVersion = _removedVersion;
+            }
+            var removedSnapshot = _removedSnapshot;
             var capturedPos = chunkPos;
             var capturedPoints = points;
 
@@ -433,6 +444,7 @@ namespace Voidborne.World.Decoration
         {
             var key = TreeKey(position);
             if (!_removedTrees.Add(key)) return false;
+            _removedVersion++;
 
             foreach (var kv in _treeChunks)
             {
@@ -1257,24 +1269,30 @@ namespace Voidborne.World.Decoration
             Bounds nearBounds = new Bounds(camPos, Vector3.one * (maxDrawDistance * 2f));
             Bounds farBounds  = new Bounds(camPos, Vector3.one * (maxBillboardDistance * 2f));
 
+            // Hoist invariant compute uniforms out of the per-variant loop.
+            // These values are identical for all 6 variants — setting them once
+            // eliminates 5 redundant CPU→GPU uniform uploads per frame.
+            cullingShader.SetVector(PropCamPos, camPos);
+            cullingShader.SetVectorArray(PropFrustumPlanes, _planeVec4);
+            cullingShader.SetFloat(PropNearDistSq, nearDistSq);
+            cullingShader.SetFloat(PropFarDistSq, farDistSq);
+            cullingShader.SetFloat(PropCrossfadeBandSq, crossfadeBandSq);
+
             for (int v = 0; v < VariantCount; v++)
             {
-                if (_bufferHighWaters[v] == 0 || _allTreesBuffers[v] == null) continue;
+                // Skip variants with no live trees (dead trees inflate highwater;
+                // checking liveTreeCounts avoids dispatching compute for dead-only buffers)
+                if (_liveTreeCounts[v] == 0 || _allTreesBuffers[v] == null) continue;
 
-                int groups = Mathf.CeilToInt(_bufferHighWaters[v] / 64f);
+                int groups = Mathf.CeilToInt(_bufferHighWaters[v] / 256f);
 
                 // Reset both append buffers
                 _visibleBuffers[v].SetCounterValue(0);
                 if (_visibleFarBuffers[v] != null)
                     _visibleFarBuffers[v].SetCounterValue(0);
 
-                // Single combined dispatch — writes near to _NearOut, far to _FarOut
-                cullingShader.SetVector(PropCamPos, camPos);
-                cullingShader.SetVectorArray(PropFrustumPlanes, _planeVec4);
+                // Only per-variant uniforms inside the loop
                 cullingShader.SetInt(PropTreeCount, _bufferHighWaters[v]);
-                cullingShader.SetFloat(PropNearDistSq, nearDistSq);
-                cullingShader.SetFloat(PropFarDistSq, farDistSq);
-                cullingShader.SetFloat(PropCrossfadeBandSq, crossfadeBandSq);
                 cullingShader.SetBuffer(_csCombinedKernel, PropAllTrees, _allTreesBuffers[v]);
                 cullingShader.SetBuffer(_csCombinedKernel, PropNearOut, _visibleBuffers[v]);
                 if (_visibleFarBuffers[v] != null)

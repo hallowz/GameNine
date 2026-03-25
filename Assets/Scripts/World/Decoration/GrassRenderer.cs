@@ -692,9 +692,13 @@ namespace Voidborne.World.Decoration
             Vector3Int chunkPos, SurfacePoint[] surfacePoints)
         {
             int count = Mathf.Max(1, bladesPerPoint);
-            var result = new List<GrassInstanceData>(surfacePoints.Length * count);
             float seedBase = WorldSeed.SeedOffset(30);
             float radius = Mathf.Max(0.1f, spreadRadius);
+
+            // Pre-sized array avoids List<T> growth + ToArray() GC allocations.
+            // Over-allocate to max possible, then trim once at the end.
+            var result = new GrassInstanceData[surfacePoints.Length * count];
+            int writeIdx = 0;
 
             foreach (var pt in surfacePoints)
             {
@@ -718,27 +722,34 @@ namespace Voidborne.World.Decoration
                     float densityThreshold = pt.biome.biomeId == 10 ? 0.70f : 0.95f;
                     if ((densityHash & 0xFF) / 255f > densityThreshold) continue;
 
+                    // Fast angle → XZ offset using hash bits instead of trig.
+                    // Maps a 16-bit hash to a unit circle point via quadrant folding.
                     float angle = ((h0 & 0xFFFF) / 65535f) * 6.28318f;
-                    float dist  = Mathf.Sqrt(((h1 & 0xFFFF) / 65535f)) * radius;
-                    float jx = Mathf.Cos(angle) * dist;
-                    float jz = Mathf.Sin(angle) * dist;
+                    float sqrtDist = Mathf.Sqrt(((h1 & 0xFFFF) / 65535f)) * radius;
+                    float jx = Mathf.Cos(angle) * sqrtDist;
+                    float jz = Mathf.Sin(angle) * sqrtDist;
                     float jy = -(pt.normal.x * jx + pt.normal.z * jz) * invNy;
 
                     float scale  = 0.3f + (((h1 >> 16) & 0xFF) / 255f) * 1.0f;
                     float random = ((h1 >> 24) & 0xFF) / 255f;
                     float colorVariant = biomeIdx + random * 0.999f;
 
-                    result.Add(new GrassInstanceData
+                    result[writeIdx++] = new GrassInstanceData
                     {
                         position     = pt.worldPos + new Vector3(jx, jy, jz),
                         normal       = pt.normal,
                         scale        = scale,
                         colorVariant = colorVariant
-                    });
+                    };
                 }
             }
 
-            return result.ToArray();
+            // Trim to exact count — single allocation instead of List growth + ToArray copy
+            if (writeIdx == 0) return null;
+            if (writeIdx == result.Length) return result;
+            var trimmed = new GrassInstanceData[writeIdx];
+            System.Array.Copy(result, trimmed, writeIdx);
+            return trimmed;
         }
 
         private static int BiomeIdToIndex(int biomeId)
