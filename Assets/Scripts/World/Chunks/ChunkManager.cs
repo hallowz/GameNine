@@ -715,7 +715,10 @@ namespace Voidborne.World.Chunks
                     data.chunkPosition.z * SIZE),
                 DepthScale        = 300f, // normalize depth: 300 voxels = depth 1.0
                 BiomeField        = biomeFieldNative,
-                OreField          = oreFieldNative
+                OreField          = oreFieldNative,
+                RoadCellSize      = DensityFunction.RoadCellSize,
+                RoadHalfWidth     = DensityFunction.RoadHalfWidth,
+                RoadSeedOffset    = WorldSeed.SeedOffset(22)
             };
 
             JobHandle voxelHandle = voxelJob.Schedule(volume, 64, climateHandle);

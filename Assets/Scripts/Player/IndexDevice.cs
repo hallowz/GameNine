@@ -2,8 +2,8 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Core state tracker for the Cortex Device system.
-/// Lives on the Player root GameObject alongside CortexAbilities and CortexDevice_PocketDimension.
+/// Core state tracker for the Index Device system.
+/// Lives on the Player root GameObject alongside IndexAbilities and IndexDevice_PocketDimension.
 ///
 /// Responsibilities:
 ///   • Tracks which of the six modules are installed (bool[6], indexed 0–5).
@@ -12,9 +12,9 @@ using UnityEngine;
 ///   • Exposes InstallModule / IsModuleInstalled / ActivateModule API.
 ///   • Fires OnModuleInstalled for QuestEventBridge and the HUD.
 ///
-/// Input handling (Tab to cycle, Q to activate) lives in CortexAbilities.
+/// Input handling (Tab to cycle, Q to activate) lives in IndexAbilities.
 /// </summary>
-public class CortexDevice : MonoBehaviour
+public class IndexDevice : MonoBehaviour
 {
     // ---------------------------------------------------------------
     //  Constants
@@ -51,7 +51,7 @@ public class CortexDevice : MonoBehaviour
     //  Properties
     // ---------------------------------------------------------------
 
-    /// <summary>True if the player has the Cortex Device (i.e. this component exists).</summary>
+    /// <summary>True if the player has the Index Device (i.e. this component exists).</summary>
     public bool HasDevice => true;
 
     /// <summary>Currently selected module index, or −1 if none.</summary>
@@ -119,12 +119,12 @@ public class CortexDevice : MonoBehaviour
         // Notify quest system.
         QuestEventBridge.RaiseModuleInstalled(moduleIndex);
 
-        Debug.Log($"[CortexDevice] Module {moduleIndex} installed. Active: {_activeModule}");
+        Debug.Log($"[IndexDevice] Module {moduleIndex} installed. Active: {_activeModule}");
     }
 
     /// <summary>
     /// Cycle to the next installed module. Wraps around.
-    /// Called by CortexAbilities on Tab input.
+    /// Called by IndexAbilities on Tab input.
     /// </summary>
     public void CycleActiveModule()
     {
@@ -146,7 +146,7 @@ public class CortexDevice : MonoBehaviour
 
     /// <summary>
     /// Directly set the active module. Fires OnActiveModuleChanged.
-    /// Called by CortexAbilities when the player selects a module via 1–6 keys.
+    /// Called by IndexAbilities when the player selects a module via 1–6 keys.
     /// </summary>
     public void SetActiveModule(int moduleIndex)
     {
@@ -155,19 +155,19 @@ public class CortexDevice : MonoBehaviour
 
         _activeModule = moduleIndex;
         OnActiveModuleChanged?.Invoke(_activeModule);
-        Debug.Log($"[CortexDevice] Active module set to {_activeModule}.");
+        Debug.Log($"[IndexDevice] Active module set to {_activeModule}.");
     }
 
     /// <summary>
     /// Trigger the currently active module's ability.
-    /// Delegates to CortexAbilities. Called by CortexAbilities on Q input.
+    /// Delegates to IndexAbilities. Called by IndexAbilities on Q input.
     /// </summary>
     public void ActivateModule(int moduleIndex)
     {
         if (!IsModuleInstalled(moduleIndex)) return;
-        // CortexAbilities listens to this call via its own Update; no direct coupling needed.
+        // IndexAbilities listens to this call via its own Update; no direct coupling needed.
         // This method is here as a public API entry point for external systems (cutscenes, etc.).
-        var abilities = GetComponent<CortexAbilities>();
+        var abilities = GetComponent<IndexAbilities>();
         if (abilities != null)
             abilities.TriggerAbility(moduleIndex);
     }

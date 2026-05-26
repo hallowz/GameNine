@@ -19,11 +19,25 @@ namespace Voidborne.World.Generation
         private const int ChannelAbyssal = 5;
         private const int ChannelRavine = 6;            // ravine centerline noise
         private const int ChannelCavern = 7;            // large cavern noise
-        private const int ChannelBiomeOverhang = 12; // W1.1 — biome-driven overhangs
-        // Channel 22 is reserved for future road generation — do not reuse here.
-        private const int ChannelSkyBiomeType = 30;  // sky biome type selection noise
-        private const int ChannelSkyIsland = 31;     // sky island mask/shape noise
-        private const int ChannelStalactite = 32;    // stalactite drip detail noise
+        private const int ChannelNoodle = 8;            // noodle cave noise (thin connectors)
+        private const int ChannelBiomeOverhang = 12;    // W1.1 — biome-driven overhangs
+        private const int ChannelRoad = 22;             // surface road Voronoi
+        private const int ChannelRoadShallow = 23;      // shallow underground road Voronoi
+        private const int ChannelRoadDeep = 24;         // deep underground road Voronoi
+        private const int ChannelRoadElevation = 25;    // road elevation smoothing noise
+        private const int ChannelSkyBiomeType = 30;     // sky biome type selection noise
+        private const int ChannelSkyIsland = 31;        // sky island mask/shape noise
+        private const int ChannelStalactite = 32;       // stalactite drip detail noise
+
+        // Road generation constants
+        public const float RoadCellSize = 400f;         // Voronoi cell size for surface roads
+        public const float RoadHalfWidth = 10f;         // road half-width in voxels (wider for driving)
+        private const float RoadMaxGrade = 0.15f;       // 15% max road slope
+        private const float ShallowTunnelCellSize = 300f;
+        private const float DeepTunnelCellSize = 500f;
+        private const float TunnelHalfWidth = 5f;
+        private const float TunnelHeight = 6f;          // tunnel vertical clearance
+        private const float TunnelWidth = 10f;          // tunnel horizontal width
 
         // Sky zone boundary: 8 chunks above the highest surface terrain (~120).
         // Transition blends from 250 to 350 so surface mountains connect smoothly.
@@ -313,6 +327,124 @@ namespace Voidborne.World.Generation
         }
 
         // =========================================================================
+        //  ROAD HELPERS
+        // =========================================================================
+
+        /// <summary>
+        /// Computes a smoothed road target elevation using low-frequency noise.
+        /// This gives roads a gently undulating profile independent of sharp terrain features.
+        /// The road elevation is much flatter than the terrain — uses only 15% of heightScale.
+        /// </summary>
+        private static float GetRoadElevation(float2 xz, TerrainShapeData shape)
+        {
+            float seedOff = WorldSeed.SeedOffset(ChannelRoadElevation);
+            // Very low frequency → slow, gentle elevation changes along roads
+            float roadHeight = NoiseUtilities.Noise2D(xz, 0.0005f, 2, 0.5f, 2f, seedOff);
+            return roadHeight * shape.heightScale * 0.15f;
+        }
+
+        /// <summary>
+        /// Carves road density: flattens terrain along Voronoi edges.
+        /// Returns modified density. roadInfluence is [0,1] where 1 = road center.
+        /// Uses a sharp road profile: solid below, air above, with slight shoulder ramp.
+        /// </summary>
+        private static float ApplyRoadCarving(float baseDensity, float worldY,
+            float roadElevation, float roadInfluence)
+        {
+            if (roadInfluence <= 0f) return baseDensity;
+
+            float distAboveRoad = worldY - roadElevation;
+
+            // Sharp road profile:
+            //   > 1 voxel above road surface → carved to air
+            //   0-1 voxel above → transition
+            //   below road → solid (fill valleys)
+            float roadDensity;
+            if (distAboveRoad > 1f)
+                roadDensity = -distAboveRoad * 8f; // strong air above road
+            else if (distAboveRoad > 0f)
+                roadDensity = math.lerp(2f, -8f, distAboveRoad); // transition at surface
+            else
+                roadDensity = math.min(baseDensity, 2f - distAboveRoad * 4f); // solid below, fills valleys
+
+            // Blend: road influence squared for sharper edges
+            float blendFactor = roadInfluence * roadInfluence;
+            return math.lerp(baseDensity, roadDensity, blendFactor);
+        }
+
+        /// <summary>
+        /// Evaluates road influence at an XZ position for the surface road network.
+        /// Public so VoxelClassificationJob and ChunkMeshBuilder can use it.
+        /// </summary>
+        public static float GetRoadInfluence(float2 worldXZ)
+        {
+            return NoiseUtilities.RoadInfluence(worldXZ, RoadCellSize, RoadHalfWidth,
+                WorldSeed.SeedOffset(ChannelRoad));
+        }
+
+        /// <summary>
+        /// Compute a smoothed surface height for road flattening.
+        /// Uses only 2 octaves (vs the full set) so high-frequency bumps are removed
+        /// but the general terrain shape is preserved. Roads follow the landscape
+        /// but are gentler — no sharp hills or dips.
+        /// </summary>
+        private static float GetSmoothedSurfaceHeight(float x, float z, TerrainShapeData shape)
+        {
+            float2 pos = new float2(x, z);
+            float seedOff = WorldSeed.SeedOffset(ChannelSurfaceHeight);
+
+            // 2 octaves at same frequency, no domain warp, 70% amplitude
+            // Removes fine detail bumps while keeping the broad terrain shape
+            float heightNoise = NoiseUtilities.Noise2D(pos, shape.heightFrequency,
+                2, shape.persistence, shape.lacunarity, seedOff);
+
+            return heightNoise * shape.heightScale * 0.7f;
+        }
+
+        // =========================================================================
+        //  CAVE HELPERS — Minecraft-inspired cave types
+        // =========================================================================
+
+        /// <summary>
+        /// Noodle caves: thin connecting passages (3-5 voxels wide).
+        /// Higher frequency than spaghetti, adds fine-grain connectivity.
+        /// </summary>
+        private static float NoodleCaveDensity(float3 worldPos, float caveScale, float caveDensity)
+        {
+            float seedOff = WorldSeed.SeedOffset(ChannelNoodle);
+            float freq = 0.03f * caveScale;
+            float n1 = NoiseUtilities.Noise3D(worldPos, freq, 2, 0.5f, 2f, seedOff);
+            float n2 = NoiseUtilities.Noise3D(worldPos, freq, 2, 0.5f, 2f, seedOff + 91.7f);
+            float dist2 = n1 * n1 + n2 * n2;
+            float radius = 0.04f + caveDensity * 0.06f; // thin tunnels
+            if (dist2 < radius * radius)
+            {
+                float t = 1f - math.sqrt(dist2) / radius;
+                return -t * 15f;
+            }
+            return 0f; // no carving
+        }
+
+        /// <summary>
+        /// Noise pillars inside cheese caves: adds density back where a secondary noise is high.
+        /// Prevents "boring empty room" by creating navigable columns/obstacles.
+        /// </summary>
+        private static float CheesePillarDensity(float3 worldPos, float caveScale)
+        {
+            float seedOff = WorldSeed.SeedOffset(ChannelCavern) + 300f;
+            float pillarNoise = NoiseUtilities.Noise3D(
+                new float3(worldPos.x, worldPos.y * 0.3f, worldPos.z),
+                0.02f * caveScale, 2, 0.5f, 2f, seedOff);
+            // Pillars where noise > 0.3
+            if (pillarNoise > 0.3f)
+            {
+                float strength = (pillarNoise - 0.3f) / 0.7f;
+                return strength * 40f; // add solid density back
+            }
+            return 0f;
+        }
+
+        // =========================================================================
         //  SURFACE ZONES
         // =========================================================================
 
@@ -339,15 +471,18 @@ namespace Voidborne.World.Generation
         }
 
         /// <summary>
-        /// Y -128 to 128: Standard surface terrain with caves, ravines.
+        /// Y -128 to 128: Surface terrain with roads, caves, ravines, and cave entrances.
+        /// Cave system reworked: fewer but wider/longer spaghetti caves (driveable),
+        /// noodle caves for connectivity, cave entrances that breach surface.
+        /// Roads carved as Voronoi edge flattening.
         /// </summary>
         private static float SurfaceBandDensity(float3 worldPos, TerrainShapeData shape, BiomeData biome, float baseDensity, float surfaceHeight)
         {
             float2 xz = new float2(worldPos.x, worldPos.z);
-
             float seedOff = WorldSeed.SeedOffset(ChannelCave3D);
+            float density = baseDensity;
 
-            // Cave frequency and radius scale with shape.caveScale (0.3 = sparse, 0.7 = dense)
+            // Cave frequency and radius scale with shape.caveScale
             float caveFreq = 0.02f * shape.caveScale;
             float caveNoise = NoiseUtilities.Noise3D(worldPos, caveFreq, 2, 0.5f, 2f, seedOff);
 
@@ -360,17 +495,28 @@ namespace Voidborne.World.Generation
 
             float depthBelowSurface = surfaceHeight - worldPos.y;
 
-            // --- Ravines: narrow deep gashes, ~400m max length, scarce ---
-            // A low-frequency gate noise creates isolated patches (~400m across)
-            // where ravines can form. The gate fades smoothly at edges so ravines
-            // taper closed rather than cutting off abruptly.
+            // =================================================================
+            //  ROADS — gentle terrain flattening along Voronoi edges
+            //  Blends toward a smoothed (low-octave) surface height so roads
+            //  follow the landscape but with less steep hills/dips.
+            // =================================================================
+            float roadInf = GetRoadInfluence(xz);
+            if (roadInf > 0f)
+            {
+                float smoothHeight = GetSmoothedSurfaceHeight(worldPos.x, worldPos.z, shape);
+                float smoothDensity = -worldPos.y + smoothHeight;
+                // Squared influence for sharp road edges, 70% blend — noticeable but not jarring
+                float blend = roadInf * roadInf * 0.7f;
+                density = math.lerp(density, smoothDensity, blend);
+            }
+
+            // =================================================================
+            //  RAVINES — narrow deep gashes, scarce
+            // =================================================================
             float ravineMaxDepth = 60f + shape.caveScale * 40f;
             float skyProximityFade = math.saturate((SkyTransitionStart - worldPos.y) / 32f);
             if (depthBelowSurface > 0f && depthBelowSurface < ravineMaxDepth && skyProximityFade > 0f)
             {
-                // Gate: 0.005 frequency → ~200m feature size. With threshold 0.15
-                // ~40% of the area has ravines. Smoothstep taper (0.15→0.35) ensures
-                // ravines close gradually at segment ends.
                 float ravineGate = NoiseUtilities.Noise2D(xz, 0.005f, 1, 0.5f, 2f,
                     WorldSeed.SeedOffset(ChannelRavine) + 500f);
                 float gateFade = math.smoothstep(0.15f, 0.35f, ravineGate);
@@ -386,27 +532,53 @@ namespace Voidborne.World.Generation
                     {
                         float falloff = 1f - ravineValue / ravineWidth;
                         float strength = math.lerp(45f, 12f, depthBelowSurface / ravineMaxDepth);
-                        baseDensity = math.min(baseDensity, -falloff * strength * skyProximityFade * gateFade);
+                        density = math.min(density, -falloff * strength * skyProximityFade * gateFade);
                     }
                 }
             }
 
-            // --- Worm caves: tube where both noise fields are near zero ---
+            // =================================================================
+            //  SPAGHETTI CAVES — more horizontal for driving, gated to be less frequent
+            //  Surface guard at 8 voxels depth; caves that naturally approach the
+            //  surface create entrances via a gentle fade (not forced widening).
+            //  Y-stretched 2x in surface band for more horizontal passages.
+            // =================================================================
             if (depthBelowSurface > 8f)
             {
-                float cave2 = NoiseUtilities.Noise3D(worldPos, caveFreq, 2, 0.5f, 2f,
-                    seedOff + 77.3f);
-                float tubeDist2 = caveNoise * caveNoise + cave2 * cave2;
-                float tubeRadius = 0.06f + shape.caveDensity * 0.16f;
-                if (tubeDist2 < tubeRadius * tubeRadius)
+                // Horizontal stretch: Y*2 makes tunnels run mostly horizontal
+                float3 horzPos = new float3(worldPos.x, worldPos.y * 2f, worldPos.z);
+                float spaghettiFreq = caveFreq * 0.8f; // slightly lower freq = longer passages
+                float spag1 = NoiseUtilities.Noise3D(horzPos, spaghettiFreq, 2, 0.5f, 2f, seedOff);
+                float spag2 = NoiseUtilities.Noise3D(horzPos, spaghettiFreq, 2, 0.5f, 2f, seedOff + 77.3f);
+                float spagDist2 = spag1 * spag1 + spag2 * spag2;
+
+                // Driveable radius but not overwhelming — close to original but wider
+                float spagRadius = 0.07f + shape.caveDensity * 0.10f;
+
+                // Fade out carving strength near surface (smooth entrance, not abrupt cutoff)
+                float surfaceFade = math.smoothstep(8f, 20f, depthBelowSurface);
+
+                if (spagDist2 < spagRadius * spagRadius)
                 {
-                    float t = 1f - math.sqrt(tubeDist2) / tubeRadius;
-                    float carveStr = 20f + shape.caveScale * 20f;
-                    return math.min(baseDensity + overhang, -t * carveStr);
+                    float t = 1f - math.sqrt(spagDist2) / spagRadius;
+                    float carveStr = (25f + shape.caveScale * 20f) * surfaceFade;
+                    density = math.min(density, -t * carveStr);
                 }
             }
 
-            // W1.1 — biome-driven overhangs
+            // =================================================================
+            //  NOODLE CAVES — thin connecting passages (deeper only)
+            // =================================================================
+            if (depthBelowSurface > 15f)
+            {
+                float noodleDen = NoodleCaveDensity(worldPos, shape.caveScale, shape.caveDensity);
+                if (noodleDen < 0f)
+                    density = math.min(density, noodleDen);
+            }
+
+            // =================================================================
+            //  W1.1 — biome-driven overhangs
+            // =================================================================
             if (biome.overhangStrength > 0f
                 && worldPos.y > biome.overhangMinY
                 && worldPos.y > surfaceHeight + 4f)
@@ -419,7 +591,7 @@ namespace Voidborne.World.Generation
                     overhang += (normOvh - threshold) * shape.heightScale;
             }
 
-            return baseDensity + overhang;
+            return density + overhang;
         }
 
         // =========================================================================
@@ -427,62 +599,131 @@ namespace Voidborne.World.Generation
         // =========================================================================
 
         /// <summary>
-        /// Y -128 to -256: Wide horizontal caverns, gentle worm tunnels, spiral passages.
-        /// Caves are predominantly horizontal for easy exploration.
+        /// Y -128 to -256: Cheese caves with pillars, wide spaghetti tunnels (driveable),
+        /// noodle connectors, road tunnels, and surface-to-underground ramp connections.
         /// </summary>
         private static float ShallowUndergroundDensity(float3 worldPos, TerrainShapeData shape, float baseDensity, float y)
         {
             float seedOff = WorldSeed.SeedOffset(ChannelCave3D);
+            float2 xz = new float2(worldPos.x, worldPos.z);
             float density = baseDensity;
 
-            float caveFreq = 0.02f * shape.caveScale;
-
-            // --- Wide horizontal caverns ---
-            // Y is stretched 3x so noise features are 3x flatter → wide, low-ceiling chambers.
+            // =================================================================
+            //  CHEESE CAVES — large chambers with noise pillars (raised threshold = fewer)
+            // =================================================================
             float3 cavernPos = new float3(worldPos.x, worldPos.y * 3f, worldPos.z);
             float cavernNoise = NoiseUtilities.Noise3D(cavernPos, 0.005f * shape.caveScale, 2, 0.5f, 2f,
                 WorldSeed.SeedOffset(ChannelCavern));
-            float cavernThreshold = 0.35f - shape.caveDensity * 0.4f;
+            float cavernThreshold = 0.45f - shape.caveDensity * 0.35f; // raised from 0.35 → fewer chambers
             if (cavernNoise > cavernThreshold)
             {
                 float intensity = (cavernNoise - cavernThreshold) / (1f - cavernThreshold);
-                density = math.min(density, -intensity * (70f + shape.caveScale * 40f));
+                float caveDen = -intensity * (70f + shape.caveScale * 40f);
+                // Add pillars inside cheese caves
+                caveDen += CheesePillarDensity(worldPos, shape.caveScale);
+                density = math.min(density, caveDen);
             }
 
-            // --- Gentle worm tunnels (mostly horizontal) ---
-            // Y-stretched sampling makes tunnels run horizontally with gentle slopes.
+            // =================================================================
+            //  SPAGHETTI CAVES — wider, more horizontal (driveable)
+            //  Y-stretched 2x, wider radius, lower frequency for longer passages
+            // =================================================================
             float3 horzPos = new float3(worldPos.x, worldPos.y * 2f, worldPos.z);
-            float horzCave1 = NoiseUtilities.Noise3D(horzPos, caveFreq * 0.8f, 2, 0.5f, 2f,
-                seedOff + 150f);
-            float horzCave2 = NoiseUtilities.Noise3D(horzPos, caveFreq * 0.8f, 2, 0.5f, 2f,
-                seedOff + 227f);
-            float horzDist2 = horzCave1 * horzCave1 + horzCave2 * horzCave2;
-            float horzRadius = 0.08f + shape.caveDensity * 0.14f;
-            if (horzDist2 < horzRadius * horzRadius)
+            float spagFreq = 0.014f * shape.caveScale; // lower freq = longer passages
+            float spag1 = NoiseUtilities.Noise3D(horzPos, spagFreq, 2, 0.5f, 2f, seedOff + 150f);
+            float spag2 = NoiseUtilities.Noise3D(horzPos, spagFreq, 2, 0.5f, 2f, seedOff + 227f);
+            float spagDist2 = spag1 * spag1 + spag2 * spag2;
+            float spagRadius = 0.12f + shape.caveDensity * 0.14f; // wider for driving
+            if (spagDist2 < spagRadius * spagRadius)
             {
-                float t = 1f - math.sqrt(horzDist2) / horzRadius;
-                density = math.min(density, -t * 55f);
-            }
-
-            // --- Connecting worm caves (wider at depth) ---
-            float caveNoise = NoiseUtilities.Noise3D(worldPos, caveFreq, 2, 0.5f, 2f, seedOff);
-            float cave2 = NoiseUtilities.Noise3D(worldPos, caveFreq, 2, 0.5f, 2f, seedOff + 77.3f);
-            float tubeDist2 = caveNoise * caveNoise + cave2 * cave2;
-            float shallowTubeRadius = 0.08f + shape.caveDensity * 0.16f;
-            if (tubeDist2 < shallowTubeRadius * shallowTubeRadius)
-            {
-                float t = 1f - math.sqrt(tubeDist2) / shallowTubeRadius;
+                float t = 1f - math.sqrt(spagDist2) / spagRadius;
                 density = math.min(density, -t * 60f);
             }
 
-            // --- Sparse vertical connections (scattered, not frequent) ---
-            // Only at specific XZ positions determined by low-frequency noise
-            float2 shaftXZ = new float2(worldPos.x, worldPos.z);
-            float shaftGate = NoiseUtilities.Noise2D(shaftXZ, 0.003f, 1, 0.5f, 2f, seedOff + 300f);
-            if (shaftGate > 0.6f) // only 20% of XZ area has vertical connections
+            // =================================================================
+            //  NOODLE CAVES — thin connecting passages
+            // =================================================================
+            float noodleDen = NoodleCaveDensity(worldPos, shape.caveScale, shape.caveDensity);
+            if (noodleDen < 0f)
+                density = math.min(density, noodleDen);
+
+            // =================================================================
+            //  ROAD TUNNELS — Voronoi-based connected tunnel network
+            //  Flat-bottomed rectangular tunnels along Voronoi edges
+            // =================================================================
+            float tunnelSeed = WorldSeed.SeedOffset(ChannelRoadShallow);
+            NoiseUtilities.Worley2D(xz, ShallowTunnelCellSize, tunnelSeed,
+                out float tF1, out float tF2, out float2 _, out float2 tunnelCenter);
+
+            float tunnelEdgeDist = tF2 - tF1;
+            if (tunnelEdgeDist < TunnelWidth)
             {
-                float shaftN1 = NoiseUtilities.Noise2D(shaftXZ, 0.01f, 2, 0.5f, 2f, seedOff + 400f);
-                float shaftN2 = NoiseUtilities.Noise2D(shaftXZ, 0.01f, 2, 0.5f, 2f, seedOff + 477f);
+                // Tunnel target Y: gently undulating within the layer
+                float tunnelTargetY = math.lerp(-192f, -160f,
+                    NoiseUtilities.Noise2D(xz, 0.002f, 2, 0.5f, 2f, tunnelSeed + 50f) * 0.5f + 0.5f);
+
+                float yDistFromFloor = worldPos.y - tunnelTargetY;
+                float xInfluence = 1f - math.smoothstep(0f, TunnelWidth, tunnelEdgeDist);
+
+                // Flat-bottomed tunnel: carve if within height range
+                if (yDistFromFloor >= 0f && yDistFromFloor < TunnelHeight)
+                {
+                    // Taper at ceiling and edges
+                    float ceilFade = math.smoothstep(TunnelHeight, TunnelHeight - 1.5f, yDistFromFloor);
+                    density = math.min(density, -xInfluence * ceilFade * 50f);
+                }
+                // Flatten floor: fill below tunnel floor
+                else if (yDistFromFloor < 0f && yDistFromFloor > -3f)
+                {
+                    float fillStr = xInfluence * math.smoothstep(-3f, 0f, yDistFromFloor);
+                    density = math.max(density, fillStr * 30f);
+                }
+            }
+
+            // =================================================================
+            //  SURFACE-TO-UNDERGROUND RAMP CONNECTIONS
+            //  Where surface road F1 center is near shallow tunnel F1 center
+            // =================================================================
+            float surfRoadSeed = WorldSeed.SeedOffset(ChannelRoad);
+            NoiseUtilities.Worley2D(xz, RoadCellSize, surfRoadSeed,
+                out float srF1, out float srF2, out float2 srCell, out float2 surfRoadCenter);
+
+            float rampProximity = math.length(new float2(surfRoadCenter.x - tunnelCenter.x,
+                                                          surfRoadCenter.y - tunnelCenter.y));
+            if (rampProximity < 120f)
+            {
+                // Ramp zone: carve a sloped passage from surface down to tunnel layer
+                float rampInfluence = 1f - math.smoothstep(0f, 120f, rampProximity);
+                float rampCenterX = (surfRoadCenter.x + tunnelCenter.x) * 0.5f;
+                float rampCenterZ = (surfRoadCenter.y + tunnelCenter.y) * 0.5f;
+                float distFromRampCenter = math.length(xz - new float2(rampCenterX, rampCenterZ));
+
+                if (distFromRampCenter < TunnelWidth * 1.5f)
+                {
+                    float rampXInf = 1f - math.smoothstep(0f, TunnelWidth * 1.5f, distFromRampCenter);
+                    // Ramp: linear slope from surface (Y ~0) down to tunnel (Y ~ -170)
+                    float surfY = GetRoadElevation(xz, shape);
+                    float tunnelY = math.lerp(-192f, -160f,
+                        NoiseUtilities.Noise2D(xz, 0.002f, 2, 0.5f, 2f, tunnelSeed + 50f) * 0.5f + 0.5f);
+                    float rampY = math.lerp(surfY, tunnelY, rampInfluence);
+
+                    float yAboveRamp = worldPos.y - rampY;
+                    if (yAboveRamp >= 0f && yAboveRamp < TunnelHeight * 1.2f)
+                    {
+                        float ceilFade = math.smoothstep(TunnelHeight * 1.2f, TunnelHeight * 0.8f, yAboveRamp);
+                        density = math.min(density, -rampXInf * ceilFade * rampInfluence * 45f);
+                    }
+                }
+            }
+
+            // =================================================================
+            //  SPARSE VERTICAL SHAFTS — occasional up/down connections
+            // =================================================================
+            float shaftGate = NoiseUtilities.Noise2D(xz, 0.003f, 1, 0.5f, 2f, seedOff + 300f);
+            if (shaftGate > 0.65f) // ~17% of area
+            {
+                float shaftN1 = NoiseUtilities.Noise2D(xz, 0.01f, 2, 0.5f, 2f, seedOff + 400f);
+                float shaftN2 = NoiseUtilities.Noise2D(xz, 0.01f, 2, 0.5f, 2f, seedOff + 477f);
                 float shaftD2 = shaftN1 * shaftN1 + shaftN2 * shaftN2;
                 float shaftR = 0.03f + shape.caveDensity * 0.05f;
                 if (shaftD2 < shaftR * shaftR)
@@ -496,56 +737,96 @@ namespace Voidborne.World.Generation
         }
 
         /// <summary>
-        /// Y -256 to -512: Mega-caverns, wide horizontal networks, scattered vertical shafts.
-        /// Deeper = bigger caverns. Mostly horizontal for player exploration.
+        /// Y -256 to -512: Mega cheese caves with pillars, wide spaghetti highways,
+        /// noodle connectors, deep road tunnels. Fewer but bigger.
         /// </summary>
         private static float DeepUndergroundDensity(float3 worldPos, TerrainShapeData shape, float baseDensity, float y)
         {
             float seedOff = WorldSeed.SeedOffset(ChannelCave3D);
+            float2 xz = new float2(worldPos.x, worldPos.z);
             float density = baseDensity;
 
-            // Depth factor: 0 at -256, 1 at -512 — caverns get bigger deeper
             float depthFactor = math.saturate((math.abs(y) - 256f) / 256f);
 
-            // --- Mega-caverns: enormous horizontal open spaces ---
-            // Y stretched 4x for extremely flat, wide cavern shapes.
+            // =================================================================
+            //  MEGA CHEESE CAVES — raised threshold, with pillars
+            // =================================================================
             float3 megaCavPos = new float3(worldPos.x, worldPos.y * 4f, worldPos.z);
             float megaCavNoise = NoiseUtilities.Noise3D(megaCavPos,
                 math.lerp(0.004f, 0.003f, depthFactor) * shape.caveScale,
                 3, 0.55f, 2f, WorldSeed.SeedOffset(ChannelCavern) + 500f);
-            float megaThreshold = math.lerp(0.32f, 0.25f, depthFactor) - shape.caveDensity * 0.35f;
+            float megaThreshold = math.lerp(0.40f, 0.32f, depthFactor) - shape.caveDensity * 0.30f; // raised
             if (megaCavNoise > megaThreshold)
             {
                 float intensity = (megaCavNoise - megaThreshold) / (1f - megaThreshold);
-                density = math.min(density, -intensity * (90f + shape.caveScale * 50f + depthFactor * 30f));
+                float caveDen = -intensity * (90f + shape.caveScale * 50f + depthFactor * 30f);
+                caveDen += CheesePillarDensity(worldPos, shape.caveScale);
+                density = math.min(density, caveDen);
             }
 
-            // --- Wide horizontal tunnel network ---
-            float deepCaveFreq = math.lerp(0.012f, 0.008f, depthFactor) * shape.caveScale;
+            // =================================================================
+            //  SPAGHETTI HIGHWAYS — wider than shallow, driveable throughout
+            // =================================================================
+            float deepSpagFreq = math.lerp(0.010f, 0.007f, depthFactor) * shape.caveScale;
             float3 horzPos = new float3(worldPos.x, worldPos.y * 2.5f, worldPos.z);
-            float megaCaveNoise1 = NoiseUtilities.Noise3D(horzPos, deepCaveFreq, 3, 0.6f, 2f, seedOff);
-            float megaCave2 = NoiseUtilities.Noise3D(horzPos, deepCaveFreq, 2, 0.5f, 2f, seedOff + 77.3f);
-            float megaTubeDist2 = megaCaveNoise1 * megaCaveNoise1 + megaCave2 * megaCave2;
-            float megaTubeRadius = math.lerp(0.10f, 0.14f, depthFactor) + shape.caveDensity * 0.2f;
-            if (megaTubeDist2 < megaTubeRadius * megaTubeRadius)
+            float spag1 = NoiseUtilities.Noise3D(horzPos, deepSpagFreq, 3, 0.6f, 2f, seedOff);
+            float spag2 = NoiseUtilities.Noise3D(horzPos, deepSpagFreq, 2, 0.5f, 2f, seedOff + 77.3f);
+            float spagDist2 = spag1 * spag1 + spag2 * spag2;
+            float spagRadius = math.lerp(0.12f, 0.16f, depthFactor) + shape.caveDensity * 0.18f;
+            if (spagDist2 < spagRadius * spagRadius)
             {
-                float t = 1f - math.sqrt(megaTubeDist2) / megaTubeRadius;
+                float t = 1f - math.sqrt(spagDist2) / spagRadius;
                 density = math.min(density, -t * 80f);
             }
 
-            // --- Scattered vertical shafts connecting cavern layers ---
-            // Very sparse — only at specific gated positions for occasional up/down routes.
-            float2 shaftXZ = new float2(worldPos.x, worldPos.z);
-            float shaftGate = NoiseUtilities.Noise2D(shaftXZ, 0.002f, 1, 0.5f, 2f, seedOff + 350f);
-            if (shaftGate > 0.7f) // only ~15% of XZ area has shafts
+            // =================================================================
+            //  NOODLE CAVES — thin connectors
+            // =================================================================
+            float noodleDen = NoodleCaveDensity(worldPos, shape.caveScale, shape.caveDensity);
+            if (noodleDen < 0f)
+                density = math.min(density, noodleDen);
+
+            // =================================================================
+            //  DEEP ROAD TUNNELS — sparser, wider than shallow
+            // =================================================================
+            float deepTunnelSeed = WorldSeed.SeedOffset(ChannelRoadDeep);
+            float deepEdgeDist = NoiseUtilities.WorleyEdgeDist(xz, DeepTunnelCellSize, deepTunnelSeed);
+
+            float deepTunnelWidth = TunnelWidth * 1.3f;
+            if (deepEdgeDist < deepTunnelWidth)
             {
-                float shaftNoise1 = NoiseUtilities.Noise2D(shaftXZ, 0.006f, 2, 0.5f, 2f, seedOff + 400f);
-                float shaftNoise2 = NoiseUtilities.Noise2D(shaftXZ, 0.006f, 2, 0.5f, 2f, seedOff + 477f);
-                float shaftDist2 = shaftNoise1 * shaftNoise1 + shaftNoise2 * shaftNoise2;
-                float shaftRadius = 0.03f + shape.caveDensity * 0.06f;
-                if (shaftDist2 < shaftRadius * shaftRadius)
+                float tunnelTargetY = math.lerp(-384f, -320f,
+                    NoiseUtilities.Noise2D(xz, 0.0015f, 2, 0.5f, 2f, deepTunnelSeed + 50f) * 0.5f + 0.5f);
+
+                float yDistFromFloor = worldPos.y - tunnelTargetY;
+                float xInfluence = 1f - math.smoothstep(0f, deepTunnelWidth, deepEdgeDist);
+                float deepTunnelH = TunnelHeight * 1.3f;
+
+                if (yDistFromFloor >= 0f && yDistFromFloor < deepTunnelH)
                 {
-                    float t = 1f - math.sqrt(shaftDist2) / shaftRadius;
+                    float ceilFade = math.smoothstep(deepTunnelH, deepTunnelH - 2f, yDistFromFloor);
+                    density = math.min(density, -xInfluence * ceilFade * 50f);
+                }
+                else if (yDistFromFloor < 0f && yDistFromFloor > -3f)
+                {
+                    float fillStr = xInfluence * math.smoothstep(-3f, 0f, yDistFromFloor);
+                    density = math.max(density, fillStr * 30f);
+                }
+            }
+
+            // =================================================================
+            //  SCATTERED VERTICAL SHAFTS
+            // =================================================================
+            float shaftGate = NoiseUtilities.Noise2D(xz, 0.002f, 1, 0.5f, 2f, seedOff + 350f);
+            if (shaftGate > 0.7f)
+            {
+                float shaftN1 = NoiseUtilities.Noise2D(xz, 0.006f, 2, 0.5f, 2f, seedOff + 400f);
+                float shaftN2 = NoiseUtilities.Noise2D(xz, 0.006f, 2, 0.5f, 2f, seedOff + 477f);
+                float shaftD2 = shaftN1 * shaftN1 + shaftN2 * shaftN2;
+                float shaftR = 0.03f + shape.caveDensity * 0.06f;
+                if (shaftD2 < shaftR * shaftR)
+                {
+                    float t = 1f - math.sqrt(shaftD2) / shaftR;
                     density = math.min(density, -t * 50f);
                 }
             }

@@ -165,7 +165,7 @@ public static class ItemIconGenerator
             // Enemy drops
             case "directiveshard":              return DrawDirectiveShard();
             case "reinforcedplating":           return DrawReinforcedPlating();
-            case "cortexcomponents":            return DrawCortexComponents();
+            case "indexcomponents":            return DrawIndexComponents();
             case "energycell":                  return DrawEnergyCell();
             case "weaponcomponents":            return DrawWeaponComponents();
             case "chitin":                      return DrawChitin();
@@ -1557,8 +1557,8 @@ public static class ItemIconGenerator
         return tex;
     }
 
-    // Cortex Components — circuit board fragment (teal green)
-    private static Texture2D DrawCortexComponents()
+    // Index Components — circuit board fragment (teal green)
+    private static Texture2D DrawIndexComponents()
     {
         var tex = NewTex();
         Color board = new Color(0.08f, 0.22f, 0.14f);

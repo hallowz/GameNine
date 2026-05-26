@@ -10,7 +10,7 @@ namespace Voidborne.Combat
         Explosive,
         Fire,
         Poison,
-        Energy,     // Cortex ability damage (Pulse shockwave, Conductor arc)
+        Energy,     // Index ability damage (Pulse shockwave, Conductor arc)
         Generic     // Untyped / fallback
     }
 

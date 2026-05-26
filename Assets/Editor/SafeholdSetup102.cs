@@ -52,7 +52,7 @@ public static class SafeholdSetup102
                     new() { text = "The device on my wrist — do you know what it is?",
                         nextNodeId = "cortex_react",
                         condition = new() {
-                            type = DialogueCondition.ConditionType.HasCortexDevice } },
+                            type = DialogueCondition.ConditionType.HasIndexDevice } },
                     new() { text = "Farewell.", nextNodeId = "" },
                 }
             },
@@ -342,15 +342,15 @@ public static class SafeholdSetup102
                      + "to shut the VORD down. If only someone could access them.",
                 choices = new()
                 {
-                    new() { text = "I can. I have the Cortex Device.", nextNodeId = "cortex_reveal",
-                        condition = new() { type = DialogueCondition.ConditionType.HasCortexDevice } },
+                    new() { text = "I can. I have The Index.", nextNodeId = "cortex_reveal",
+                        condition = new() { type = DialogueCondition.ConditionType.HasIndexDevice } },
                     new() { text = "Back.", nextNodeId = "root" },
                 }
             },
             new() {
                 nodeId = "cortex_reveal",
                 speakerName = "Archivist Cell",
-                text = "The Wrist Terminal... I've only seen it in schematics.\n\n"
+                text = "The Index... I've only seen it in schematics.\n\n"
                      + "Then you can do what the Architect couldn't finish. "
                      + "Each module restores a portion of the override capacity. "
                      + "Find all six — and you can shut them all down.",
@@ -434,7 +434,7 @@ public static class SafeholdSetup102
                 {
                     new() { text = "It's a Stronghold. One of six built by the Architect.", nextNodeId = "reveal2" },
                     new() { text = "Actually, I'll show you.", nextNodeId = "reveal_device",
-                        condition = new() { type = DialogueCondition.ConditionType.HasCortexDevice } },
+                        condition = new() { type = DialogueCondition.ConditionType.HasIndexDevice } },
                 }
             },
             new() {

@@ -21,12 +21,20 @@ namespace Voidborne.Tests.EditMode
         // ─── Density sanity checks ───
 
         [Test]
-        public void Density_IsPositive_DeepUnderground()
+        public void Density_DeepUnderground_MajoritySolid()
         {
-            // At y = -500, density should generally be positive (solid)
-            float density = DensityFunction.GetDensity(new float3(100f, -500f, 100f), _defaultShape, _defaultBiome);
-            Assert.IsTrue(density > 0f,
-                $"Expected positive density deep underground (y=-500), got {density}");
+            // At y = -500, most samples should be positive (solid). Caves can create air pockets.
+            int solidCount = 0;
+            const int samples = 20;
+            for (int i = 0; i < samples; i++)
+            {
+                float x = i * 137f;
+                float z = i * 251f;
+                float density = DensityFunction.GetDensity(new float3(x, -500f, z), _defaultShape, _defaultBiome);
+                if (density > 0f) solidCount++;
+            }
+            Assert.Greater(solidCount, samples / 2,
+                $"Expected majority solid at y=-500, got {solidCount}/{samples}");
         }
 
         [Test]
@@ -59,11 +67,11 @@ namespace Voidborne.Tests.EditMode
             float densityLow = DensityFunction.GetDensity(new float3(x, -200f, z), _defaultShape, _defaultBiome);
             float densityHigh = DensityFunction.GetDensity(new float3(x, 300f, z), _defaultShape, _defaultBiome);
 
-            // Deep should be positive, high should be negative
+            // Deep should be positive (solid), high should be negative (air)
             Assert.IsTrue(densityLow > 0f,
-                $"Expected positive density at y=-200, got {densityLow}");
+                $"Expected positive (solid) density at y=-200, got {densityLow}");
             Assert.IsTrue(densityHigh < 0f,
-                $"Expected negative density at y=300, got {densityHigh}");
+                $"Expected negative (air) density at y=300, got {densityHigh}");
 
             // Find approximate surface by binary search
             float lo = -200f;

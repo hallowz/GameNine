@@ -155,7 +155,7 @@ namespace Voidborne.Enemies
         }
 
         /// <summary>
-        /// Stagger this enemy (Cortex Pulse ability).
+        /// Stagger this enemy (Index Pulse ability).
         /// </summary>
         public void Stagger(float duration)
         {
@@ -164,7 +164,7 @@ namespace Voidborne.Enemies
         }
 
         /// <summary>
-        /// Disable mechanical enemy (Cortex Conductor ability, Optimized only).
+        /// Disable mechanical enemy (Index Conductor ability, Optimized only).
         /// </summary>
         public void DisableMechanical(float duration)
         {

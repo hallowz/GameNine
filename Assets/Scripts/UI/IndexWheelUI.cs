@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -21,7 +22,7 @@ using UnityEngine.UI;
 /// Locked nodes (module not yet installed) are shown greyed-out and
 /// cannot be selected.
 /// </summary>
-public class CortexWheelUI : MonoBehaviour
+public class IndexWheelUI : MonoBehaviour
 {
     // ---------------------------------------------------------------
     //  Constants
@@ -37,7 +38,7 @@ public class CortexWheelUI : MonoBehaviour
     // Module names and keys shown in the wheel.
     private static readonly string[] ModuleNames =
     {
-        "PULSE",         // 0
+        "TETHER",        // 0
         "SHARD INDEX",   // 1
         "INTERVAL",      // 2
         "CONDUCTOR",     // 3
@@ -47,7 +48,7 @@ public class CortexWheelUI : MonoBehaviour
 
     private static readonly string[] ModuleKeys =
     {
-        "shockwave", "x-ray scan", "time slow", "arc bolt", "phase out", "open portal"
+        "grapple", "x-ray scan", "time slow", "arc bolt", "phase out", "open portal"
     };
 
     // ---------------------------------------------------------------
@@ -69,8 +70,8 @@ public class CortexWheelUI : MonoBehaviour
     //  Runtime references
     // ---------------------------------------------------------------
 
-    private CortexDevice    _device;
-    private CortexAbilities _abilities;
+    private IndexDevice    _device;
+    private IndexAbilities _abilities;
 
     private Canvas          _canvas;
     private GameObject      _root;
@@ -100,7 +101,7 @@ public class CortexWheelUI : MonoBehaviour
     public bool IsOpen => _open;
     public int  HoveredModule => _hoveredModule;
 
-    public void Initialize(CortexDevice device, CortexAbilities abilities)
+    public void Initialize(IndexDevice device, IndexAbilities abilities)
     {
         _device    = device;
         _abilities = abilities;
@@ -118,8 +119,8 @@ public class CortexWheelUI : MonoBehaviour
         Time.fixedDeltaTime = 0.02f * WheelTimeScale;
         _root.SetActive(true);
         RefreshNodes();
-        Cursor.visible   = true;
-        Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible   = true;
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
     }
 
     /// <summary>Close the wheel, restore time, and return the selected module (-1 if cancelled).</summary>
@@ -130,8 +131,8 @@ public class CortexWheelUI : MonoBehaviour
         _root.SetActive(false);
         Time.timeScale  = _savedTimeScale;
         Time.fixedDeltaTime = 0.02f * _savedTimeScale;
-        Cursor.visible   = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        UnityEngine.Cursor.visible   = false;
+        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
 
         int selected = _hoveredModule;
         _hoveredModule = -1;
@@ -153,7 +154,7 @@ public class CortexWheelUI : MonoBehaviour
     private void UpdateDirectionLine()
     {
         Vector2 screenCentre = new(Screen.width * 0.5f, Screen.height * 0.5f);
-        Vector2 mousePos     = Input.mousePosition;
+        Vector2 mousePos     = Mouse.current != null ? Mouse.current.position.ReadValue() : screenCentre;
         Vector2 delta        = mousePos - screenCentre;
 
         // Dead-zone: if mouse is very close to centre, no selection.
@@ -237,7 +238,7 @@ public class CortexWheelUI : MonoBehaviour
         Transform canvasRoot  = existingCanvas != null ? existingCanvas.transform : MakeCanvas();
 
         // Root panel — full-screen, no raycast block (so it doesn't eat clicks).
-        _root = new GameObject("CortexWheelUI", typeof(RectTransform));
+        _root = new GameObject("IndexWheelUI", typeof(RectTransform));
         _root.transform.SetParent(canvasRoot, false);
         var rootRect      = _root.GetComponent<RectTransform>();
         rootRect.anchorMin = Vector2.zero;
@@ -274,7 +275,7 @@ public class CortexWheelUI : MonoBehaviour
         for (int i = 0; i < NodeCount; i++)
             BuildNode(i, centreRect);
 
-        // "CORTEX DEVICE" label at top of wheel.
+        // "THE INDEX" label at top of wheel.
         BuildLabel(centreRect);
     }
 
@@ -391,7 +392,7 @@ public class CortexWheelUI : MonoBehaviour
         r.anchoredPosition = Vector2.zero;
 
         var txt        = go.GetComponent<Text>();
-        txt.text       = "CORTEX DEVICE";
+        txt.text       = "THE INDEX";
         txt.font       = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         txt.fontSize   = 11;
         txt.color      = new Color(0.45f, 0.65f, 0.75f, 0.7f);

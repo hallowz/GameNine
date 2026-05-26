@@ -48,11 +48,11 @@ namespace Voidborne.Player
         public float MaxStamina => maxStamina;
         public Vector3 Velocity => velocity;
 
-        /// <summary>Exposed for Cortex Interval ability — read-only access to base walk speed.</summary>
+        /// <summary>Exposed for Index Interval ability — read-only access to base walk speed.</summary>
         public float WalkSpeed => walkSpeed;
 
         /// <summary>
-        /// External speed multiplier applied by CortexAbilities during The Interval.
+        /// External speed multiplier applied by IndexAbilities during The Interval.
         /// 1f = normal; set to 1/timeScale to compensate for slow-world.
         /// </summary>
         public float ExternalSpeedMult { get; set; } = 1f;

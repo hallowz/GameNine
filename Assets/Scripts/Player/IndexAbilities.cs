@@ -1,10 +1,11 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Voidborne.Combat;
 using Voidborne.Enemies;
 
 /// <summary>
-/// Implements the six Cortex Device active abilities. Lives on the Player root.
+/// Implements the six Index Device active abilities. Lives on the Player root.
 ///
 /// Hold X (no menu open) — opens radial ability wheel; time slows significantly.
 ///   Move mouse to aim the direction line toward an ability node.
@@ -12,22 +13,22 @@ using Voidborne.Enemies;
 /// Q — fire the currently selected ability.
 ///
 /// Module abilities:
-///   0 — The Pulse       (8s CD)  : directional shockwave staggers enemies, shatters terrain.
+///   0 — The Tether      (3s CD)  : grappling hook — pull player to terrain, tow vehicles.
 ///   1 — The Shard Index (15s CD) : 6s material overlay, ores/weak-points visible.
 ///   2 — The Interval    (45s CD) : 4s world slow (30%), player moves at full speed.
 ///   3 — The Conductor   (charge) : builds charge over 30s; release: electrical bolt arc × 3.
 ///   4 — The Threshold   (60s CD) : 6s phase-out, pass through thin terrain, silent melee kill.
 ///   5 — The Fold        (power)  : opens portal to selected pocket dimension.
 /// </summary>
-[RequireComponent(typeof(CortexDevice))]
-public class CortexAbilities : MonoBehaviour
+[RequireComponent(typeof(IndexDevice))]
+public class IndexAbilities : MonoBehaviour
 {
     // ---------------------------------------------------------------
     //  Constants
     // ---------------------------------------------------------------
 
     /// <summary>Cooldown durations in seconds. −1 = not cooldown-based (charge or power cost).</summary>
-    private static readonly float[] CooldownDurations = { 8f, 15f, 45f, -1f, 60f, -1f };
+    private static readonly float[] CooldownDurations = { 3f, 15f, 45f, -1f, 60f, -1f };
 
     private const float ConductorChargeTime    = 30f;   // seconds to full charge
     private const float ConductorArcDamage     = 60f;
@@ -41,10 +42,11 @@ public class CortexAbilities : MonoBehaviour
     private const float ThresholdDuration      = 6f;
     private const float ThresholdSilentWindow  = 2f;
 
-    private const float PulseRange             = 8f;
-    private const float PulseHalfAngle         = 45f;   // degrees, cone half-angle
-    private const float PulseDamage            = 25f;
-    private const float PulseStaggerDuration   = 2f;
+    // Module 0 — The Tether (grappling hook)
+    private const float TetherRange            = 40f;   // max raycast distance
+    private const float TetherPullSpeed        = 18f;   // player pull speed toward anchor
+    private const float TetherVehicleForce     = 800f;  // force applied to tow vehicles
+    private const float TetherMinDetachDist    = 1.5f;  // auto-detach when this close to anchor
 
     private const float ShardDuration          = 6f;
 
@@ -64,16 +66,16 @@ public class CortexAbilities : MonoBehaviour
     //  Runtime state
     // ---------------------------------------------------------------
 
-    private CortexDevice                 _device;
-    private CortexDevice_PocketDimension _pocket;
+    private IndexDevice                 _device;
+    private IndexDevice_PocketDimension _pocket;
     private UnityEngine.CharacterController _charController;
-    private CortexWheelUI                _wheel;
+    private IndexWheelUI                _wheel;
 
     // Cached collider buffer for Physics.OverlapSphereNonAlloc (avoids GC allocs)
     private readonly Collider[] _overlapBuffer = new Collider[32];
 
     // Cooldown timers indexed by module (0–5). Counts down to 0.
-    private readonly float[] _cooldownTimers = new float[CortexDevice.ModuleCount];
+    private readonly float[] _cooldownTimers = new float[IndexDevice.ModuleCount];
 
     // Module 3 — Conductor
     private float _conductorCharge;         // 0 → ConductorChargeTime
@@ -88,6 +90,13 @@ public class CortexAbilities : MonoBehaviour
     private bool  _thresholdActive;
     private float _thresholdRealTimer;
     private float _thresholdExitTime = -99f;
+
+    // Module 0 — Tether (grappling hook)
+    private enum TetherState { Idle, Attached, Detaching }
+    private TetherState _tetherState = TetherState.Idle;
+    private Vector3     _tetherAnchor;
+    private Rigidbody   _tetherVehicleRb;   // non-null when attached to a vehicle
+    private LineRenderer _tetherLine;
 
     // Module 1 — Shard Index
     private bool  _shardActive;
@@ -115,15 +124,15 @@ public class CortexAbilities : MonoBehaviour
 
     private void Awake()
     {
-        _device         = GetComponent<CortexDevice>();
-        _pocket         = GetComponent<CortexDevice_PocketDimension>();
+        _device         = GetComponent<IndexDevice>();
+        _pocket         = GetComponent<IndexDevice_PocketDimension>();
         _charController = GetComponent<UnityEngine.CharacterController>();
 
         // Conductor starts from zero.
         _conductorCharge = 0f;
 
         // Build radial wheel (creates UI lazily on first frame).
-        _wheel = gameObject.AddComponent<CortexWheelUI>();
+        _wheel = gameObject.AddComponent<IndexWheelUI>();
         _wheel.Initialize(_device, this);
         _wheel.OnModuleSelected += OnWheelModuleSelected;
     }
@@ -135,6 +144,7 @@ public class CortexAbilities : MonoBehaviour
     private void Update()
     {
         TickCooldowns();
+        TickTether();
         TickConductorCharge();
         TickInterval();
         TickThreshold();
@@ -149,10 +159,12 @@ public class CortexAbilities : MonoBehaviour
 
     private void HandleInput()
     {
+        if (Keyboard.current == null) return;
+
         bool anyUIOpen = UIManager.Instance != null && UIManager.Instance.IsAnyUIOpen;
 
-        // Tab held — open radial ability wheel (blocks if any other UI is open).
-        if (Input.GetKeyDown(KeyCode.X) && !anyUIOpen && _device.InstalledCount > 0)
+        // X held — open radial ability wheel (blocks if any other UI is open).
+        if (Keyboard.current.xKey.wasPressedThisFrame && !anyUIOpen && _device.InstalledCount > 0)
             _wheel.Open();
 
         // Tick wheel every frame while open.
@@ -160,7 +172,7 @@ public class CortexAbilities : MonoBehaviour
             _wheel.Tick();
 
         // X released — confirm selection and close wheel.
-        if (Input.GetKeyUp(KeyCode.X) && _wheel.IsOpen)
+        if (Keyboard.current.xKey.wasReleasedThisFrame && _wheel.IsOpen)
         {
             int selected = _wheel.Close();
             if (selected >= 0 && _device.IsModuleInstalled(selected))
@@ -168,12 +180,22 @@ public class CortexAbilities : MonoBehaviour
         }
 
         // Q — fire the active module's ability (wheel must be closed).
-        if (Input.GetKeyDown(KeyCode.Q) && !_wheel.IsOpen)
+        if (Keyboard.current.qKey.wasPressedThisFrame && !_wheel.IsOpen)
         {
             int idx = _device.ActiveModuleIndex;
             if (idx >= 0)
-                TriggerAbility(idx);
+            {
+                // Tether toggle: Q again while attached detaches.
+                if (idx == 0 && _tetherState == TetherState.Attached)
+                    DetachTether();
+                else
+                    TriggerAbility(idx);
+            }
         }
+
+        // Jump also detaches the tether.
+        if (_tetherState == TetherState.Attached && Keyboard.current.spaceKey.wasPressedThisFrame)
+            DetachTether();
     }
 
     private void OnWheelModuleSelected(int moduleIndex)
@@ -182,7 +204,7 @@ public class CortexAbilities : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    //  Public ability trigger (also callable from CortexDevice / cinematics)
+    //  Public ability trigger (also callable from IndexDevice / cinematics)
     // ---------------------------------------------------------------
 
     public void TriggerAbility(int moduleIndex)
@@ -191,7 +213,7 @@ public class CortexAbilities : MonoBehaviour
 
         switch (moduleIndex)
         {
-            case 0: ActivatePulse();      break;
+            case 0: ActivateTether();     break;
             case 1: ActivateShardIndex(); break;
             case 2: ActivateInterval();   break;
             case 3: ActivateConductor();  break;
@@ -201,36 +223,119 @@ public class CortexAbilities : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    //  Module 0 — The Pulse
+    //  Module 0 — The Tether (grappling hook)
     // ---------------------------------------------------------------
 
-    private void ActivatePulse()
+    private void ActivateTether()
     {
         if (_cooldownTimers[0] > 0f) return;
+        if (_tetherState != TetherState.Idle) return;
 
-        Vector3 origin    = transform.position + Vector3.up;
-        Vector3 direction = transform.forward;
+        // Raycast from camera forward.
+        Camera cam = Camera.main;
+        if (cam == null) return;
 
-        int hitCount = Physics.OverlapSphereNonAlloc(origin, PulseRange, _overlapBuffer, enemyLayerMask);
-        for (int i = 0; i < hitCount; i++)
+        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        if (!Physics.Raycast(ray, out RaycastHit hit, TetherRange))
         {
-            Collider col = _overlapBuffer[i];
-            Vector3 toEnemy = (col.transform.position - origin).normalized;
-            float   angle   = Vector3.Angle(direction, toEnemy);
-            if (angle > PulseHalfAngle) continue;
-
-            if (col.TryGetComponent(out EnemyEntity enemy))
-            {
-                enemy.TakeDamage(new DamageInfo { Amount = PulseDamage, Type = DamageType.Generic });
-                enemy.Stagger(PulseStaggerDuration);
-            }
+            Debug.Log("[IndexAbilities] Tether: no target in range.");
+            return;
         }
 
-        // TODO (art): spawn directional shockwave VFX along transform.forward.
+        _tetherAnchor = hit.point;
+        _tetherVehicleRb = null;
+
+        // Check if we hit a vehicle (has Rigidbody on self or parent).
+        Rigidbody vehicleRb = hit.collider.GetComponentInParent<Rigidbody>();
+        if (vehicleRb != null)
+        {
+            _tetherVehicleRb = vehicleRb;
+            Debug.Log("[IndexAbilities] Tether attached to vehicle.");
+        }
+        else
+        {
+            Debug.Log($"[IndexAbilities] Tether attached to terrain at {hit.point}");
+        }
+
+        _tetherState = TetherState.Attached;
+
+        // Create or enable line renderer for cable visual.
+        EnsureTetherLine();
+        _tetherLine.enabled = true;
+    }
+
+    private void TickTether()
+    {
+        if (_tetherState != TetherState.Attached) return;
+
+        // Update line renderer.
+        if (_tetherLine != null)
+        {
+            Vector3 handPos = transform.position + transform.up * 0.8f + transform.right * -0.2f;
+            _tetherLine.SetPosition(0, handPos);
+
+            if (_tetherVehicleRb != null)
+                _tetherAnchor = _tetherVehicleRb.worldCenterOfMass;
+
+            _tetherLine.SetPosition(1, _tetherAnchor);
+        }
+
+        if (_tetherVehicleRb != null)
+        {
+            // Vehicle tow: pull vehicle toward player.
+            Vector3 pullDir = (transform.position - _tetherVehicleRb.worldCenterOfMass).normalized;
+            _tetherVehicleRb.AddForce(pullDir * TetherVehicleForce * Time.deltaTime, ForceMode.Force);
+        }
+        else
+        {
+            // Terrain pull: move player toward anchor.
+            Vector3 toAnchor = _tetherAnchor - transform.position;
+            float dist = toAnchor.magnitude;
+
+            if (dist < TetherMinDetachDist)
+            {
+                DetachTether();
+                return;
+            }
+
+            Vector3 pullVelocity = toAnchor.normalized * TetherPullSpeed;
+
+            // Apply via CharacterController.
+            if (_charController != null)
+                _charController.Move(pullVelocity * Time.deltaTime);
+        }
+    }
+
+    private void DetachTether()
+    {
+        if (_tetherState == TetherState.Idle) return;
+
+        _tetherState = TetherState.Idle;
+        _tetherVehicleRb = null;
+
+        if (_tetherLine != null)
+            _tetherLine.enabled = false;
 
         _cooldownTimers[0] = CooldownDurations[0];
-        Debug.Log("[CortexAbilities] The Pulse fired.");
+        Debug.Log("[IndexAbilities] Tether detached.");
     }
+
+    private void EnsureTetherLine()
+    {
+        if (_tetherLine != null) return;
+
+        _tetherLine = gameObject.AddComponent<LineRenderer>();
+        _tetherLine.positionCount = 2;
+        _tetherLine.startWidth = 0.02f;
+        _tetherLine.endWidth = 0.015f;
+        _tetherLine.material = new Material(Shader.Find("Sprites/Default"));
+        _tetherLine.startColor = new Color(0.3f, 0.75f, 0.85f, 0.9f);
+        _tetherLine.endColor = new Color(0.2f, 0.5f, 0.6f, 0.7f);
+        _tetherLine.enabled = false;
+    }
+
+    /// <summary>True while the Tether is attached to something.</summary>
+    public bool IsTetherActive => _tetherState == TetherState.Attached;
 
     // ---------------------------------------------------------------
     //  Module 1 — The Shard Index
@@ -245,7 +350,7 @@ public class CortexAbilities : MonoBehaviour
         _shardTimer    = ShardDuration;
 
         _cooldownTimers[1] = CooldownDurations[1];
-        Debug.Log("[CortexAbilities] The Shard Index active.");
+        Debug.Log("[IndexAbilities] The Shard Index active.");
     }
 
     private void TickShard()
@@ -282,7 +387,7 @@ public class CortexAbilities : MonoBehaviour
         }
 
         _cooldownTimers[2] = CooldownDurations[2];
-        Debug.Log("[CortexAbilities] The Interval active.");
+        Debug.Log("[IndexAbilities] The Interval active.");
     }
 
     private void TickInterval()
@@ -325,7 +430,7 @@ public class CortexAbilities : MonoBehaviour
         {
             _conductorCharge      = ConductorChargeTime;
             _conductorFullyCharged = true;
-            Debug.Log("[CortexAbilities] Conductor fully charged.");
+            Debug.Log("[IndexAbilities] Conductor fully charged.");
         }
     }
 
@@ -351,7 +456,7 @@ public class CortexAbilities : MonoBehaviour
 
         _conductorCharge       = 0f;
         _conductorFullyCharged = false;
-        Debug.Log($"[CortexAbilities] Conductor discharged — hit {arcs} targets.");
+        Debug.Log($"[IndexAbilities] Conductor discharged — hit {arcs} targets.");
     }
 
     /// <summary>Called by melee system when the player strikes with a fully-charged Conductor.</summary>
@@ -365,7 +470,7 @@ public class CortexAbilities : MonoBehaviour
 
         _conductorCharge       = 0f;
         _conductorFullyCharged = false;
-        Debug.Log("[CortexAbilities] Conductor discharged on melee contact.");
+        Debug.Log("[IndexAbilities] Conductor discharged on melee contact.");
         return true;
     }
 
@@ -392,7 +497,7 @@ public class CortexAbilities : MonoBehaviour
         // TODO (art/audio): play phase-out VFX/SFX, reduce player visibility.
 
         _cooldownTimers[4] = CooldownDurations[4];
-        Debug.Log("[CortexAbilities] The Threshold active.");
+        Debug.Log("[IndexAbilities] The Threshold active.");
     }
 
     private void TickThreshold()
@@ -412,7 +517,7 @@ public class CortexAbilities : MonoBehaviour
 
         Physics.IgnoreLayerCollision(gameObject.layer, LayerMaskToLayer(terrainLayerMask), false);
 
-        Debug.Log("[CortexAbilities] The Threshold ended.");
+        Debug.Log("[IndexAbilities] The Threshold ended.");
     }
 
     /// <summary>
@@ -430,7 +535,7 @@ public class CortexAbilities : MonoBehaviour
     {
         if (_pocket == null)
         {
-            Debug.LogWarning("[CortexAbilities] CortexDevice_PocketDimension not found.");
+            Debug.LogWarning("[IndexAbilities] IndexDevice_PocketDimension not found.");
             return;
         }
         _pocket.TryOpenPortal();
@@ -442,7 +547,7 @@ public class CortexAbilities : MonoBehaviour
 
     private void TickCooldowns()
     {
-        for (int i = 0; i < CortexDevice.ModuleCount; i++)
+        for (int i = 0; i < IndexDevice.ModuleCount; i++)
         {
             if (CooldownDurations[i] > 0f && _cooldownTimers[i] > 0f)
                 _cooldownTimers[i] -= Time.deltaTime;
@@ -456,7 +561,7 @@ public class CortexAbilities : MonoBehaviour
     /// <summary>Returns remaining cooldown ratio (0 = ready, 1 = just fired) for HUD.</summary>
     public float GetCooldownRatio(int moduleIndex)
     {
-        if (moduleIndex < 0 || moduleIndex >= CortexDevice.ModuleCount) return 0f;
+        if (moduleIndex < 0 || moduleIndex >= IndexDevice.ModuleCount) return 0f;
         float dur = CooldownDurations[moduleIndex];
         if (dur <= 0f) return 0f;
         return Mathf.Clamp01(_cooldownTimers[moduleIndex] / dur);
@@ -464,7 +569,7 @@ public class CortexAbilities : MonoBehaviour
 
     public bool IsOnCooldown(int moduleIndex)
     {
-        if (moduleIndex < 0 || moduleIndex >= CortexDevice.ModuleCount) return false;
+        if (moduleIndex < 0 || moduleIndex >= IndexDevice.ModuleCount) return false;
         return _cooldownTimers[moduleIndex] > 0f;
     }
 

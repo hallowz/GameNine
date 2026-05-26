@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Always-visible 9-slot hotbar at the bottom of the screen.
-/// Scroll wheel or 1-9 keys select the active slot (gold highlight).
+/// Always-visible 5-slot hotbar on the Index bracer face.
+/// Scroll wheel or 1-5 keys select the active slot (gold highlight).
 /// Subscribes to PlayerInventory.OnInventoryChanged to refresh.
 /// </summary>
 public class HotbarUI : MonoBehaviour
@@ -16,7 +16,7 @@ public class HotbarUI : MonoBehaviour
     private const float SlotSpacing  = 4f;
     private const float BarPaddingH  = 8f;
     private const float BarPaddingV  = 6f;
-    private const int   HotbarCount  = 9;
+    private const int   HotbarCount  = 5;
 
     // ---------------------------------------------------------------
     //  References

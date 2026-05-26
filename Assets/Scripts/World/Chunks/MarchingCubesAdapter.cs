@@ -403,6 +403,12 @@ namespace Voidborne.World.Chunks
             densityCompute.SetVector("chunkWorldOffset",   worldPos);
             densityCompute.SetFloat ("domainWarpStrength", DOMAIN_WARP_STRENGTH);
             densityCompute.SetInt   ("worldSeed",          WorldSeed.Seed);
+
+            // Road uniforms (global, not per-biome)
+            densityCompute.SetFloat("roadCellSize",       DensityFunction.RoadCellSize);
+            densityCompute.SetFloat("roadHalfWidth",      DensityFunction.RoadHalfWidth);
+            densityCompute.SetFloat("roadSeedOffset",     WorldSeed.SeedOffset(22));
+            densityCompute.SetFloat("roadElevSeedOffset", WorldSeed.SeedOffset(25));
             densityCompute.SetBuffer (_densityKernel, "biomeDataBuffer",      slot.biomeBuffer);
             densityCompute.SetBuffer (_densityKernel, "densityBuffer",         slot.densityBuffer);
             densityCompute.SetBuffer (_densityKernel, "surfaceHeightBuffer",   slot.surfaceHeightBuffer);

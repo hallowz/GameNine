@@ -33,7 +33,7 @@ namespace Voidborne.Enemies
         {
             if (!e.isActive || e.state == EnemyState.Dead) return;
 
-            // Cortex ability freeze
+            // Index ability freeze
             if (time < e.staggerEndTime || time < e.mechanicalDisableEndTime)
             {
                 e.desiredDirection = float3.zero;

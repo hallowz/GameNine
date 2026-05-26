@@ -163,9 +163,15 @@ namespace Voidborne.Combat
             {
                 float scroll = Mouse.current.scroll.y.ReadValue();
                 if (scroll < -0.01f)
-                    requested = (playerInventory.SelectedHotbarIndex + 1) % 9;
+                {
+                    int count = playerInventory.Hotbar.SlotCount;
+                    requested = (playerInventory.SelectedHotbarIndex + 1) % count;
+                }
                 else if (scroll > 0.01f)
-                    requested = (playerInventory.SelectedHotbarIndex - 1 + 9) % 9;
+                {
+                    int count = playerInventory.Hotbar.SlotCount;
+                    requested = (playerInventory.SelectedHotbarIndex - 1 + count) % count;
+                }
             }
 
             playerInventory.SelectedHotbarIndex = requested;

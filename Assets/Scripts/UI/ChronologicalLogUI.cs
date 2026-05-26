@@ -79,8 +79,13 @@ public class ChronologicalLogUI : MonoBehaviour
 
     private void Update()
     {
-        if (_visible && Input.GetKeyDown(KeyCode.Escape))
-            Hide();
+        try
+        {
+            if (_visible && UnityEngine.InputSystem.Keyboard.current != null &&
+                UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+                Hide();
+        }
+        catch { }
     }
 
     // ---------------------------------------------------------------

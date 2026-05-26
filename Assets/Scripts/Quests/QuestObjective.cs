@@ -11,7 +11,7 @@ public enum ObjectiveType
     CraftItem,
     PlaceBuilding,
     InteractWith,
-    InstallCortexModule
+    InstallIndexModule
 }
 
 /// <summary>
@@ -46,8 +46,8 @@ public class QuestObjective
     /// <summary>InteractWith: matches the interactableId on the triggering object.</summary>
     public string interactableId;
 
-    /// <summary>InstallCortexModule: module index (0–5). -1 = any module.</summary>
-    public int cortexModuleIndex = -1;
+    /// <summary>InstallIndexModule: module index (0–5). -1 = any module.</summary>
+    public int indexModuleIndex = -1;
 
     // ---------------------------------------------------------------
     //  Runtime state — not persisted on the ScriptableObject

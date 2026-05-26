@@ -56,3 +56,6 @@ crashlytics-build.properties
 
 # Screenshots at root
 *.png
+
+# Claude Code agent worktrees
+.claude/worktrees/

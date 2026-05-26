@@ -47,7 +47,7 @@ public class PocketDimensionZone : MonoBehaviour
     //  Player callbacks
     // ---------------------------------------------------------------
 
-    /// <summary>Called by CortexDevice_PocketDimension when the player enters.</summary>
+    /// <summary>Called by IndexDevice_PocketDimension when the player enters.</summary>
     public virtual void OnPlayerEnter()
     {
         Debug.Log($"[PocketDimensionZone] Player entered '{dimensionName}'.");
