@@ -67,15 +67,15 @@ public class DialogueCondition
         QuestComplete,
         QuestActive,
         HasItem,
-        CortexModuleInstalled,
-        HasCortexDevice,
+        IndexModuleInstalled,
+        HasIndexDevice,
         HasItem_Any,   // player has any item flagged as "archive fragment"
     }
 
     public ConditionType   type        = ConditionType.None;
     public string          questId;
     public ItemDefinition  item;
-    public int             cortexModuleIndex = -1;
+    public int             indexModuleIndex = -1;
     public bool            invert;           // true = NOT this condition
 
     /// <summary>Evaluate against current game state.</summary>
@@ -108,16 +108,16 @@ public class DialogueCondition
                 return inv.HasItem(item);
             }
 
-            case ConditionType.CortexModuleInstalled:
+            case ConditionType.IndexModuleInstalled:
             {
-                CortexDevice dev = UnityEngine.Object.FindFirstObjectByType<CortexDevice>();
-                if (dev == null || cortexModuleIndex < 0) return false;
-                return dev.IsModuleInstalled(cortexModuleIndex);
+                IndexDevice dev = UnityEngine.Object.FindFirstObjectByType<IndexDevice>();
+                if (dev == null || indexModuleIndex < 0) return false;
+                return dev.IsModuleInstalled(indexModuleIndex);
             }
 
-            case ConditionType.HasCortexDevice:
+            case ConditionType.HasIndexDevice:
             {
-                CortexDevice dev = UnityEngine.Object.FindFirstObjectByType<CortexDevice>();
+                IndexDevice dev = UnityEngine.Object.FindFirstObjectByType<IndexDevice>();
                 return dev != null && dev.HasDevice;
             }
 

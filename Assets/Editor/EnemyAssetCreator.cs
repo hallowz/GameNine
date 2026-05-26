@@ -9,7 +9,7 @@ using Voidborne.Enemies;
 /// Menu: Voidborne > Create Enemy Type Assets (Vol 6.4)
 ///
 /// Creates:
-///   Loot items:  DirectiveShard, ReinforcedPlating, CortexComponents,
+///   Loot items:  DirectiveShard, ReinforcedPlating, IndexComponents,
 ///                EnergyCell, WeaponComponents, Chitin,
 ///                FracturedMemoryShard, SchematicFragment
 ///   Enemy defs:  6 × EnemyDefinition ScriptableObjects
@@ -356,8 +356,8 @@ public static class EnemyAssetCreator
             "Heavy armour plate recovered from an OptimizedHeavy. Dense and impact-resistant.",
             ItemType.Resource, 32);
 
-        var cortexComponents  = GetOrCreateItem<ItemDefinition>("CortexComponents",
-            "Cortex Components",
+        var indexComponents   = GetOrCreateItem<ItemDefinition>("IndexComponents",
+            "Index Components",
             "Internal processing nodes from an Optimized unit. Useful for advanced crafting.",
             ItemType.Resource, 32);
 
@@ -455,7 +455,7 @@ public static class EnemyAssetCreator
         heavy.groupSizeMin   = 1;
         heavy.groupSizeMax   = 2;
         heavy.prefab         = LoadPrefab(heavyPath);
-        SetLootTable(heavy, (reinforcedPlating, 1, 3, 0.9f), (cortexComponents, 1, 2, 0.7f));
+        SetLootTable(heavy, (reinforcedPlating, 1, 3, 0.9f), (indexComponents, 1, 2, 0.7f));
         EditorUtility.SetDirty(heavy);
 
         var ranged = GetOrCreateDef("OptimizedRangedDefinition");
@@ -524,7 +524,7 @@ public static class EnemyAssetCreator
             "You should not be here. Leave, and I will not escalate."
         };
         crafter.prefab = LoadPrefab(crafterPath);
-        SetLootTable(crafter, (schematicFragment, 1, 1, 0.4f), (cortexComponents, 1, 2, 0.8f));
+        SetLootTable(crafter, (schematicFragment, 1, 1, 0.4f), (indexComponents, 1, 2, 0.8f));
         EditorUtility.SetDirty(crafter);
 
         var stalker = GetOrCreateDef("CaveStalkerDefinition");

@@ -5,7 +5,7 @@ using UnityEngine;
 using Voidborne.Building.Electricity;
 
 /// <summary>
-/// Manages the pocket dimension system for Cortex Module 5 — The Fold.
+/// Manages the pocket dimension system for Index Module 5 — The Fold.
 ///
 /// Each pocket dimension is an isolated zone placed at a far Y-offset
 /// (y = ZoneBaseY + id * ZoneSpacing) so it is always loaded in the same scene
@@ -22,8 +22,8 @@ using Voidborne.Building.Electricity;
 ///
 /// Portal VFX: a vertical tear (scale x=0.2, y=2, z=1) spawned at the targeted surface.
 /// </summary>
-[RequireComponent(typeof(CortexDevice))]
-public class CortexDevice_PocketDimension : MonoBehaviour
+[RequireComponent(typeof(IndexDevice))]
+public class IndexDevice_PocketDimension : MonoBehaviour
 {
     // ---------------------------------------------------------------
     //  Constants
@@ -69,7 +69,7 @@ public class CortexDevice_PocketDimension : MonoBehaviour
     //  Runtime state
     // ---------------------------------------------------------------
 
-    private CortexDevice _device;
+    private IndexDevice _device;
     private GameObject   _activePortal;
     private bool         _portalOpen;
     private Vector3      _portalWorldPos;
@@ -85,7 +85,7 @@ public class CortexDevice_PocketDimension : MonoBehaviour
 
     private void Awake()
     {
-        _device = GetComponent<CortexDevice>();
+        _device = GetComponent<IndexDevice>();
 
         // Ensure HOME dimension exists.
         if (dimensions.Count == 0 || !dimensions.Exists(d => d.isHome))
@@ -105,7 +105,7 @@ public class CortexDevice_PocketDimension : MonoBehaviour
     //  Public API
     // ---------------------------------------------------------------
 
-    /// <summary>Called by CortexAbilities when the player presses Q with Module 5 active.</summary>
+    /// <summary>Called by IndexAbilities when the player presses Q with Module 5 active.</summary>
     public void TryOpenPortal()
     {
         if (!_device.IsModuleInstalled(5)) return;
@@ -336,7 +336,7 @@ public class CortexDevice_PocketDimension : MonoBehaviour
             }
         }
         // If no power available, allow it anyway (device has minimal self-power).
-        // Gameplay feedback (HUD warning) is handled by CortexHUD.
+        // Gameplay feedback (HUD warning) is handled by IndexHUD.
         return true;
     }
 
@@ -358,15 +358,15 @@ public class CortexDevice_PocketDimension : MonoBehaviour
 
 /// <summary>
 /// Lightweight trigger component attached to the spawned portal object.
-/// Detects when the player enters and notifies CortexDevice_PocketDimension.
+/// Detects when the player enters and notifies IndexDevice_PocketDimension.
 /// </summary>
 public class PortalTriggerHandler : MonoBehaviour
 {
-    private CortexDevice_PocketDimension _pocket;
+    private IndexDevice_PocketDimension _pocket;
     private int _dimId;
     private bool _used;
 
-    public void Initialize(CortexDevice_PocketDimension pocket, int dimId)
+    public void Initialize(IndexDevice_PocketDimension pocket, int dimId)
     {
         _pocket = pocket;
         _dimId  = dimId;

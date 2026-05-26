@@ -86,32 +86,8 @@ namespace Voidborne.World.MarchingCubes
         {
             pointsPerAxis = voxelsPerAxis + 1;
 
-            // Using legacy Input for now — will be replaced with new Input System
-            if (Input.GetKeyDown(KeyCode.G))
-            {
-                float startTime = Time.realtimeSinceStartup;
-                if (infiniteWorld)
-                {
-                    GenerateVisibleChunks();
-                }
-                else
-                {
-                    GenerateFixedChunks();
-                }
-                Debug.Log("Loaded in " + (Time.realtimeSinceStartup - startTime) + " Seconds.");
-            }
-
-            if (Input.GetKeyDown(KeyCode.T))
-            {
-                float startTime = Time.realtimeSinceStartup;
-                UpdateMarchingCubesParams();
-                Debug.Log("Loaded in " + (Time.realtimeSinceStartup - startTime) + " Seconds.");
-            }
-
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                generateOnUpdate = !generateOnUpdate;
-            }
+            // Debug keys disabled — use new Input System for runtime control
+            // Legacy Input.GetKeyDown calls removed to prevent exceptions
 
             if (generateOnUpdate)
             {

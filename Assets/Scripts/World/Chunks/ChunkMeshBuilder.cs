@@ -424,12 +424,13 @@ namespace Voidborne.World.Chunks
                 }
 
                 float2 worldXZ = new float2(worldPos.x, worldPos.z);
+                float roadInf = DensityFunction.GetRoadInfluence(worldXZ);
                 points.Add(new SurfacePoint
                 {
                     worldPos      = worldPos,
                     normal        = normal,
                     biome         = BiomeMap.GetBiome(worldXZ),
-                    roadInfluence = 0f,
+                    roadInfluence = roadInf,
                     underwater    = false,
                     oreType       = ore
                 });

@@ -41,6 +41,11 @@ namespace Voidborne.World.Generation
         // Depth normalization scale (voxels of surface distance → normalized depth)
         public float DepthScale;
 
+        // Road parameters for dirt override
+        public float RoadCellSize;
+        public float RoadHalfWidth;
+        public float RoadSeedOffset;
+
         [NativeDisableParallelForRestriction]
         public NativeArray<byte> BiomeField;  // 32^3 output
 
@@ -74,9 +79,26 @@ namespace Voidborne.World.Generation
                 return;
             }
 
-            // Try ore placement (same logic as old OreGenerationJob)
             float worldX = ChunkWorldOrigin.x + x;
             float worldZ = ChunkWorldOrigin.z + z;
+
+            // Road surface override: force dirt for top 3 voxels on roads
+            if (RoadCellSize > 0f)
+            {
+                float depthBelow = surfH - worldY;
+                if (depthBelow >= 0f && depthBelow < 3f)
+                {
+                    float roadInf = NoiseUtilities.RoadInfluence(
+                        new float2(worldX, worldZ), RoadCellSize, RoadHalfWidth, RoadSeedOffset);
+                    if (roadInf > 0.3f)
+                    {
+                        OreField[index] = 8; // DirtOreId
+                        return;
+                    }
+                }
+            }
+
+            // Try ore placement (same logic as old OreGenerationJob)
 
             for (int i = 0; i < OreParamsArray.Length; i++)
             {

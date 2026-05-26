@@ -9,7 +9,7 @@ using Voidborne.Enemies;
 ///   • KillEnemy          — EnemyManager.OnAnyEnemyDied
 ///   • CollectItem        — PlayerInventory.OnItemAdded (static event)
 ///   • CraftItem          — QuestEventBridge.OnItemCrafted (raised by UIManager)
-///   • InstallCortexModule — QuestEventBridge.OnCortexModuleInstalled (raised by CortexDevice, Vol 10.3)
+///   • InstallIndexModule — QuestEventBridge.OnIndexModuleInstalled (raised by IndexDevice, Vol 10.3)
 ///   • ReachLocation      — QuestLocationTrigger fires QuestManager.UpdateObjective directly
 ///   • PlaceBuilding      — BuildingManager calls QuestManager.UpdateObjective directly
 ///   • InteractWith       — Interactable objects call QuestManager.UpdateObjective directly
@@ -27,9 +27,9 @@ public class QuestEventBridge : MonoBehaviour
     public static event Action<ItemDefinition, int> OnItemCrafted;
 
     /// <summary>
-    /// Raised by CortexDevice (Vol 10.3) when a module is installed.
+    /// Raised by IndexDevice (Vol 10.3) when a module is installed.
     /// </summary>
-    public static event Action<int> OnCortexModuleInstalled;
+    public static event Action<int> OnIndexModuleInstalled;
 
     // ---------------------------------------------------------------
     //  Static raise helpers (called by external systems)
@@ -38,12 +38,12 @@ public class QuestEventBridge : MonoBehaviour
     public static void RaiseItemCrafted(ItemDefinition item, int qty)
         => OnItemCrafted?.Invoke(item, qty);
 
-    public static void RaiseCortexModuleInstalled(int moduleIndex)
-        => OnCortexModuleInstalled?.Invoke(moduleIndex);
+    public static void RaiseIndexModuleInstalled(int moduleIndex)
+        => OnIndexModuleInstalled?.Invoke(moduleIndex);
 
-    /// <summary>Alias used by CortexDevice.</summary>
+    /// <summary>Alias used by IndexDevice.</summary>
     public static void RaiseModuleInstalled(int moduleIndex)
-        => RaiseCortexModuleInstalled(moduleIndex);
+        => RaiseIndexModuleInstalled(moduleIndex);
 
     // ---------------------------------------------------------------
     //  Lifecycle
@@ -54,7 +54,7 @@ public class QuestEventBridge : MonoBehaviour
         EnemyManager.OnAnyEnemyDied             += HandleEnemyDied;
         PlayerInventory.OnItemAdded          += HandleItemAdded;
         OnItemCrafted                        += HandleItemCrafted;
-        OnCortexModuleInstalled              += HandleCortexModuleInstalled;
+        OnIndexModuleInstalled              += HandleIndexModuleInstalled;
     }
 
     private void OnDisable()
@@ -62,7 +62,7 @@ public class QuestEventBridge : MonoBehaviour
         EnemyManager.OnAnyEnemyDied             -= HandleEnemyDied;
         PlayerInventory.OnItemAdded          -= HandleItemAdded;
         OnItemCrafted                        -= HandleItemCrafted;
-        OnCortexModuleInstalled              -= HandleCortexModuleInstalled;
+        OnIndexModuleInstalled              -= HandleIndexModuleInstalled;
     }
 
     // ---------------------------------------------------------------
@@ -101,11 +101,11 @@ public class QuestEventBridge : MonoBehaviour
             itemDef: item);
     }
 
-    private static void HandleCortexModuleInstalled(int moduleIndex)
+    private static void HandleIndexModuleInstalled(int moduleIndex)
     {
         if (QuestManager.Instance == null) return;
         QuestManager.Instance.UpdateObjective(
-            ObjectiveType.InstallCortexModule,
-            cortexModuleIndex: moduleIndex);
+            ObjectiveType.InstallIndexModule,
+            indexModuleIndex: moduleIndex);
     }
 }

@@ -6,8 +6,8 @@ public enum SlotType { Hotbar, Main, WornBackpack, BackpackContents }
 /// <summary>
 /// MonoBehaviour that lives on the Player GameObject.
 /// Manages four logical inventories:
-///   • Hotbar         — 9 × 1  (9 slots, always visible)
-///   • Main           — 9 × 3  (27 slots, opened with inventory key)
+///   • Hotbar         — 5 × 1  (5 slots, always visible on bracer)
+///   • Main           — 5 × 7  (35 slots, opened with inventory key)
 ///   • WornSlot       — 1 × 1  (dedicated backpack equipment slot)
 ///   • BackpackInventory — sized by the worn BackpackItem, null when empty
 ///
@@ -20,10 +20,10 @@ public class PlayerInventory : MonoBehaviour
     //  Inventories
     // ---------------------------------------------------------------
 
-    /// <summary>9-slot hotbar row.</summary>
+    /// <summary>5-slot hotbar row (visible on Index bracer).</summary>
     public Inventory Hotbar { get; private set; }
 
-    /// <summary>27-slot main inventory (9 × 3).</summary>
+    /// <summary>35-slot main inventory (5 × 7).</summary>
     public Inventory Main { get; private set; }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class PlayerInventory : MonoBehaviour
 
     private int _selectedHotbarIndex = 0;
 
-    /// <summary>Currently selected hotbar slot (0–8).</summary>
+    /// <summary>Currently selected hotbar slot (0–4).</summary>
     public int SelectedHotbarIndex
     {
         get => _selectedHotbarIndex;
@@ -74,8 +74,8 @@ public class PlayerInventory : MonoBehaviour
 
     private void Awake()
     {
-        Hotbar           = new Inventory(9, 1);
-        Main             = new Inventory(9, 3);
+        Hotbar           = new Inventory(5, 1);
+        Main             = new Inventory(5, 7);
         WornSlotInventory = new Inventory(1, 1);
 
         Hotbar.OnInventoryChanged            += RaiseChanged;

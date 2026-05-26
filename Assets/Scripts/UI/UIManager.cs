@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -70,6 +71,13 @@ public class UIManager : MonoBehaviour
     // Floating cursor-item image
     private Image         _cursorImage;
     private RectTransform _rootCanvasRect;
+
+    // Bracer integration
+    private IndexBracerController _bracer;
+    private Transform _inventoryOverlayParent;
+    private Transform _craftingOverlayParent;
+    private Vector2   _inventoryOverlayAnchorPos;
+    private Vector2   _craftingOverlayAnchorPos;
 
     // ---------------------------------------------------------------
     //  Player component references (cached in Start)
@@ -145,6 +153,11 @@ public class UIManager : MonoBehaviour
         if (_terrainInteraction == null)
             Debug.LogWarning("[UIManager] PlayerTerrainInteraction not found — terrain interaction will not be locked on inventory open.");
 
+        // Wire bracer integration (hotbar on bracer screen, messages, foldout hooks)
+        // Runs as coroutine because IndexBracerController.Start() is also a coroutine
+        // that waits for PlayerManager before building — we need to wait for it.
+        StartCoroutine(WireBracerIntegrationDeferred());
+
         // Gameplay starts with cursor locked
         SetCursorLocked(true);
     }
@@ -214,6 +227,13 @@ public class UIManager : MonoBehaviour
         {
             _inventoryUI.Show();
 
+            // Open bracer foldout (diegetic animation)
+            if (_bracer != null)
+            {
+                _bracer.OpenFoldout();
+                ReparentToBracer();
+            }
+
             // Show personal crafting grid alongside the inventory panel
             // (only when no crafting station or furnace is already open)
             if (_personalCraftingGrid != null && !_craftingStationOpen && !_furnaceOpen)
@@ -232,6 +252,13 @@ public class UIManager : MonoBehaviour
                 Cursor.CancelAndReturn();
 
             _inventoryUI.Hide();
+
+            // Return UIs to overlay before closing foldout
+            if (_bracer != null)
+            {
+                ReparentToOverlay();
+                _bracer.CloseFoldout();
+            }
 
             // Close backpack panel when inventory closes
             if (_backpackUI != null && _backpackUI.IsOpen)
@@ -745,6 +772,133 @@ public class UIManager : MonoBehaviour
             SetCursorLocked(true);
             if (_fpsCamera != null)          _fpsCamera.enabled          = true;
             if (_terrainInteraction != null)  _terrainInteraction.enabled = true;
+        }
+    }
+
+    // ---------------------------------------------------------------
+    //  Bracer Integration
+    // ---------------------------------------------------------------
+
+    private System.Collections.IEnumerator WireBracerIntegrationDeferred()
+    {
+        // Wait until IndexBracerController has finished building.
+        float timeout = 10f;
+        float elapsed = 0f;
+        IndexBracerController bracer = null;
+        while (elapsed < timeout)
+        {
+            bracer = FindFirstObjectByType<IndexBracerController>();
+            if (bracer != null && bracer.BracerScreenRect != null)
+                break;
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        _bracer = bracer;
+        if (_bracer == null || _bracer.BracerScreenRect == null)
+        {
+            Debug.Log("[UIManager] IndexBracerController not found — hotbar stays on overlay canvas.");
+            yield break;
+        }
+
+        // Reparent HotbarUI to the bracer screen canvas
+        if (_hotbarUI != null)
+        {
+            RectTransform hotbarRT = _hotbarUI.GetComponent<RectTransform>();
+            hotbarRT.SetParent(_bracer.BracerScreenRect, false);
+
+            // Anchor to upper portion of bracer screen
+            hotbarRT.anchorMin = new Vector2(0.5f, 1f);
+            hotbarRT.anchorMax = new Vector2(0.5f, 1f);
+            hotbarRT.pivot     = new Vector2(0.5f, 1f);
+            hotbarRT.anchoredPosition = new Vector2(0f, -4f);
+        }
+
+        // Reparent StaminaBar to the bracer screen canvas (below hotbar)
+        if (_staminaBarUI != null)
+        {
+            RectTransform barRT = _staminaBarUI.GetComponent<RectTransform>();
+            barRT.SetParent(_bracer.BracerScreenRect, false);
+
+            barRT.anchorMin = new Vector2(0.5f, 1f);
+            barRT.anchorMax = new Vector2(0.5f, 1f);
+            barRT.pivot     = new Vector2(0.5f, 1f);
+            barRT.sizeDelta = new Vector2(160f, 6f);
+            barRT.anchoredPosition = new Vector2(0f, -72f);
+        }
+
+        // Initialize IndexMessageDisplay on the bracer screen
+        var msgDisplay = gameObject.GetComponent<IndexMessageDisplay>();
+        if (msgDisplay == null)
+            msgDisplay = gameObject.AddComponent<IndexMessageDisplay>();
+        msgDisplay.Init(_bracer.BracerScreenRect);
+
+        // Cache overlay parents for reparenting inventory/crafting on open/close
+        if (_inventoryUI != null)
+        {
+            _inventoryOverlayParent = _inventoryUI.transform.parent;
+            _inventoryOverlayAnchorPos = _inventoryUI.GetComponent<RectTransform>().anchoredPosition;
+        }
+        if (_craftingUI != null)
+        {
+            _craftingOverlayParent = _craftingUI.transform.parent;
+            _craftingOverlayAnchorPos = _craftingUI.GetComponent<RectTransform>().anchoredPosition;
+        }
+
+        Debug.Log("[UIManager] Bracer integration wired — hotbar and messages on bracer screen.");
+    }
+
+    private void ReparentToBracer()
+    {
+        if (_bracer == null) return;
+
+        // Inventory → Panel A
+        if (_inventoryUI != null && _bracer.FoldoutRectA != null)
+        {
+            RectTransform rt = _inventoryUI.GetComponent<RectTransform>();
+            rt.SetParent(_bracer.FoldoutRectA, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(4f, 4f);
+            rt.offsetMax = new Vector2(-4f, -4f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+        }
+
+        // Crafting → Panel B (only personal crafting, not station UIs)
+        if (_craftingUI != null && _bracer.FoldoutRectB != null && !_craftingStationOpen)
+        {
+            RectTransform rt = _craftingUI.GetComponent<RectTransform>();
+            rt.SetParent(_bracer.FoldoutRectB, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(4f, 4f);
+            rt.offsetMax = new Vector2(-4f, -4f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+        }
+    }
+
+    private void ReparentToOverlay()
+    {
+        // Inventory → overlay canvas
+        if (_inventoryUI != null && _inventoryOverlayParent != null)
+        {
+            RectTransform rt = _inventoryUI.GetComponent<RectTransform>();
+            rt.SetParent(_inventoryOverlayParent, false);
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = _inventoryOverlayAnchorPos;
+        }
+
+        // Crafting → overlay canvas
+        if (_craftingUI != null && _craftingOverlayParent != null)
+        {
+            RectTransform rt = _craftingUI.GetComponent<RectTransform>();
+            rt.SetParent(_craftingOverlayParent, false);
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot     = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = _craftingOverlayAnchorPos;
         }
     }
 

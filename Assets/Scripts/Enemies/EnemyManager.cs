@@ -639,7 +639,7 @@ namespace Voidborne.Enemies
         // ─── Ability effects ────────────────────────────────────────────
 
         /// <summary>
-        /// Apply Cortex Pulse stagger to an enemy.
+        /// Apply Index Pulse stagger to an enemy.
         /// </summary>
         public void ApplyStagger(int index, float duration)
         {
@@ -648,7 +648,7 @@ namespace Voidborne.Enemies
         }
 
         /// <summary>
-        /// Apply Cortex Conductor mechanical disable (Optimized only).
+        /// Apply Index Conductor mechanical disable (Optimized only).
         /// </summary>
         public void ApplyMechanicalDisable(int index, float duration)
         {

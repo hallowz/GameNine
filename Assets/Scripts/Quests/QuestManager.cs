@@ -99,7 +99,7 @@ public class QuestManager : MonoBehaviour
         ItemDefinition  itemDef                 = null,
         Voidborne.Enemies.EnemyDefinition enemyDef = null,
         string          locationOrInteractableId = null,
-        int             cortexModuleIndex        = -1)
+        int             indexModuleIndex        = -1)
     {
         foreach (var kvp in _active)
         {
@@ -118,7 +118,7 @@ public class QuestManager : MonoBehaviour
                     ObjectiveType.ReachLocation      => string.IsNullOrEmpty(obj.locationId)       || obj.locationId       == locationOrInteractableId,
                     ObjectiveType.PlaceBuilding      => true,
                     ObjectiveType.InteractWith       => string.IsNullOrEmpty(obj.interactableId)   || obj.interactableId   == locationOrInteractableId,
-                    ObjectiveType.InstallCortexModule => cortexModuleIndex < 0 || obj.cortexModuleIndex < 0 || obj.cortexModuleIndex == cortexModuleIndex,
+                    ObjectiveType.InstallIndexModule => indexModuleIndex < 0 || obj.indexModuleIndex < 0 || obj.indexModuleIndex == indexModuleIndex,
                     _                                => false
                 };
 
@@ -218,7 +218,7 @@ public class QuestInstance
                 targetItem        = src.targetItem,
                 locationId        = src.locationId,
                 interactableId    = src.interactableId,
-                cortexModuleIndex = src.cortexModuleIndex,
+                indexModuleIndex = src.indexModuleIndex,
                 // currentCount and isCompleted start at default (0 / false)
             };
         }
