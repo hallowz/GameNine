@@ -6,7 +6,8 @@
         "Voidborne.Editor.Data",
         "Voidborne.Editor.ArtPipeline",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

@@ -1732,7 +1732,7 @@ Status codes:
 | 3.4 | Icon Renderer (Core 60 only) | [✓] | 60 PNGs in Assets/Textures/Icons/; 4 new EditMode tests; 304/304 passing |
 | 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [✓] | 7 creature prefabs (3 fauna + 3 enemies + 1 NPC) + 7 creature icons; 6 new EditMode tests; 310/310 passing |
 | 3.6 | One-Click Generate Visuals | [✓] | Volume 3 (visual pipeline) COMPLETE for M2 scope. GenerateAllVisuals chains all 5 stages; 2 new EditMode tests; 312/312 passing |
-| 4.1 | UI Style Kit | [ ] | JetBrains Mono font asset required |
+| 4.1 | UI Style Kit | [✓] | JetBrains Mono SDF baked; UIStyle + UIBuilder + 7 EditMode tests; 319/319 passing |
 | 4.2 | HUD Layout | [ ] | |
 | 4.3 | Inventory Panel | [ ] | |
 | 4.4 | Machine UI Frame (includes howItWorks block) | [ ] | |
@@ -1982,6 +1982,209 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 4 Chunk 4.1 (UI Style Kit)
+Notes:
+
+VERDICT: PASS. V4.1 flipped from [D] to [✓]. No fixes required. Volume 4
+foundation is solid; V4.2 (HUD Layout) is unblocked.
+
+CHECKS RUN:
+- License compliance: Assets/Fonts/JetBrainsMono-OFL.txt present (4,399
+  bytes). First lines confirm SIL Open Font License 1.1 with the
+  JetBrains Mono Project Authors copyright. OFL distribution
+  requirements satisfied.
+- TTF: Assets/Fonts/JetBrainsMono-Regular.ttf present (273,900 bytes).
+  `file` reports "TrueType Font data, 17 tables" - real font, not a
+  stub.
+- SDF asset: Assets/Resources/Fonts/JetBrainsMono-SDF.asset is a
+  TMP_FontAsset YAML with the expected sub-asset structure:
+    * Material sub-asset (fileID -1050007200738180048) bound to
+      TextMeshPro/Distance Field shader.
+    * Texture2D atlas sub-asset (fileID -63505783740848065) referenced
+      from m_AtlasTextures.
+    * m_AtlasPopulationMode: 1 (Dynamic).
+    * m_FaceInfo.m_PointSize: 90, m_AtlasPadding: 9,
+      m_AtlasRenderMode: 4165 (SDFAA32), m_AtlasWidth/Height: 1024.
+    * m_SourceFontFile GUID 45709191df90c124db21c1f7b458ca94 links back
+      to the bundled TTF.
+- UIStyle.cs: All 10 palette colours match the spec hex values bit-for-
+  bit. Sizes match (11/13/14/16/20, 50/4/12/1). Font getter is lazy and
+  caches with a one-shot warning + TMP_Settings.defaultFontAsset
+  fallback. ResetFontCache() is a tiny test seam; it only clears the
+  cache and does not introduce production state.
+- UIBuilder.cs: Panel/Text/SlotBg/Btn/Border all return the built
+  component, parent under the supplied transform with
+  worldPositionStays:false, set layer to UI (5 fallback). Btn nests a
+  TMP label child stretched to fill. Border draws as first sibling (the
+  implementer's V4.2 heads-up about hollow-frame composition is well
+  noted).
+- Tests: EditMode 319/319 passed in 10.90s, 0 failed, 0 skipped
+  (baseline was 312/312, +7 new = exact match with the implementer's
+  report). All 7 UIStyleTests cases passed including
+  UIStyle_HasJetBrainsMonoFont (confirms Resources.Load resolves the
+  real SDF asset, not the fallback).
+- Compile/warnings: read_console returned 0 errors and 0 warnings after
+  refresh.
+- asmdef: EditModeTests.asmdef gained only Unity.TextMeshPro. No new
+  asmdef files. UIStyle/UIBuilder live in namespace Voidborne.UI.Style
+  reachable from the existing Voidborne asmdef - confirmed by the
+  Voidborne.UI.Style using directive in the tests resolving cleanly.
+- Scope: git status shows only V4.1-owned files touched. HotbarUI.cs,
+  InventoryUI.cs, SlotUI.cs, TooltipUI.cs, CrosshairUI.cs untouched -
+  V4.2-V4.6 own those restyles.
+- Codebase rules: No emojis in any source file. UIStyle and UIBuilder
+  are runtime-visible (no #if UNITY_EDITOR). License file mandatory and
+  present.
+
+DEVIATIONS ACCEPTED:
+- AccentDim / TextError / TextSuccess added to the palette beyond what
+  the master_prompt 4.1 enumeration listed. Matches the task brief and
+  the HTML reference; useful for V4.2 status/feedback states.
+- Atlas Texture2D and Material persisted as sub-assets via
+  AddObjectToAsset. This is the correct fix for the domain-reload
+  reference loss the implementer encountered and is what TMP's own
+  wizard does. Without it the tests would have flakily failed; the
+  asset would have been unusable across editor restarts.
+- ResetFontCache() public method - acceptable. It is a test-only seam
+  that touches two private statics. No production code calls it; the
+  surface area is trivial and the alternative (InternalsVisibleTo) is
+  heavier.
+- Btn accepts a null onClick. Reasonable for placeholder/test layouts.
+
+NEXT UP: V4.2 (HUD Layout). HotbarUI restyle via UIBuilder.SlotBg and
+UIStyle.Accent for selection. New HudUI for health/stamina/temp/
+corruption. CrosshairUI restyle. The Border helper draws a solid
+stretched panel - implementer's heads-up about layering a Panel-tinted
+inset above it to get a hollow-frame look is the correct pattern for
+the V4.2 selected-slot highlight.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 4 Chunk 4.1 (UI Style Kit)
+Notes:
+
+V4.1 flipped from [ ] to [D]. Volume 4 foundation in place; every M2 UI
+screen (V4.2-V4.6) can now build on UIStyle + UIBuilder.
+
+FONT DOWNLOAD:
+- URL: https://github.com/JetBrains/JetBrainsMono/releases/latest/download/JetBrainsMono-2.304.zip
+- Version: JetBrainsMono 2.304 (OFL licensed)
+- Download size: 5,622,857 bytes (zip)
+- JetBrainsMono-Regular.ttf: 273,900 bytes -> Assets/Fonts/JetBrainsMono-Regular.ttf
+- OFL.txt: 4,399 bytes -> Assets/Fonts/JetBrainsMono-OFL.txt (license preservation -
+  hard requirement of OFL)
+- Only Regular weight bundled per M2 scope guard. Bold/Italic deferred.
+
+SDF BAKE (via TMP_FontAsset.CreateFontAsset in Editor):
+- samplingPointSize: 90
+- atlasPadding: 9
+- renderMode: SDFAA
+- atlasWidth: 1024, atlasHeight: 1024
+- AtlasPopulationMode: Dynamic
+- enableMultiAtlasSupport: true
+- Output: Assets/Resources/Fonts/JetBrainsMono-SDF.asset (6,467 bytes)
+- Atlas Texture2D and Material persisted as sub-assets via
+  AddObjectToAsset (3 objects under the path). Without this step the
+  in-memory atlas reference was unassigned at load time and broke 2 of
+  the new tests. After the fix all 7 new tests pass.
+- TryAddCharacters("VOIDBORNE0123456789") returns true post-load, so
+  the dynamic atlas populates as expected.
+
+FILES CREATED:
+- Assets/Fonts/JetBrainsMono-Regular.ttf            (font, 274 KB)
+- Assets/Fonts/JetBrainsMono-OFL.txt                (OFL license, 4.4 KB)
+- Assets/Resources/Fonts/JetBrainsMono-SDF.asset    (TMP SDF font, 6.5 KB)
+- Assets/Scripts/UI/Style/UIStyle.cs                (palette + sizes + Font getter)
+- Assets/Scripts/UI/Style/UIBuilder.cs              (Panel/Text/SlotBg/Btn/Border)
+- Assets/Tests/EditMode/UIStyleTests.cs             (7 EditMode tests)
+
+FILES MODIFIED:
+- Assets/Tests/EditMode/EditModeTests.asmdef       (+ Unity.TextMeshPro reference)
+
+PALETTE (matches HTML reference voidborne-flowchart-v3.html):
+- Background  #0a0e14  Panel      #14181f  PanelLight #1e2430
+- Border      #2a2f38  Accent     #b6f73e  AccentDim  #6b9a25
+- Text        #c9d1d9  TextDim    #8b949e
+- TextError   #f85149  TextSuccess #56d364
+
+SIZES:
+- FontSizeSmall 11 / Body 13 / Label 14 / Header 16 / Title 20
+- SlotSize 50  SlotGap 4  PanelPadding 12  BorderWidth 1
+
+UIBUILDER HELPERS (all return the built component, all parent under the
+supplied transform, all set layer to UI):
+- RectTransform Panel(parent, name)              -> Image tinted UIStyle.Panel
+- TextMeshProUGUI Text(parent, content, size, color, name)
+- Image SlotBg(parent, name)                     -> 50x50, UIStyle.PanelLight
+- Button Btn(parent, label, onClick, name)       -> with TMP label child
+- Image Border(target, color)                    -> stretched child, drawn behind
+
+NAMESPACE / ASMDEF:
+- Both UIStyle.cs and UIBuilder.cs live in namespace Voidborne.UI.Style.
+- Reachable from the existing Voidborne asmdef (UI scripts already live
+  there under Voidborne.UI). No new asmdef created - the spec allowed
+  either; this keeps the dep graph simpler.
+- EditModeTests.asmdef gained a Unity.TextMeshPro reference so tests can
+  see TMPro types.
+
+TESTS (+7 new, all pass):
+- UIStyle_HasJetBrainsMonoFont
+- UIStyle_PaletteColorsParseCorrectly (10 hex checks)
+- UIStyle_StandardSizesMatchSpec
+- UIBuilder_PanelCreatesValidHierarchy
+- UIBuilder_TextSetsFontAndContent
+- UIBuilder_SlotBgIsSquareSlotSized
+- UIBuilder_BtnHasLabelChild
+
+EditMode total: 319/319 passing in 10.68s (was 312/312). 0 failed, 0
+skipped. 0 new compile errors. 0 new compile warnings from my files
+(initial CS0618 on TMP_Text.enableWordWrapping was caught on the first
+refresh and replaced with the project-standard textWrappingMode API,
+matching TooltipUI.cs convention).
+
+DEVIATIONS:
+- Persisted the atlas Texture2D and the Material as sub-assets of the
+  TMP_FontAsset (AddObjectToAsset). The spec said "save the resulting
+  TMP_FontAsset to ... via AssetDatabase.CreateAsset" - this is the
+  standard requirement plus the same one-liner Unity's TMP Font Asset
+  Creator wizard does internally. Without it the in-memory atlas
+  reference is lost across the editor->test domain reload boundary and
+  the asset throws UnassignedReferenceException on first use. Visible
+  in the inspector / TMP material preview as a normal SDF font.
+- Added UIStyle.AccentDim, TextError, TextSuccess colours per the task
+  spec. The master_prompt 4.1 text only enumerated bg/panel/border/
+  accent/text/dim; the task brief explicitly listed the wider palette.
+  Followed the brief.
+- Added a public UIStyle.ResetFontCache() method (visible to tests so
+  the cached Font lookup can be invalidated). Production code does not
+  call it.
+- UIBuilder.Btn accepts a null onClick (label-only buttons are useful
+  for tests / placeholder layouts). Non-null callbacks are wired
+  normally.
+
+V4.2 HEADS-UPS (HUD Layout):
+- HotbarUI.cs already exists from V2 work. V4.2 should restyle slot
+  backgrounds via UIBuilder.SlotBg and use UIStyle.Accent for the
+  selected-slot tint. SlotSize/SlotGap/PanelPadding constants are
+  ready to use.
+- The font asset is loaded lazily on the first UIStyle.Font access.
+  Production code in V4.2+ should call UIStyle.Font at least once
+  during UIManager init to surface a fallback warning early if the
+  asset is ever lost.
+- The Border helper draws a SOLID stretched rectangle (placed as the
+  first sibling). V4.2 hotbar selection highlight should layer a
+  UIStyle.Panel-coloured panel above it inset by BorderWidth to get
+  the hollow-frame look the HTML reference uses.
+- The Index device's UI (IndexMessageDisplay etc.) was deliberately
+  NOT touched per scope guard. Its custom cyan colour (0.45/0.85/0.90)
+  remains a diegetic exception to the new palette - intentional.
+- Old in-world Canvas instances (Volume 4.6) still need to be hunted
+  down. Scope-guarded out of V4.1.
 ```
 
 ```
