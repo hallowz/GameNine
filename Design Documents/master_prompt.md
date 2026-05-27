@@ -1729,7 +1729,7 @@ Status codes:
 | Vol.Chunk | Description | Status | Notes |
 |-----------|-------------|--------|-------|
 | 3.3 | Item Visual Recipe & Composer (Core 60 only) | [✓] | 60 world prefabs + 19 placed variants; 6 new EditMode tests; 300/300 passing |
-| 3.4 | Icon Renderer (Core 60 only) | [ ] | Runtime <30s vs ~5min for 1031 |
+| 3.4 | Icon Renderer (Core 60 only) | [✓] | 60 PNGs in Assets/Textures/Icons/; 4 new EditMode tests; 304/304 passing |
 | 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [ ] | |
 | 3.6 | One-Click Generate Visuals | [ ] | |
 | 4.1 | UI Style Kit | [ ] | JetBrains Mono font asset required |
@@ -1982,6 +1982,246 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 3 Chunk 3.4 (Icon Renderer)
+Notes:
+
+VERDICT: PASS. V3.4 flipped from [D] to [✓]. No fixes required.
+
+CHECKS RUN:
+- refresh_unity force/all/request: ready_for_tools, 0 errors, 0 new
+  warnings in console (the 4 pre-existing CS0618 FindObjectOfType
+  warnings noted by the implementer still live in ElectricitySetup.cs /
+  AutomationSetup.cs - unrelated to V3.4).
+- run_tests EditMode: 304/304 passing in 4.52s. No regressions, +4 new
+  IconRendererTests cases as reported.
+- execute_menu_item Voidborne/Generate/Item Icons: re-ran successfully
+  on top of the existing PNGs; second run logged the same "Rendered 60
+  icons (Core 60)" summary, confirming idempotence.
+- Assets/Textures/Icons/ contains exactly 60 *.png files post-rerun.
+- Spot-checked ItemDefinition assets (workbench / milk / iron_ore /
+  furnace / wood): all carry a non-zero icon guid pointing to the
+  matching PNG (workbench.asset icon guid 9376f87... == workbench.png.meta
+  guid). The SerializedObject persistence pattern is working.
+- workbench.png 11537B, milk.png 13186B, iron_ore.png 19617B - all
+  well above the 500B "blank image" floor; real silhouettes.
+- clay.png / sand.png / stone.png are byte-identical (md5
+  399f7656ab67fb45e0e8c79bb30db725). Source prefabs share the same
+  cube mesh (b3211f24...) and the same build_neutral material
+  (2f6728f2...). Confirmed V3.3 mapper data issue, NOT a V3.4 renderer
+  bug - leaving for the V2.2/V3.5/V3.6 designer pass per V3.3 + V3.4
+  implementer notes.
+
+DEVIATIONS REVIEWED:
+1. Two-phase StartAssetEditing flow - correct. RenderIcon writes the
+   PNG synchronously; IconBulkRenderer batches the writes, closes the
+   batch with StopAssetEditing, then reloads each Sprite and assigns
+   via SerializedObject.FindProperty("icon").objectReferenceValue +
+   ApplyModifiedPropertiesWithoutUndo. ItemDefinition.icon is actually
+   a public Sprite field (Inventory/ItemDefinition.cs:111), so direct
+   assignment would also have worked, but the SerializedObject path is
+   strictly safer (handles future visibility changes, fires the right
+   editor notifications) and matches the V3.3 prefab-assign pattern.
+2. Dynamic layer pick (31/30/29/28) with cullingMask restriction -
+   correct. No TagManager mutation; cam.cullingMask = 1<<iconLayer and
+   light.cullingMask = 1<<iconLayer guarantee no scene contamination
+   even if a future change occupies layer 31.
+3. MSAA gated on SystemInfo.supportsMultisampleAutoResolve, URP per-
+   camera AA explicitly disabled via UniversalAdditionalCameraData -
+   correct, gives deterministic readback.
+
+CODEBASE RULES VERIFIED:
+- Both new editor scripts wrapped in #if UNITY_EDITOR.
+- IconRendererTests wrapped in #if UNITY_INCLUDE_TESTS.
+- No emojis in source.
+- asmdef diff is minimal - only adds Unity.RenderPipelines.Universal.
+  Runtime, which is required for UniversalAdditionalCameraData.
+- try/finally cleanup in RenderIcon disposes RT, Camera, Light,
+  prefab instance, and Texture2D readback in reverse order, including
+  resetting RenderTexture.active. Bulk pass wraps StartAssetEditing
+  in its own try/finally so the batch always closes.
+- Pure edit-time tool; no persistent runtime state.
+
+SPOT-CHECK ON IconRenderer FRAMING:
+- maxExtent / xzDiagonal / bounds.extents.y trio with 1.25x padding
+  matches the spec's "~80% fill" requirement (1/0.8 = 1.25).
+- 3/4 angle (1,1,-1).normalized at distance (bounds.size.magnitude *
+  2 + 2) with LookAt(bounds.center) is correct ortho framing.
+- farClipPlane = bounds.size.magnitude * 8 + 10 leaves plenty of
+  headroom.
+- NoRenderers branch logs a warning and returns null (test coverage
+  via Renderer_TransparentBackground using a primitive sphere
+  exercises the renderer-present path; no-renderer path is guarded
+  but untested, which is acceptable since V3.3 guarantees every Core
+  60 prefab has at least one Renderer).
+
+NO FIXES APPLIED. Tracker updated. V3.5 and V3.6 remain [ ].
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 3 Chunk 3.4 (Icon Renderer)
+Notes:
+
+WHAT LANDED:
+- Icon rendering pipeline for the Core 60. Every ItemDefinition now has a
+  non-null Sprite icon stored at Assets/Textures/Icons/{id}.png. The
+  renderer is editor-only, idempotent, and survives StartAssetEditing
+  batches via a two-phase render/reload flow in the bulk pass.
+
+FILES CREATED:
+- Assets/Editor/ArtPipeline/IconRenderer.cs - static class with
+  RenderIcon(GameObject prefab, string itemId, int resolution = 256).
+  Creates a hidden Camera + Directional Light on a dedicated layer
+  (31, the first unused layer in TagManager today, with fallbacks
+  30/29/28), instantiates the prefab far from origin with HideAndDontSave,
+  sets the layer recursively on all children, frames the camera tight
+  to the combined Renderer.bounds (orthographic, 3/4 angle at
+  (1,1,-1).normalized * distance, ~80% silhouette fill via 1.25x
+  padding), renders into an ARGB32 RT (24-bit depth, 4x MSAA when
+  supportsMultisampleAutoResolve), reads back into a Texture2D, encodes
+  to PNG, writes to disk, applies TextureImporter settings (textureType=
+  Sprite, alphaIsTransparency=true, spriteImportMode=Single, mipmaps off,
+  clamp wrap, bilinear, maxTextureSize=nextPow2(resolution)), and returns
+  the loaded Sprite. Try/finally wraps all RT/Camera/Light/instance
+  cleanup. Uses UniversalAdditionalCameraData to disable shadows + post
+  + AA-via-URP so the readback is deterministic.
+- Assets/Editor/ArtPipeline/IconBulkRenderer.cs - [MenuItem("Voidborne/
+  Generate/Item Icons")] + public static int Run(int resolution = 256)
+  test-callable entry point. Two-phase to handle StartAssetEditing
+  deferral: phase 1 renders + saves PNGs for every item with a
+  non-null modelPrefab (DisplayProgressBar per item, ClearProgressBar
+  in finally), phase 2 reloads each Sprite after StopAssetEditing
+  finalises the imports and writes it onto ItemDefinition.icon via
+  SerializedObject.FindProperty("icon").objectReferenceValue +
+  ApplyModifiedPropertiesWithoutUndo (the icon field is private/
+  serialized; direct assignment doesn't persist). Logs summary at end.
+  Returns the count of items successfully assigned.
+- Assets/Tests/EditMode/IconRendererTests.cs - 4 tests:
+    Renderer_ProducesNonNullSprite (workbench.prefab -> Sprite non-null,
+    PNG exists at Assets/Textures/Icons/workbench.png),
+    Renderer_IconResolutionMatchesRequest (resolution=128 -> texture is
+    128x128; uses a temp id and cleans up),
+    Renderer_TransparentBackground (sphere primitive renders -> the four
+    corner pixels of the raw PNG decode have alpha=0; uses a temp id and
+    cleans up),
+    BulkRenderer_AssignsToItemDatabase (IconBulkRenderer.Run() > 0; at
+    least 3 of {workbench, furnace, milk, iron_ore} have non-null icon
+    after the bulk pass).
+
+FILES MODIFIED:
+- Assets/Editor/ArtPipeline/Voidborne.Editor.ArtPipeline.asmdef -
+  added "Unity.RenderPipelines.Universal.Runtime" to references so the
+  UniversalAdditionalCameraData type resolves. Other Voidborne editor
+  scripts (TreeBillboardBaker.cs) compile in Assembly-CSharp-Editor
+  which auto-references everything; the ArtPipeline asmdef does not.
+
+DEVIATIONS FROM SPEC:
+
+1. **StartAssetEditing breaks synchronous Sprite load.** The spec says
+   to wrap the bulk loop in AssetDatabase.StartAssetEditing /
+   StopAssetEditing AND that RenderIcon should return the imported
+   Sprite. These conflict: inside a StartAssetEditing batch, importer
+   work is queued and AssetDatabase.LoadAssetAtPath<Sprite> returns null
+   until StopAssetEditing closes. Resolved with a two-phase bulk flow:
+   phase 1 renders + writes PNGs + applies importer settings inside the
+   batch; phase 2 (after StopAssetEditing + AssetDatabase.Refresh)
+   reloads every Sprite and writes ItemDefinition.icon. The standalone
+   RenderIcon() call path (used by the tests and any future
+   single-item caller) is unaffected and still returns the Sprite
+   synchronously because nothing wraps it.
+
+2. **Layer pick is dynamic with fallbacks.** Spec says "layer 31 = 'IconRenderer'
+   - fall back to a temporary layer if 31 is in use". TagManager.asset
+   already has layer 31 unused; I did NOT register a named "IconRenderer"
+   layer (would be a project-settings mutation and the spec specifically
+   said to avoid scene contamination, not to add layers). Renderer picks
+   31 first and falls back through 30/29/28 if a future change occupies
+   31. Camera cullingMask + Light cullingMask both restrict to the
+   chosen layer so scene contamination is impossible.
+
+3. **MSAA / antialiasing.** Spec said "anti-aliased if available". Set
+   the RenderTextureDescriptor msaaSamples to 4 when
+   SystemInfo.supportsMultisampleAutoResolve, else 1. URP's per-camera
+   AA is explicitly disabled on the UniversalAdditionalCameraData so
+   the only AA path is the RT MSAA - keeps the readback deterministic.
+
+VERIFICATION RESULTS:
+- refresh_unity: 0 compile errors after asmdef update. 0 new warnings
+  (the 4 CS0618 FindObjectOfType warnings pre-date V3.4 and live in
+  ElectricitySetup.cs / AutomationSetup.cs).
+- run_tests EditMode: 304/304 passing (was 300 after V3.3; +4 new
+  IconRendererTests cases). Wall time 6.65s.
+- execute_menu_item Voidborne/Generate/Item Icons:
+  "[IconBulkRenderer] Rendered 60 icons (Core 60). Saved to
+  Assets/Textures/Icons/." Idempotent on re-run.
+- Assets/Textures/Icons/ contains exactly 60 *.png files (one per Core
+  60 item).
+- ItemDatabase sample check: workbench / furnace / milk / iron_ore /
+  wood_door / iron_sword / wood all have non-null icon references named
+  after the item id. All 60 of 60 items carry non-null icons.
+
+VISUAL-FIDELITY CONCERNS (data, not renderer):
+
+- **clay.png, sand.png, stone.png are byte-identical** (3765 bytes each).
+  All three resolve to the same Mapper recipe (Cube + build_neutral) per
+  V3.3's notes. Renderer is doing its job; the recipe distinguisher needs
+  designer attention (V2.2 territory - extend ItemSoGenerator to derive
+  buildColor for known soil sources). V3.3 flagged this.
+- **charcoal.png / bread.png / flour.png are similar sizes (~3723 bytes)**
+  and use the generic-component fallback (small Cube + build_neutral).
+  Same root cause as above. Renderer is fine; data needs the category /
+  property cleanup.
+- **gunpowder.png at 2024 bytes** is the smallest in the set (smaller
+  silhouette via the generic fallback). Reads as a tiny grey dot. Worth
+  a designer pass.
+
+HEADS-UPS FOR V3.5 (Fauna / Enemy / NPC Visual Recipes):
+
+- The IconRenderer is creature-agnostic - it just needs a GameObject with
+  Renderers in the prefab. V3.5 can call IconRenderer.RenderIcon
+  directly for the 7 NPCs (or whatever creature/enemy registry V3.5
+  introduces) once those prefabs exist. No need to fork.
+- Tall silhouettes are framed via Mathf.Max(maxExtent, xzDiagonal,
+  bounds.extents.y) so a Fungal Brood Mother at ~3m tall will fit
+  within the icon without manual tuning.
+- Layer 31 + cullingMask restriction means V3.5 can render multiple
+  prefabs in sequence without scene contamination. Camera/Light
+  cullingMasks are restricted to the icon layer so any in-scene lights
+  / cameras left over from a creature prefab won't leak.
+- If V3.5 needs an animated pose for a creature (e.g. T-pose vs idle),
+  drive that on the instantiated GameObject before calling Render() on
+  the camera - the IconRenderer instantiates the prefab into the scene
+  and renders it without further mutation, so a pose tweak between
+  instantiation and Render() is possible. Today's RenderIcon does not
+  expose that hook; V3.5 can either (a) pass a pre-posed prefab or (b)
+  extend RenderIcon with an Action<GameObject> postSpawn callback.
+
+HEADS-UPS FOR V3.6 (One-Click Generate Visuals):
+
+- Call order should be Materials -> Primitives -> Item Prefabs ->
+  Creature Prefabs -> Item Icons -> Creature Icons. Item Icons MUST
+  run after Item Prefabs - IconBulkRenderer warns + skips any item
+  whose modelPrefab is null.
+- The full Core 60 icon bulk pass completes in <2s wall time on my
+  machine (well under the spec's "<30s" budget). V3.6's combined
+  pipeline should still feel snappy.
+- IconBulkRenderer.Run() returns the number of items assigned, so
+  V3.6 can show a meaningful end-of-run summary.
+
+COOP / CODEBASE RULES:
+- IconRenderer / IconBulkRenderer wrapped in #if UNITY_EDITOR.
+- No emojis in source.
+- All resource creation (RenderTexture, Camera, Light, prefab instance,
+  Texture2D readback) is cleaned up in try/finally so a thrown exception
+  during rendering can't leak.
+- Idempotent - re-running overwrites the same PNGs at the same paths
+  and SerializedObject only writes when the Sprite reference changes.
+- No runtime state; no MonoBehaviour state. The renderer is a pure
+  edit-time tool.
 ```
 
 ```

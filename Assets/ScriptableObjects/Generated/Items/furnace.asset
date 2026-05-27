@@ -24,7 +24,7 @@ MonoBehaviour:
   buildColor: 
   maxStackSize: 1
   weight: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 15cb114d7c368d64b9fce6c776993a91, type: 3}
   modelPrefab: {fileID: 2012532584485457433, guid: d0aa16981c5515545bdfb7417817cbb3, type: 3}
   placedPrefab: {fileID: 731765063803833852, guid: e1150e356e6d5ce448962414c763be61, type: 3}
   properties: 
