@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e4842b747e1bc145bb4dd75d74c1b03, type: 3}
+  m_Name: cave_eel
+  m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
+  id: cave_eel
+  displayName: Cave Eel
+  description: Aquatic predator. Found in marsh water and cave pools.
+  behaviors:
+  - Lurks in deep water.
+  - Strikes from below at swimming players.
+  - Vulnerable when out of water.
+  - Eel oil is the most efficient bio-fuel.
+  habitat: Marsh Fauna
+  dropItemIds:
+  - Eel Meat x2-3
+  - Eel Oil x1-2 (engine fuel)
+  - Cave Slime x1
+  isTameable: 0
+  isPassive: 0
+  isAggressive: 0
+  baseHealth: 50
+  baseSpeed: 3
+  prefab: {fileID: 0}

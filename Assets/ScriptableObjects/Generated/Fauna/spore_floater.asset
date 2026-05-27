@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e4842b747e1bc145bb4dd75d74c1b03, type: 3}
+  m_Name: spore_floater
+  m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
+  id: spore_floater
+  displayName: Spore Floater
+  description: Drifting marsh creature. Almost like a living lantern. Mostly passive
+    but bursts spores when threatened.
+  behaviors:
+  - Drifts on marsh winds.
+  - Releases small spore cloud when touched.
+  - Dies easily from any attack.
+  - Cluster of floaters lights up marsh paths at night.
+  habitat: Marsh Fauna
+  dropItemIds:
+  - Spore Cluster x1-2
+  - Bio Sac x1
+  - Glow Paste x1
+  isTameable: 0
+  isPassive: 0
+  isAggressive: 0
+  baseHealth: 50
+  baseSpeed: 3
+  prefab: {fileID: 0}

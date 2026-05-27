@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: the_choice_variants
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: the_choice_variants
+  displayName: The Choice (Variants)
+  description: Final encounter, depends on the player's choice at the Choice Chamber.
+    Each ending has its own confrontation.
+  tier: 0
+  family: 6
+  behaviors:
+  - "Seal \u2014 fight the rift itself, as a manifested entity. Reality bends."
+  - "Bind \u2014 fight the hidden Apostle of the Council, who opposes binding."
+  - "Step Through \u2014 no fight; an extended traversal sequence into the unknown."
+  - "Embrace \u2014 fight your own mirror, the Untouched who refused to corrupt."
+  abilities:
+  - 'Seal path: rift uses every mechanic the game has ever shown'
+  - 'Bind path: Apostle fights with diplomacy mechanics'
+  - 'Step Through path: environmental puzzle, not combat'
+  - 'Embrace path: mirror copies player''s exact loadout'
+  dropItemIds:
+  - Ending-specific cosmetic title
+  - New Game+ unlock
+  - Atlas final state (different per ending)
+  - Player's chosen reality
+  boss_section: Story Finale
+  isBoss: 1
+  isFinale: 1
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

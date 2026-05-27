@@ -1,0 +1,1577 @@
+[
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Fungal Brood Mother",
+    "desc": "The first major boss. Lurks in a ruined Kin village basement in the Lowlands. Tier 1 — designed to teach players the boss-fighting loop.",
+    "appearance": "Bloated, slow Kin matriarch overgrown with bioluminescent fungal sacs. Her face is partially preserved, eyes blank but tracking. Trails spore-mist as she moves.",
+    "behaviors": [
+      "Stays mostly stationary, rarely chases.",
+      "Spawns 'Spore Mites' (small fast adds) every ~15 seconds.",
+      "Telegraphs sac-burst attacks 2 seconds before triggering.",
+      "Becomes more aggressive below 30% HP, releases panic spore-cloud."
+    ],
+    "abilities": [
+      "Spore-Sac Burst — AOE poison cloud, leaves lingering damage zone",
+      "Fungal Spawn — summons 3-5 Spore Mites",
+      "Tendril Lash — short-range pull toward her",
+      "Death Bloom — final ability, releases all stored spores"
+    ],
+    "drops": [
+      "Cartographer's Lens (guaranteed — required for first Atlas)",
+      "Spore Cluster x3-5",
+      "Glandular Sac (chem set bootstrap component)",
+      "Spirit Anchor (her Kin memory)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Bone Brood Father",
+    "desc": "A patriarchal corruption in the Badlands. Lives in the ribcage of a colossal Kin elder's skeleton, now half-buried in red sand.",
+    "appearance": "Skeletal humanoid, almost no flesh, ribs flared like a cage. Skull is enormous, jaw permanently open in a silent howl. Cracked bone armor covers his arms.",
+    "behaviors": [
+      "Slower than Fungal but hits much harder.",
+      "Spawns 'Bone Walkers' — skeletal minions that pursue relentlessly.",
+      "Uses sand as cover, occasionally burrows briefly.",
+      "Will retreat into his ribcage at low HP and channel a final attack."
+    ],
+    "abilities": [
+      "Bone Spike Wall — spawns barriers that block player movement",
+      "Marrow Lance — long-range bone projectile, high damage",
+      "Walker Summon — 4-6 Bone Walkers join the fight",
+      "Ossuary Slam — close-range AOE, breaks player armor"
+    ],
+    "drops": [
+      "Sharp Bone Tip x8 (taxidermy + ammo materials)",
+      "Father's Marrow (masterwork bow ingredient)",
+      "Sinew Bundle x3",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Frost Brood Lich",
+    "desc": "Wreathed in perpetual blizzard in the Frozen Peaks. Was once a Kin elder revered for her ice-prophecies.",
+    "appearance": "Tall, gaunt figure suspended above the ground in a vortex of snow. Crystalline shards float around her like a slow halo. Her eyes are two pinpoints of blue cold.",
+    "behaviors": [
+      "Floats slowly, never touches ground.",
+      "Spawns 'Frost Wisps' (fast, fragile, freeze on hit).",
+      "Drops temperature in the arena over time — player needs cold protection.",
+      "Phases between physical and intangible states."
+    ],
+    "abilities": [
+      "Glacial Lance — three-bolt frozen volley",
+      "Wisp Tide — summons 6-8 Frost Wisps",
+      "Icebound — locks the player in place briefly",
+      "Hailstorm — area denial, falling ice shards"
+    ],
+    "drops": [
+      "Frost Crystal x6 (cryo gear)",
+      "Lich's Pulse (cryo engine ingredient)",
+      "Glacial Robe Scrap (armor mat)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Aether Brood Empress",
+    "desc": "Floats serenely above a Sky Island throne. Surrounded by hovering shards of crystal that drift in mathematical patterns.",
+    "appearance": "Regal Kin form draped in tattered silk. Skin half-replaced with violet aether crystal. Her crown is made of orbiting shards that never touch her head.",
+    "behaviors": [
+      "Highly mobile — teleports short distances around the arena.",
+      "Spawns 'Aether Mites' — mini-bosses that mirror her teleport.",
+      "Vulnerable only when her crown shards align overhead (3-second window).",
+      "Uses gravity attacks — pulls or pushes the player off platforms."
+    ],
+    "abilities": [
+      "Crown Shard Volley — fires orbital shards in spiraling arcs",
+      "Gravity Reverse — flips up/down briefly",
+      "Mite Manifest — 3 Aether Mites appear from rifts",
+      "Imperial Decree — temporary invulnerability + summons"
+    ],
+    "drops": [
+      "Aether Distillate x2 (T4 engine fuel)",
+      "Empress Shard (sky vehicle component)",
+      "Void Dust x4",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Vord Brood Queen",
+    "desc": "Found in an abyssal pit beneath an old Kin temple. Closest creature to the original VORD form. Tier 3.",
+    "appearance": "No longer recognizably Kin. A wet, segmented mass with multiple eye-clusters and dozens of half-formed limbs. Constantly birthing smaller drones.",
+    "behaviors": [
+      "Stationary — anchored to the pit by her own mass.",
+      "Continuous spawn rate of basic Vord Drones (8-12 in arena at all times).",
+      "Hits players from across the arena with elongated tendrils.",
+      "Below 25% HP, becomes mobile by uprooting from the pit — much more dangerous."
+    ],
+    "abilities": [
+      "Tendril Sweep — rotating arena-wide attack",
+      "Drone Tide — endless spawn",
+      "Acid Spit — long-range ranged attack",
+      "Uproot (phase 2) — boss becomes mobile, chases player"
+    ],
+    "drops": [
+      "Vord Marrow (rare, T3+ recipes)",
+      "Queen's Carapace x4 (prestige armor)",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor (rare — Queen partially retains identity)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Mech Brood Director",
+    "desc": "In a Kin ruin that was a pre-corruption automation lab. The Director was a Kin engineer who tried to fight Vord with automation — and lost.",
+    "appearance": "Half flesh, half scrapped machinery. Spider-like legs, six tool-arms. Face is a brass mask welded to remaining flesh. Eye lenses glow.",
+    "behaviors": [
+      "Constructs minions live during the fight — pulls scrap from the floor.",
+      "Has 4 'construction stations' around the arena — destroy them to slow spawns.",
+      "Heavy ranged focus — keeps distance.",
+      "Repairs itself if left alone for too long."
+    ],
+    "abilities": [
+      "Drone Assembly — every 12 seconds, builds a new minion",
+      "Servo Strike — long-arm melee from range",
+      "Self-Repair — channels for 4 seconds, heals 15% HP",
+      "Overload Discharge — AOE pulse from the chest"
+    ],
+    "drops": [
+      "Director's Cortex (prestige etcher recipe)",
+      "Servo x6, Capacitor x4",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Stone Warden",
+    "desc": "Tier 1 Warden, guarding a small Lowlands ruin. Slow but devastating melee fight.",
+    "appearance": "Towering Kin-shaped figure of grey stone, with green moss in the cracks. Wields a massive stone maul. Cracks glow faintly red.",
+    "behaviors": [
+      "Slow movement, telegraphed attacks.",
+      "Becomes faster as cracks widen — at 50% HP, charges briefly.",
+      "Cannot be staggered by light attacks.",
+      "Vulnerable spot: the glowing core in his chest, exposed after a charge."
+    ],
+    "abilities": [
+      "Maul Slam — straight-line AOE",
+      "Quake Stomp — circular AOE, knocks player back",
+      "Boulder Throw — ranged option, dodgeable",
+      "Charge Rush — only at lower HP, exposes core after"
+    ],
+    "drops": [
+      "Smith's Hammer (Forge recipe unlock)",
+      "Stone Cube x12, Iron Ingot x4",
+      "Warden's Core (masterwork tool material)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Iron Sentinel",
+    "desc": "Guards a Kin smithy in the Badlands. Fully armored, near-invincible from the front.",
+    "appearance": "Suit of riveted iron plate, three meters tall. The helmet's visor is sealed shut. Sparks bleed from joints when it moves.",
+    "behaviors": [
+      "Cannot be damaged from the front — must hit from behind or sides.",
+      "Slow turning, predictable.",
+      "Has a 'rage' phase when its armor cracks at 33% HP — much faster and more aggressive.",
+      "Stomps create shockwaves that knock back."
+    ],
+    "abilities": [
+      "Greatsword Cleave — wide frontal arc",
+      "Shoulder Bash — forward charge",
+      "Earth Tremor — radial stomp",
+      "Rage Phase — strips armor, faster movement, exposed weak points"
+    ],
+    "drops": [
+      "Sentinel Plating (masterwork armor mat)",
+      "Iron Ingot x8, Titanium Plate x2",
+      "Sealed Helm (display trophy)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Glass Watcher",
+    "desc": "In a crystalline cave system beneath the Fungal Marshes. Reflective surfaces mean every angle matters.",
+    "appearance": "Crystalline humanoid with refractive skin that scatters light into rainbows. Cannot be seen clearly from any one angle — always partly invisible.",
+    "behaviors": [
+      "Reflects ranged attacks back at the player.",
+      "Must be fought in melee.",
+      "Creates 'mirror copies' that look identical — only one is real.",
+      "Vulnerable when the cave's natural light hits its core directly."
+    ],
+    "abilities": [
+      "Refract — reflects a ranged shot back",
+      "Mirror Self — spawns 2 False copies",
+      "Crystal Shard Burst — close-range AOE",
+      "Prism Beam — laser when caught in direct light"
+    ],
+    "drops": [
+      "Watcher's Lens (telescope + atlas upgrade material)",
+      "Glass x10, Silica Dust x6",
+      "Prism Core (energy weapon component)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Bone Colossus",
+    "desc": "A multi-skeleton Kin amalgam, fused into one giant. In the Badlands' Bone Reach.",
+    "appearance": "Massive figure assembled from 5-6 Kin skeletons fused together. Multiple skulls. Multiple arms. Walks on irregular leg combinations.",
+    "behaviors": [
+      "Each skull is a separate weak point — destroy them in sequence to weaken him.",
+      "While skulls remain, regenerates over time.",
+      "Different arms wield different weapons (hammer, spear, claw).",
+      "Final phase: collapses into a single skeleton and becomes much faster."
+    ],
+    "abilities": [
+      "Multi-Limb Assault — strikes from several angles at once",
+      "Bone Erupt — pillars of bone burst from the ground",
+      "Skull Howl — area fear, scrambles player aim briefly",
+      "Reassemble — picks up fallen skull bones to regrow"
+    ],
+    "drops": [
+      "Colossal Marrow (giant-scale building blocks)",
+      "Bone Plate x20",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor (the original Kin who was 'first' in the fusion)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Mist Guard",
+    "desc": "In a Sky Island fortress perpetually shrouded in cloud. Visibility is the central challenge.",
+    "appearance": "Tall humanoid in a long flowing cloak of mist. Face hidden. Only the gleam of two weapons visible through the fog.",
+    "behaviors": [
+      "Visible only when attacking.",
+      "Moves silently through mist when between attacks.",
+      "Has a clear 'wind-up' sound before each strike — audio cues critical.",
+      "Cleared mist by stunning him with sonic attacks reveals his True position."
+    ],
+    "abilities": [
+      "Mist Step — teleports through fog",
+      "Twin Cleave — paired blade strikes",
+      "Veil Cloak — increases ambient mist density",
+      "Gale Step — knocks player off platform edge"
+    ],
+    "drops": [
+      "Mist-Walker Cloak (stealth armor)",
+      "Cloud Crystal (sky vehicle component)",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Warden Family",
+    "name": "Void Custodian",
+    "desc": "Endgame Warden. In the deepest abyss, guarding the path to the Citadel. The most patient fight in the game.",
+    "appearance": "Tall, robed figure with a featureless mask. Aura of consumed light around it — a sphere of darkness 3 meters wide that swallows projectiles.",
+    "behaviors": [
+      "Projectiles entering its darkness sphere are nullified.",
+      "Must be fought in melee or with attacks that pierce the sphere.",
+      "Counter-attacks every successful player hit with a precise riposte.",
+      "Telegraphs ultimate ability across the entire arena."
+    ],
+    "abilities": [
+      "Void Riposte — instant counter on player hit",
+      "Darkness Pulse — expands sphere temporarily",
+      "Lightless Lance — pierces armor, ignores cover",
+      "Final Eclipse — arena-wide darkness for 5 seconds"
+    ],
+    "drops": [
+      "Custodian's Mantle (prestige cloak)",
+      "Void Crystal x2",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor (one of the original Kin Council)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Mist Hunter",
+    "desc": "Tier 1 Hunter. Stalks the Fungal Marshes by night. Fast, low HP, deadly if not tracked.",
+    "appearance": "Lean Kin figure on all fours, half-corrupted. Skin pale, eyes huge and reflective. Moves silently. Trail of phosphorescent footprints fade quickly.",
+    "behaviors": [
+      "Stays mostly invisible, attacks from behind.",
+      "Retreats to recover stealth between strikes.",
+      "Can be tracked by faint footprint trail.",
+      "Vulnerable in the moment after an attack (1-2 second window)."
+    ],
+    "abilities": [
+      "Pounce — sudden leap from stealth",
+      "Throat Tear — high damage close-range",
+      "Mist Veil — re-enters stealth, even mid-fight",
+      "Shriek — momentarily blinds player"
+    ],
+    "drops": [
+      "Hunter's Pelt (Ranger Garb component)",
+      "Sharp Bone Tip x4",
+      "Predator Meat x2",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Shadow Stalker",
+    "desc": "In an old Kin night-watch tower in the Lowlands. Was once a guard captain.",
+    "appearance": "Long, gangly Kin form draped in tattered dark cloth. Carries two curved blades. Eyes glow faint amber from beneath the hood.",
+    "behaviors": [
+      "Uses environmental shadows to disappear.",
+      "Comes from above as often as from the sides.",
+      "Reads player's movement — circles to opposite side.",
+      "Throws blades from stealth, then closes for finisher."
+    ],
+    "abilities": [
+      "Twin Blade Throw — dual ranged attack from stealth",
+      "Shadow Step — teleports between dark zones",
+      "Finisher Lunge — closes gap from any direction",
+      "Smoke Veil — creates shadow zone for cover"
+    ],
+    "drops": [
+      "Stalker's Mask (stealth armor)",
+      "Curved Blade Fragment (weapon mat)",
+      "Black Silk (silk cable alt)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Spore Hunter",
+    "desc": "Deep in the Fungal Marshes, a Kin who became one with the spores. Toxic, fast, terrifying.",
+    "appearance": "Hunched Kin figure overgrown with bioluminescent fungal spores. Trails a constant cloud. Limbs end in claw-spurs of compressed mycelium.",
+    "behaviors": [
+      "Leaves spore zones wherever it walks — visible damage trails.",
+      "Faster than other Hunters but more predictable in attack patterns.",
+      "Vulnerable to fire damage.",
+      "Becomes more aggressive at low HP and stops leaving zones (focused on player)."
+    ],
+    "abilities": [
+      "Spore Claw — close-range AOE poison",
+      "Trail Mark — leaves a damage zone behind",
+      "Bloom Burst — circular poison release",
+      "Berserker Rush — final phase, ignores zones to chase player"
+    ],
+    "drops": [
+      "Spore Cluster x6",
+      "Hunter's Fungal Spur (poison weapon mat)",
+      "Bio Sac x4",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Frost Reaver",
+    "desc": "In the Frozen Peaks, hunting at the treeline. Tier 2. Tracks the player as much as the player tracks it.",
+    "appearance": "Powerful Kin figure with white-blue skin and frost-rimed eyes. Wears the fur of slaughtered Snowdrifters. Two long ice-bone claws.",
+    "behaviors": [
+      "Stays at edge of player's vision, watching.",
+      "Engages only when player commits to an action (drinking, crafting, etc).",
+      "Phase 1: hit-and-run. Phase 2: full combat.",
+      "Can freeze the player solid briefly with a successful claw hit."
+    ],
+    "abilities": [
+      "Hunter's Mark — telegraph attack from far range",
+      "Frost Claw — close-range, may freeze",
+      "Pack Howl — summons 2 wolves to support",
+      "Reaver's Charge — single high-damage commitment"
+    ],
+    "drops": [
+      "Reaver's Pelt (cryo armor)",
+      "Frost-Bone Claw (weapon)",
+      "Thick Pelt x3",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Sky Hunter",
+    "desc": "In a Sky Island spire, hunts from the air. The first fight that meaningfully uses aerial mobility.",
+    "appearance": "Winged Kin figure — wings are corrupted Driftwing skin grafted to their back. Carries a longbow made of skyserpent bone.",
+    "behaviors": [
+      "Stays airborne almost the entire fight.",
+      "Player needs Glider/Gyrocopter or precise long-range to engage.",
+      "Lands only briefly to recover quivers.",
+      "Vulnerable during its dive-attacks."
+    ],
+    "abilities": [
+      "Skyserpent Volley — multi-arrow ranged attack",
+      "Dive Strike — committed high-speed dive, exposes weakness on miss",
+      "Wing Buffet — knocks player off platforms",
+      "Ascend — escapes to higher altitude when threatened"
+    ],
+    "drops": [
+      "Skyserpent Bow (masterwork ranged weapon)",
+      "Driftwing Skin (aerial armor)",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Hunter Family",
+    "name": "Vord Lance",
+    "desc": "Endgame Hunter. Vord's perfected assassin. The Apostle's chosen.",
+    "appearance": "Slender, almost beautiful Kin figure. Skin made of black chitin segments. Carries a single spear made of focused void. Moves like liquid.",
+    "behaviors": [
+      "Engages, disengages, repositions — never stays in one spot more than 3 seconds.",
+      "Counter-attacks specifically when player misses a swing.",
+      "Has a 'final blow' attack at low HP that one-shots — must be dodged perfectly.",
+      "Speaks to the player during the fight — old Kin language, half-lucid."
+    ],
+    "abilities": [
+      "Void Lance Thrust — high-precision pierce attack",
+      "Step-Echo — afterimages confuse player aim",
+      "Riposte Reading — counter on missed attacks",
+      "Final Verdict — endgame one-shot, telegraphed but hard to dodge"
+    ],
+    "drops": [
+      "Void Lance (legendary weapon)",
+      "Vord-Chitin Plates (prestige armor)",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor (high-value — Lance was a beloved Kin commander)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Mire Channeler",
+    "desc": "Tier 1 Channeler. Lives at the heart of a Fungal Marsh. Turns the arena against the player.",
+    "appearance": "Stooped Kin figure leaning on a staff topped with a glowing fungal sphere. Robes dripping with marsh water. Long stringy hair.",
+    "behaviors": [
+      "Stays at distance, channels environmental hazards.",
+      "Will not approach the player even if attacked in melee.",
+      "Vulnerable while channeling (3-second windows).",
+      "Surrounding water becomes acidic over time as fight progresses."
+    ],
+    "abilities": [
+      "Acid Pool — designates spots that bubble up after 2 seconds",
+      "Spore Squall — area cloud damage",
+      "Mire Tendrils — grasping vines from below",
+      "Channel: Drowning — slows player movement in water"
+    ],
+    "drops": [
+      "Channeler's Staff Tip (alchemist masterwork tool)",
+      "Marshfern Pulp x6",
+      "Royal Jelly x2",
+      "Spirit Anchor (an old Kin apothecary)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Cinder Caster",
+    "desc": "Badlands volcanic vent. The arena heats up over the course of the fight — player needs heat resistance.",
+    "appearance": "Tall Kin figure with skin like cracked obsidian glowing orange from within. Robes burn but don't consume. Holds a fistful of molten metal.",
+    "behaviors": [
+      "Arena temperature rises every 30 seconds — player takes burn damage without protection.",
+      "Stays mobile to keep distance.",
+      "Pyro spirit if cleansed; otherwise turns the arena to lava at low HP.",
+      "Vulnerable when channeling Magma Pillar (channels for 4 seconds)."
+    ],
+    "abilities": [
+      "Molten Volley — three arc projectiles",
+      "Cinder Step — leaves fire patches when moving",
+      "Magma Pillar — vertical column rises from beneath player",
+      "Eruption — final ability, fills arena with lava"
+    ],
+    "drops": [
+      "Cinderroot Sigil (Pyro Engine masterwork)",
+      "Thermal Rock x3",
+      "Cinderroot Oil x4",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Frost Conduit",
+    "desc": "Frozen Peaks, in a crystalline cathedral. Channels are the entire arena — pillars of ice that focus its power.",
+    "appearance": "Statuesque Kin figure encased in flowing ice, ice flowing upward instead of dripping. Translucent — you can see her heart pulsing.",
+    "behaviors": [
+      "Power is amplified by 4 ice pillars at the arena edges — destroy them to weaken her.",
+      "Each pillar destroyed reduces her abilities tier.",
+      "Slow movement but constant ranged barrage.",
+      "Pillars regenerate slowly — managing them is the fight."
+    ],
+    "abilities": [
+      "Glacial Bolt — homing frost projectile",
+      "Pillar Resonance — area freeze under ice pillars",
+      "Frostfall — overhead ice rain in arena",
+      "Heart Beat — pulse AOE that scales with intact pillars"
+    ],
+    "drops": [
+      "Frost Conduit Core (cryo engine prestige)",
+      "Frost Crystal x10",
+      "Cryo Gel x4",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Storm Speaker",
+    "desc": "Sky Island, in a fortress where ancient Kin called the lightning. Wields the storm itself.",
+    "appearance": "Wild-haired Kin figure standing atop a wind-circled platform. Arms raised, draped in tattered cloth. Eyes are pure white.",
+    "behaviors": [
+      "Calls lightning — strike zones visible 2 seconds in advance.",
+      "Manipulates wind to push player away from her.",
+      "Has 4 'storm anchors' on the arena floor — break them to disrupt her.",
+      "Hardest with metal armor (lightning attraction)."
+    ],
+    "abilities": [
+      "Lightning Strike — telegraphed AOE",
+      "Gale Push — radial wind shove",
+      "Static Field — slows and shocks anyone in zone",
+      "Cyclone — final phase, central tornado covers half the arena"
+    ],
+    "drops": [
+      "Storm Crown (lightning gear)",
+      "Capacitor x6 (heavy electronics drop)",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Bone Sigil-Keeper",
+    "desc": "In a Kin burial complex. Channels through carved sigil-stones placed around the arena.",
+    "appearance": "Robed Kin priest, skin replaced with carved bone segments. Sigils etched directly into her skull, glowing faintly green.",
+    "behaviors": [
+      "Power flows through 6 sigil-stones at the edges of the arena.",
+      "Inscribe each stone takes time — interrupt or destroy them.",
+      "Heals when standing near intact sigils.",
+      "Becomes more dangerous as stones are removed (desperate phase)."
+    ],
+    "abilities": [
+      "Sigil Channel — heals herself near stones",
+      "Bone Spear Inscription — creates spears from carved sigils",
+      "Soul Drain — short-range life-steal",
+      "Final Inscription — at 25% HP, etches the player's soul"
+    ],
+    "drops": [
+      "Sigil-Keeper's Codex (mystic recipes unlock)",
+      "Sigil Carving x6 (mystic component)",
+      "Soul Essence x3",
+      "Spirit Anchor"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Channeler Family",
+    "name": "Void Manipulator",
+    "desc": "Endgame Channeler. In an abyssal void node, manipulates gravity, space, and time.",
+    "appearance": "Robed Kin figure that flickers between three positions simultaneously. Half-transparent. Eyes are voids — actual voids — that pull light into them.",
+    "behaviors": [
+      "Player gravity reverses unpredictably.",
+      "Boss has 3 positions at once — must be hit in all 3 to do real damage.",
+      "Time slows in pockets — must read which 'speed bubble' she's in.",
+      "Final phase: arena unfolds into non-Euclidean shape, gravity vectors confuse aim."
+    ],
+    "abilities": [
+      "Gravity Flip — temporary reversal",
+      "Triple Self — exists in 3 places",
+      "Time Pocket — slow-motion bubble",
+      "Reality Fold — final phase, arena becomes non-Euclidean"
+    ],
+    "drops": [
+      "Void Manipulator's Sigil (singularity gear)",
+      "Aether Distillate x3",
+      "Heart Fragment (1 of 7)",
+      "Spirit Anchor (an original Kin Council theorist)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Tendril Horror",
+    "desc": "Tier 3 Aberrant. Buried in the foundations of a sunken Kin temple in the Marshes. Reaches through walls.",
+    "appearance": "No Kin body. Just a central mass of pulsing flesh anchored to the temple's heart-stone, with dozens of long, segmented tendrils extending into the surrounding rooms.",
+    "behaviors": [
+      "Cannot move from its anchor.",
+      "Strikes through walls — line-of-sight does not protect.",
+      "Tendrils have individual HP — destroying them reduces attack rate.",
+      "Phase 2: the anchor lifts, becomes mobile but reduced damage."
+    ],
+    "abilities": [
+      "Wall-Pierce Strike — tendril through cover",
+      "Sweep — multiple tendrils across a room",
+      "Tendril Regeneration — regrows lost limbs over time",
+      "Anchor Release — phase change, becomes mobile"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "Aberrant Flesh x4 (mystic recipes)",
+      "Temple Heart-Stone (atlas + base upgrade)",
+      "Spirit Anchor (the original Kin temple keeper)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Echoing Heart",
+    "desc": "In a vast underground cavern. Fights with copies of itself; the real one is hidden among echoes.",
+    "appearance": "Floating heart-shaped mass of corrupted flesh, suspended in air. Identical to its echoes — only the player's careful listening reveals which one pulses real.",
+    "behaviors": [
+      "Spawns 4-6 identical decoys at start of fight.",
+      "Real heart has a slightly different rhythm — audio cue critical.",
+      "Damaging a decoy heals the real one.",
+      "Phase 2: respawns decoys, faster cycles."
+    ],
+    "abilities": [
+      "Sonic Pulse — area damage from real heart only",
+      "Decoy Mirror — spawns copies",
+      "Misdirection — swaps positions briefly",
+      "Sympathetic Resonance — wrong target damage heals real heart"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "Echo Crystal (sonic gear)",
+      "True Heart-Sliver (Atlas upgrade)",
+      "Spirit Anchor (multiple — the Heart was many people)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Hollow Choir",
+    "desc": "In a Sky Island chapel. Six separate Kin singers must be killed in harmonic order or they heal each other.",
+    "appearance": "Six Kin figures standing in a circle, mouths open in eternal song. Each robed in a different color. Eyes closed.",
+    "behaviors": [
+      "Six bosses share an HP pool but cannot be killed in any order.",
+      "Player must identify the correct harmonic order by listening to each one's voice tone.",
+      "Killing wrong order: the remaining heal massively.",
+      "Final stage: all six dissonate, become aggressive simultaneously."
+    ],
+    "abilities": [
+      "Harmonic Note — individual sonic attack",
+      "Dissonance — collective AOE when out of order",
+      "Final Chorus — phase 2, all six attack together",
+      "Heal Echo — heals when one is killed in wrong order"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "Chorus Crystal x6 (music gear)",
+      "Kin Diary (lore reveal)",
+      "Spirit Anchor (six separate, all bond as one in the Gateway)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Maw of the Abyss",
+    "desc": "In a deep cave that opens into the void. A gravity well that pulls everything — including the player — toward an event horizon.",
+    "appearance": "A wide circular pit in the ground. At its center, a slowly-rotating black sphere. Above it, a tentacled mouth-like structure that breathes.",
+    "behaviors": [
+      "Player is constantly pulled toward the central pit.",
+      "Falling into the pit is instant death.",
+      "Must fight while moving against the pull.",
+      "Maw has tentacles that swing across the platform."
+    ],
+    "abilities": [
+      "Gravity Pull — constant force toward pit",
+      "Tentacle Sweep — wide platform attack",
+      "Void Inhale — periodic increase in pull strength",
+      "Final Swallow — pit expands, less platform"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "Void Crystal x2",
+      "Singularity Charge (gadget unlock)",
+      "Spirit Anchor (the Council member who first opened the rift)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Forgotten King",
+    "desc": "Endgame. A corrupted Kin monarch ruling over his own stronghold. Dignified. Lucid. Asks the player to justify themselves before fighting. The moral hinge of Act 3.",
+    "appearance": "Stately Kin figure on a throne, dressed in well-kept robes. Crown of black metal. Skin partially corrupted but face still recognizably noble. Eyes are sad.",
+    "behaviors": [
+      "Speaks to the player throughout the fight — old Kin language.",
+      "Will not attack first; must be provoked.",
+      "If player tries to flee, lets them. (Saves quest for later.)",
+      "Fights with skill and patience — uses every Warden/Channeler hybrid mechanic."
+    ],
+    "abilities": [
+      "Royal Decree — buffs his Vord fodder in the stronghold",
+      "Crown Burst — radial holy energy attack",
+      "Royal Guard Summon — calls Vord lieutenants",
+      "Final Oath — at 1 HP, asks for mercy or final blow"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "King's Crown (cosmetic + parley unlock)",
+      "Royal Codex (NPC unlock — Kin Council recipes)",
+      "Spirit Anchor (most powerful in the Gateway when freed — speaks the harshest truths)"
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Aberrant Family",
+    "name": "Carapace Apostle",
+    "desc": "A Kin who chose corruption voluntarily. Worships VORD. Faces the player as a willing servant of the rift.",
+    "appearance": "Robed figure with chitinous black armor grown over their entire body. Helmet shaped like a beetle's head. Holds a vord-staff carved from rift material.",
+    "behaviors": [
+      "Will negotiate, but only for the player to surrender to VORD willingly.",
+      "Fights without remorse — believes they are saving the player.",
+      "Has access to multiple Vord abilities simultaneously.",
+      "Asks the player at half HP: 'Why do you struggle against peace?'"
+    ],
+    "abilities": [
+      "Apostle's Conversion — instant kill if player gets too close",
+      "Carapace Bash — heavy melee",
+      "Vord Ritual — summons abyssal tendrils",
+      "Acceptance — at 1 HP, asks player to free them or convert"
+    ],
+    "drops": [
+      "Heart Fragment (1 of 7)",
+      "Apostle's Carapace (prestige armor)",
+      "Vord Cipher x3 (decoded lore)",
+      "Spirit Anchor (problematic — Apostle's choice persists in spirit form)"
+    ]
+  },
+  {
+    "cat": "finale",
+    "section": "Story Finale",
+    "name": "The Hollow Source",
+    "desc": "Act 4 first major fight. Inside the Citadel. A vast Vord creature woven from every type of Kin — smith, beekeeper, dancer, scholar. Cycles through their attack patterns.",
+    "appearance": "Towering composite figure with multiple Kin bodies fused together. Some hands hold hammers, some hold scrolls, some hold harps. Constantly changing posture as different Kin within take control.",
+    "behaviors": [
+      "Cycles through 6 attack patterns mirroring previous boss families.",
+      "Player must recognize the active pattern and respond accordingly.",
+      "Each pattern lasts 30-45 seconds.",
+      "Fight is genuinely hard — players who skipped archetypes will struggle here."
+    ],
+    "abilities": [
+      "Smith Phase — heavy melee like a Warden",
+      "Channeler Phase — environmental hazards",
+      "Hunter Phase — stealth and pounces",
+      "Brood Phase — summons Vord minions",
+      "Apostle Phase — wide AOE",
+      "Final Cycle — all 6 simultaneously briefly"
+    ],
+    "drops": [
+      "Hollow Crown (legendary cosmetic)",
+      "Source-Fragment (final atlas upgrade)",
+      "Spirit Anchor (six in one — the Hollow Source contains all the original Council)",
+      "Citadel Key (unlocks Choice Chamber)"
+    ]
+  },
+  {
+    "cat": "finale",
+    "section": "Story Finale",
+    "name": "The Choice (Variants)",
+    "desc": "Final encounter, depends on the player's choice at the Choice Chamber. Each ending has its own confrontation.",
+    "appearance": "The rift itself, or the Apostle, or the player's mirror — depends on the chosen path.",
+    "behaviors": [
+      "Seal — fight the rift itself, as a manifested entity. Reality bends.",
+      "Bind — fight the hidden Apostle of the Council, who opposes binding.",
+      "Step Through — no fight; an extended traversal sequence into the unknown.",
+      "Embrace — fight your own mirror, the Untouched who refused to corrupt."
+    ],
+    "abilities": [
+      "Seal path: rift uses every mechanic the game has ever shown",
+      "Bind path: Apostle fights with diplomacy mechanics",
+      "Step Through path: environmental puzzle, not combat",
+      "Embrace path: mirror copies player's exact loadout"
+    ],
+    "drops": [
+      "Ending-specific cosmetic title",
+      "New Game+ unlock",
+      "Atlas final state (different per ending)",
+      "Player's chosen reality"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Drone",
+    "desc": "The most common corrupted Kin. Rank-and-file of every Vord stronghold. Was once a Kin laborer or farmer.",
+    "appearance": "Hunched humanoid in tattered work clothes. Skin grey-purple, eyes filmed over. Slow shuffling gait, weak limbs.",
+    "behaviors": [
+      "Slow approach, swings clumsily.",
+      "Easily killed individually; dangerous in groups.",
+      "No ranged ability.",
+      "Tends to clump near the boss for support."
+    ],
+    "abilities": [
+      "Clumsy Swing — basic melee",
+      "Lunge Bite — short-range attack",
+      "Death Spasm — releases small spore puff on death"
+    ],
+    "drops": [
+      "Vord Scrap x1-2",
+      "Memory Echo (rare)",
+      "Small amount of corruption material"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Slinger",
+    "desc": "Corrupted Kin who once worked as scouts or hunters. Wields a primitive sling or thrown rocks.",
+    "appearance": "Lankier than Drones, with one arm subtly elongated. Skin grey, eyes dark. Carries a leather sling around their neck.",
+    "behaviors": [
+      "Keeps distance from player.",
+      "Hides behind cover between throws.",
+      "Fragile in melee — runs if approached.",
+      "Often paired with Drones to form a melee+ranged team."
+    ],
+    "abilities": [
+      "Stone Sling — ranged attack, moderate damage",
+      "Retreat — runs to new cover when approached",
+      "Volley — fires three stones quickly when desperate"
+    ],
+    "drops": [
+      "Vord Scrap x1-2",
+      "Memory Echo (rare)",
+      "Stone Pellet x2-3"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Burrower",
+    "desc": "Lives beneath the ground in any stronghold. Ambushes players who walk over loose dirt.",
+    "appearance": "Stocky form, thick arms, no visible eyes — face is sealed flesh with claws around the mouth. Skin nearly the color of dirt.",
+    "behaviors": [
+      "Hides underground until player walks within 3m.",
+      "Bursts up for one big attack, then re-burrows.",
+      "Telegraphs surface position with rumbling sound and dust.",
+      "Cannot follow player onto built grid platforms."
+    ],
+    "abilities": [
+      "Surface Strike — emerges with claw attack",
+      "Burrow — escapes underground",
+      "Drag Down — at low HP, grabs player and pulls into ground briefly"
+    ],
+    "drops": [
+      "Vord Scrap x2-3",
+      "Burrower Claw (rare, ammo material)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Sprinter",
+    "desc": "Fast, low-HP melee. Was once a Kin runner or messenger.",
+    "appearance": "Slim, almost graceful corrupted form. Long legs end in pointed feet. Face is mostly intact but eyes are wild and bright.",
+    "behaviors": [
+      "Closes distance to player extremely fast.",
+      "Hits once and circles away.",
+      "Easy to kill if hit, but hard to hit.",
+      "Will not engage in groups — strikes alone."
+    ],
+    "abilities": [
+      "Sprint Strike — fast melee on closing",
+      "Evade — short hop away after attacking",
+      "Frenzy — at low HP, ignores evasion, all-in attack"
+    ],
+    "drops": [
+      "Vord Scrap x1",
+      "Sprinter Sinew (Bestmaster recipe mat)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Brute",
+    "desc": "Heavy mid-tier enemy. Often found guarding important rooms in strongholds.",
+    "appearance": "Massively muscular corrupted Kin. Skin rough, almost armored. Wears scrap-iron plates wired into the flesh.",
+    "behaviors": [
+      "Slow but deals very high melee damage.",
+      "Can stagger players with hits.",
+      "Has armor — needs heavier weapons or armor-piercing ammo.",
+      "Often guards corruption nodes."
+    ],
+    "abilities": [
+      "Heavy Slam — telegraphed AOE",
+      "Grab — at close range, picks up player and throws",
+      "Armor Shrug — ignores light damage"
+    ],
+    "drops": [
+      "Vord Scrap x4-5",
+      "Brute Hide (armor material)",
+      "Iron Plate x1-2 (looted scrap)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Spore-Bearer",
+    "desc": "Carrier of fungal corruption. Common in marshes and stronghold interiors.",
+    "appearance": "Bloated, mushroom-covered humanoid. Cluster of glowing spore-sacs replaces head. Walks unsteadily.",
+    "behaviors": [
+      "Walks slowly toward player, suicide-style.",
+      "Explodes in a poison cloud when killed or close to player.",
+      "Vulnerable from range only.",
+      "Often used as 'pushers' to flush player from cover."
+    ],
+    "abilities": [
+      "Death Bloom — releases poison cloud on death",
+      "Lurch — slow, inevitable approach"
+    ],
+    "drops": [
+      "Spore Cluster x2-3",
+      "Bio Sac x1"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Charger",
+    "desc": "Multi-leg corrupted creature. No longer human-shaped — looks like a Kin that grew extra limbs and lost their face.",
+    "appearance": "Six-legged horror, body low to the ground. Original Kin torso visible in the center but mutated. Mouth where the head should be.",
+    "behaviors": [
+      "Sprint-charges in straight lines.",
+      "Hard to dodge in tight spaces.",
+      "Telegraphs charge with screech.",
+      "Fragile from sides, armored on front."
+    ],
+    "abilities": [
+      "Charge — straight-line high-damage rush",
+      "Trample — runs over player after knockdown",
+      "Screech — alerts other enemies"
+    ],
+    "drops": [
+      "Vord Scrap x2-3",
+      "Charger Leg (Vehicle component)",
+      "Sinew x2"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Climber",
+    "desc": "Lurks on stronghold walls and ceilings. Drops on players from above.",
+    "appearance": "Spindly corrupted Kin, all limbs. Hands and feet end in long hooked claws. Eyes on the back of the head — can see in all directions.",
+    "behaviors": [
+      "Stays on walls and ceilings.",
+      "Drops onto players from above.",
+      "Can be heard skittering before it strikes.",
+      "Fragile when on ground."
+    ],
+    "abilities": [
+      "Drop Strike — falls onto player from above",
+      "Wall Run — moves quickly along vertical surfaces",
+      "Claw Slash — close-range attack"
+    ],
+    "drops": [
+      "Vord Scrap x1-2",
+      "Climber Claw (grapple/tool material)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Shrieker",
+    "desc": "Non-combat support enemy. Alerts other Vord and increases their aggression.",
+    "appearance": "Tall, thin corrupted Kin with an enormously elongated mouth. No weapons. Trembles constantly.",
+    "behaviors": [
+      "Stays at edges of combat.",
+      "Shrieks when player is spotted — alerts everything nearby.",
+      "Flees from melee.",
+      "Priority kill target — silencing it reduces stronghold difficulty significantly."
+    ],
+    "abilities": [
+      "Alert Shriek — calls all nearby Vord to player",
+      "Buff Shriek — increases ally damage",
+      "Retreat — runs from melee"
+    ],
+    "drops": [
+      "Vord Scrap x1",
+      "Shrieker Throat (sonic weapon material)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Mender",
+    "desc": "Support enemy. Heals other Vord. Slow, but a real threat when present.",
+    "appearance": "Hunched, robed Kin form. Hands constantly extended with green-glowing motes between them. Face hidden under hood.",
+    "behaviors": [
+      "Stays behind front-line Vord.",
+      "Heals allies within 5m every few seconds.",
+      "Priority kill — but harder to reach.",
+      "Fragile but flees when targeted directly."
+    ],
+    "abilities": [
+      "Heal Pulse — restores nearby Vord HP",
+      "Tether Heal — single-target larger heal",
+      "Cleansing Mist — removes player's poison effects (unintentionally)"
+    ],
+    "drops": [
+      "Royal Jelly x1-2 (rare)",
+      "Mender's Robe Scrap",
+      "Spirit Anchor (rare — Mender retained some compassion)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Carrier",
+    "desc": "Large beast-of-burden Vord. Carries supplies and equipment between strongholds.",
+    "appearance": "Quadrupedal, broad-backed. Visible packs and gear strapped to its back. Face is a half-corrupted Kin's, expression vacant.",
+    "behaviors": [
+      "Travels between strongholds in pairs.",
+      "Non-aggressive unless attacked.",
+      "Drops significant loot if defeated.",
+      "Other Vord will defend it if attacked nearby."
+    ],
+    "abilities": [
+      "Kick — defensive only",
+      "Heavy Slam — when cornered",
+      "Bray Alert — calls nearby Vord on death"
+    ],
+    "drops": [
+      "Vord Scrap x6-10",
+      "Crafted materials from its packs (random)",
+      "Carrier Yoke (Bestmaster component)",
+      "Spirit Anchor (rare)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Graze",
+    "desc": "Peaceful herd animal. Roams the Lowlands. The basic source of meat and hide.",
+    "appearance": "Stocky four-legged grazer with thick brown fur. Long muzzle, gentle eyes, curved horns. Hooves leave clear prints in soft soil.",
+    "behaviors": [
+      "Travels in herds of 4-8.",
+      "Flees if attacked or approached aggressively.",
+      "Can be tamed with Calming Pheromone or fed grain.",
+      "Plodder Cannon mount when fully bonded."
+    ],
+    "drops": [
+      "Raw Meat x2-3",
+      "Hide x1-2",
+      "Bone x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Cluck",
+    "desc": "Small bird-like creature. Lays eggs. Common around any settled area.",
+    "appearance": "Round body, short legs, fluffy feathers in mottled grey-brown. Tiny eyes, big appetite.",
+    "behaviors": [
+      "Stays close to where it spawned.",
+      "Easy to catch by hand.",
+      "Lays eggs in nests if kept in Animal Pen.",
+      "Cluck calls attract more Clucks."
+    ],
+    "drops": [
+      "Egg x1 (passive)",
+      "Poultry x1-2 (if killed)",
+      "Feather x2-3"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Fleecegoat",
+    "desc": "Hill-dwelling small fauna. Source of wool and milk.",
+    "appearance": "Sheep-goat hybrid with thick white wool and small curved horns. Bleats when curious.",
+    "behaviors": [
+      "Climbs cliffs other fauna can't.",
+      "Lets player shear it for wool without killing.",
+      "Can be milked at Auto-Milker.",
+      "Aggressive only if cornered."
+    ],
+    "drops": [
+      "Wool x2-3 (passive shear)",
+      "Milk x1 (auto-milker)",
+      "Raw Meat x1-2 (if killed)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Cave Fauna",
+    "name": "Cavebleat",
+    "desc": "Underground variant of the Graze. Lives in cave systems and produces a milkier, fattier dairy.",
+    "appearance": "Smaller and paler than a Graze. Thick wool replaces most fur. Eyes adapted to low light, almost luminous.",
+    "behaviors": [
+      "Solitary or in pairs.",
+      "Flees deeper into caves when threatened.",
+      "Excellent milk source — Cavebleat cheese is a chef's premium.",
+      "Vulnerable to predators in caves."
+    ],
+    "drops": [
+      "Raw Meat x2",
+      "Hide x1",
+      "Cave Wool x2"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Cave Fauna",
+    "name": "Cavestalker",
+    "desc": "Predator. Hunts other cave fauna. Will attack the player if surprised.",
+    "appearance": "Long-bodied feline with elongated legs and slitted yellow eyes. Coat is mottled grey-black for cave camouflage.",
+    "behaviors": [
+      "Stalks in silence until close.",
+      "Pounces from above or hidden alcoves.",
+      "Doesn't pursue if player escapes line-of-sight.",
+      "Can be tamed (very rare) into a powerful melee companion."
+    ],
+    "drops": [
+      "Predator Meat x2",
+      "Thick Pelt x1",
+      "Sharp Bone Tip x1-2"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Sky Fauna",
+    "name": "Glimmerwing",
+    "desc": "Beautiful flying creature. Sky Islands' most common fauna. Source of feathers and a rare bioluminescent organ.",
+    "appearance": "Bird-like, with feathers that catch the light and shift colors. Long tail-feathers. Eyes are tiny and bright.",
+    "behaviors": [
+      "Roosts at high altitudes.",
+      "Flees if approached aggressively.",
+      "Can be lured with food.",
+      "Used as a courier when tamed."
+    ],
+    "drops": [
+      "Feather x3-4",
+      "Bio Sac x1 (rare glow organ)",
+      "Raw Meat x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Sky Fauna",
+    "name": "Driftwing",
+    "desc": "Large flying creature. Sky Islands' apex aerial predator.",
+    "appearance": "Massive bird-like beast with leathery wings. Long beak. Eyes that watch from any height.",
+    "behaviors": [
+      "Soars high, dives on small prey.",
+      "Will attack the player if engaged in air.",
+      "Hardest fauna to tame — but a Driftwing mount is the player's first True flying companion.",
+      "Bonded Driftwings carry the player through sky islands."
+    ],
+    "drops": [
+      "Driftwing Skin (aerial armor)",
+      "Feather x6-8 (large)",
+      "Raw Meat x4"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Sky Fauna",
+    "name": "Skyserpent",
+    "desc": "Apex Sky Island predator. Snake-like, flies through the air on no visible mechanism.",
+    "appearance": "Long serpentine body, covered in silver scales that catch wind. Wings are vestigial — actual flight is somehow magical.",
+    "behaviors": [
+      "Solitary, territorial.",
+      "Dives at the player at high speed.",
+      "Cannot be tamed.",
+      "Drops are used in elite gadgets and weapons."
+    ],
+    "drops": [
+      "Skyserpent Oil (engine fuel)",
+      "Skyserpent Scale x4 (armor mat)",
+      "Sharp Bone Tip x2"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Frozen Peaks Fauna",
+    "name": "Snowdrifter",
+    "desc": "Snow-dwelling creature. Slow but provides thick pelt and deep wool.",
+    "appearance": "Heavy quadruped with white shaggy coat. Stubby horns. Trundles through snow.",
+    "behaviors": [
+      "Migrates in slow herds.",
+      "Easy to track in snow.",
+      "Will fight back if attacked — a powerful charge.",
+      "Bonded for cold-resistance buff to nearby player."
+    ],
+    "drops": [
+      "Thick Pelt x2",
+      "Deep Wool x2-3",
+      "Frost Crystal x1 (rare, from horns)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Frozen Peaks Fauna",
+    "name": "Ash Pup",
+    "desc": "Friendly canine. Player's first potential companion. Lives in mountain caves.",
+    "appearance": "Small, fluffy white-grey canine with bright eyes. Pups are easy to befriend with Pet Food.",
+    "behaviors": [
+      "Pups follow Mother packs.",
+      "Easily bonds with player when given Pet Food.",
+      "Trained Ash Pup is a combat companion — fights small enemies.",
+      "Will not engage bosses directly but supports player."
+    ],
+    "drops": [
+      "Pelt x1 (if killed — generally not recommended)",
+      "Ash Pup spawns nearby (cute, friendly)",
+      "Companion bond (when fed)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Marsh Fauna",
+    "name": "Spore Floater",
+    "desc": "Drifting marsh creature. Almost like a living lantern. Mostly passive but bursts spores when threatened.",
+    "appearance": "Round, bioluminescent organism floating slightly above marsh water. Tendrils dangle below. Glows faintly.",
+    "behaviors": [
+      "Drifts on marsh winds.",
+      "Releases small spore cloud when touched.",
+      "Dies easily from any attack.",
+      "Cluster of floaters lights up marsh paths at night."
+    ],
+    "drops": [
+      "Spore Cluster x1-2",
+      "Bio Sac x1",
+      "Glow Paste x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Marsh Fauna",
+    "name": "Bog Frog",
+    "desc": "Common marsh amphibian. Source of sticky secretions used in glue traps.",
+    "appearance": "Large green frog with bulging eyes. Skin glistens with sticky mucus. Long sticky tongue.",
+    "behaviors": [
+      "Sits motionless on lily pads.",
+      "Hops away when approached.",
+      "Easy to catch with Net Thrower.",
+      "Edible meat (chef cuisine)."
+    ],
+    "drops": [
+      "Bog Frog Secretion x1 (alchemist mat)",
+      "Raw Meat x1",
+      "Bio Sac x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Marsh Fauna",
+    "name": "Cave Eel",
+    "desc": "Aquatic predator. Found in marsh water and cave pools.",
+    "appearance": "Long, snake-like aquatic creature. Skin is slick, dark green. Eyes glow in water.",
+    "behaviors": [
+      "Lurks in deep water.",
+      "Strikes from below at swimming players.",
+      "Vulnerable when out of water.",
+      "Eel oil is the most efficient bio-fuel."
+    ],
+    "drops": [
+      "Eel Meat x2-3",
+      "Eel Oil x1-2 (engine fuel)",
+      "Cave Slime x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Marsh Fauna",
+    "name": "Honey Bee",
+    "desc": "Common pollinator. Beekeeper archetype's primary resource.",
+    "appearance": "Standard fluffy bee. Black-yellow stripes. Pollen on legs.",
+    "behaviors": [
+      "Lives in Apiaries and wild Honey Hives.",
+      "Friendly to player wearing Beekeeper Suit.",
+      "Aggressive otherwise — swarm attacks.",
+      "Used as ammo for Bee Cannon, transport for Bee Courier Hive."
+    ],
+    "drops": [
+      "Honey x1 (from hive harvest)",
+      "Beeswax x1",
+      "Royal Jelly x1 (rare)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Badlands Fauna",
+    "name": "Thornback",
+    "desc": "Aggressive Badlands predator. Pack hunter. Difficult tame, valuable mount.",
+    "appearance": "Quadruped with bristling spine of bone spikes. Reptilian skin. Hooked tail.",
+    "behaviors": [
+      "Hunts in packs of 3-4.",
+      "Charges at the player from concealment.",
+      "Spikes are weaponizable.",
+      "Bonded Thornback is a deadly hunting mount."
+    ],
+    "drops": [
+      "Sharp Bone Tip x2-3",
+      "Thornback Hide x1",
+      "Predator Meat x1"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Badlands Fauna",
+    "name": "Plodder",
+    "desc": "Slow, massive ungulate. The Badlands' equivalent of a draft animal.",
+    "appearance": "Bovine giant with thick hide and slow gait. Two curved horns. Calm eyes.",
+    "behaviors": [
+      "Mostly stationary, grazing.",
+      "Will defend if attacked.",
+      "Heavy load-bearing mount.",
+      "Plodder-mounted Cannon is a mid-game vehicle."
+    ],
+    "drops": [
+      "Raw Meat x6-8",
+      "Hide x4",
+      "Bone x3"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Badlands Fauna",
+    "name": "Rootback",
+    "desc": "Smaller herd animal. Provides quality leather.",
+    "appearance": "Smaller than Plodder, sleeker. Reddish-brown fur. Roots in the soil for food.",
+    "behaviors": [
+      "Travels in family groups.",
+      "Flees from predators.",
+      "Drops quality leather when killed.",
+      "Can be milked for goat-milk-like product."
+    ],
+    "drops": [
+      "Quality Hide x1-2",
+      "Raw Meat x2",
+      "Milk x1 (rarely)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Universal Fauna",
+    "name": "Silk Spinner",
+    "desc": "Spider-like creature. Lives in caves and ruins.",
+    "appearance": "Large arachnid with long legs and a glistening silken sheen. Mostly black with white markings.",
+    "behaviors": [
+      "Builds webs in caves.",
+      "Ambushes from above.",
+      "Drops silk when killed.",
+      "Aggressive only when player enters its web."
+    ],
+    "drops": [
+      "Spider Silk x2-3",
+      "Silk Cable (alchemy)",
+      "Predator Meat x1"
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Wren",
+    "desc": "The first Kin you rescue. Quiet for most of Act 1; becomes a central figure in the story. Holds the seventh Heart Fragment inside her — the discovery of which is the moral hinge of Act 3.",
+    "appearance": "Young Kin, mid-twenties. Pale, with dark hair down past her shoulders. Wears the clothes you find her in: a torn working dress, sturdy boots. Eyes deep brown, often looking down.",
+    "behaviors": [
+      "Follows the player back to base in Act 1.",
+      "Speaks only at the end of Act 1, reveals the Council's plan.",
+      "Stays at the base throughout Act 2, opening up gradually.",
+      "Acts as quest-giver for several side missions.",
+      "At end of Act 3, the player discovers her secret — and must choose."
+    ],
+    "abilities": [
+      "Provides recipes for early Kin tools.",
+      "Unlocks the first Spirit Gateway recipe when trust is high.",
+      "Offers food and rest at the base.",
+      "Personality: gentle, observant, traumatized."
+    ],
+    "drops": [
+      "Cannot be killed by player.",
+      "On her own death (Act 3 choice): Heart Fragment + permanent Spirit Anchor that always speaks first when the Gateway is opened."
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Marsh Apothecary",
+    "desc": "Second rescued Kin. Found in the Fungal Marshes. Was once an alchemist for the Kin Council.",
+    "appearance": "Older Kin man, white hair pulled back, wears a stained apothecary's apron with many pockets. Glasses. Hands stained green from years of brewing.",
+    "behaviors": [
+      "Lives at the player's base.",
+      "Operates a Chemistry Set near his bed.",
+      "Brews unique potions on request.",
+      "Gives the player the Chemistry Set recipe."
+    ],
+    "abilities": [
+      "Unlocks 5 alchemist masterwork recipes.",
+      "Will accept ingredients in exchange for prepared potions.",
+      "Mutters about plants and bugs constantly.",
+      "Personality: distracted, kind, deeply curious."
+    ],
+    "drops": [
+      "Cannot be killed.",
+      "Death: Spirit becomes one of the first Gateway residents (after natural in-game time)."
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Vesh the Smith",
+    "desc": "Third rescued Kin. Found in a Badlands forge ruin. Was a smith before the corruption.",
+    "appearance": "Burly Kin woman, dark skin and braided hair. Forearms covered in burn scars. Wears a leather apron and heavy boots.",
+    "behaviors": [
+      "Works at the Smith's Anvil Station at the base.",
+      "Crafts masterwork weapons on request.",
+      "Knew Wren before the fall — their reunion is emotional.",
+      "Tells stories about old smiths of the Council."
+    ],
+    "abilities": [
+      "Unlocks 5 smith masterwork weapon recipes.",
+      "Will repair any item for free.",
+      "Personality: stoic, sentimental once you earn her trust."
+    ],
+    "drops": [
+      "Cannot be killed.",
+      "Death: Spirit unlocks legendary forge recipes."
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Brae the Hunter",
+    "desc": "Fourth rescued Kin. Found in the Frozen Peaks. Hunted the Frost Reaver before being rescued.",
+    "appearance": "Slim Kin figure in heavy fur cloak. Two scars across one cheek. Carries a bone bow. Quiet, watchful.",
+    "behaviors": [
+      "Goes on hunts with the player if invited.",
+      "Provides intelligence about distant strongholds.",
+      "Trains the player in tracking (unlocks Hunter's Hood crafting).",
+      "Sleeps in the Scout's Tent at the base."
+    ],
+    "abilities": [
+      "Offers Hunter quests through the Bounty Board.",
+      "Unlocks 4 Hunter-archetype recipes.",
+      "Will accompany the player into difficult zones (rare)."
+    ],
+    "drops": [
+      "Cannot be killed (escapes danger).",
+      "Death: Spirit unlocks tracking-related legendary tools."
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Kor the Scholar",
+    "desc": "Fifth rescued Kin. Found on a Sky Island. Reveals the truth about VORD's origin.",
+    "appearance": "Elderly Kin with a long white beard and round spectacles. Wears a robe stitched with sigils. Walking stick.",
+    "behaviors": [
+      "Establishes a Reading Lectern at the base.",
+      "Decodes Kin Tablets and VORD Recordings the player brings.",
+      "Reveals key story lore over multiple conversations.",
+      "Often paired with the Apothecary discussing old Kin theology."
+    ],
+    "abilities": [
+      "Unlocks all Scholar archetype recipes.",
+      "Will translate any unknown text.",
+      "Personality: wise, sometimes overwhelming with information."
+    ],
+    "drops": [
+      "Cannot be killed.",
+      "Death: Spirit unlocks the Knowledge Crystal endgame recipe."
+    ]
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Mira the Pacifist",
+    "desc": "Optional Kin rescue. Found in a hidden grove protected by tamed creatures.",
+    "appearance": "Young Kin woman in plant-fiber clothes, surrounded by small animals. Smiles often. Bare feet.",
+    "behaviors": [
+      "Refuses to fight. Helps player tame creatures.",
+      "Establishes the Naturalist path at the base.",
+      "Will not enter dangerous areas.",
+      "Asks the player not to kill creatures unnecessarily."
+    ],
+    "abilities": [
+      "Unlocks Calming Pheromone + Naturalist's Mantle recipes.",
+      "Will tame creatures the player brings home.",
+      "Provides Friendship Tokens daily."
+    ],
+    "drops": [
+      "Cannot be killed.",
+      "Death: Spirit unlocks all Pacifist-path legendary items."
+    ]
+  },
+  {
+    "cat": "trader",
+    "section": "Travelling Merchants",
+    "name": "The Wanderer",
+    "desc": "The first trader the player meets. Travels alone with a pack mule. Has a different stock every visit.",
+    "appearance": "Lean figure in a wide-brimmed hat, dusty road clothes. Face often shadowed. Speaks softly but charges fair prices.",
+    "behaviors": [
+      "Visits the base if Trade Post + Caravan Beacon are placed.",
+      "Stays for 1-2 in-game days, then leaves.",
+      "Stock changes between visits.",
+      "Sometimes carries rare ingredients no other source has."
+    ],
+    "abilities": [
+      "Trades any item for any other (with markup).",
+      "Will buy player surplus.",
+      "Sometimes shares rumors about distant strongholds."
+    ],
+    "drops": [
+      "Cannot be attacked (will leave forever).",
+      "Trade only."
+    ]
+  },
+  {
+    "cat": "trader",
+    "section": "Travelling Merchants",
+    "name": "The Caravan Master",
+    "desc": "Leads a caravan of 4-5 NPCs. Only visits if the player has high merchant relations.",
+    "appearance": "Imposing figure on a covered wagon. Long coat with many hidden pockets. Goggles for sand storms.",
+    "behaviors": [
+      "Visits monthly with a full caravan.",
+      "Brings bulk goods and rare materials.",
+      "Hires the player for delivery missions.",
+      "Provides discounts based on Trader's Ledger."
+    ],
+    "abilities": [
+      "Sells in bulk.",
+      "Offers protection contracts.",
+      "Carries materials from distant regions."
+    ],
+    "drops": [
+      "Trade only.",
+      "On death of any caravan member: faction loss, no more visits."
+    ]
+  },
+  {
+    "cat": "trader",
+    "section": "Travelling Merchants",
+    "name": "The Festival Trader",
+    "desc": "Only visits during festivals. Carries unique cosmetics and one-time items.",
+    "appearance": "Brightly dressed in colored robes, with bells on sleeves. Cheerful, loud.",
+    "behaviors": [
+      "Appears only during in-game festivals.",
+      "Sells limited-time recipes.",
+      "Always at the Festival Lantern centerpiece.",
+      "Leaves at festival end."
+    ],
+    "abilities": [
+      "Sells unique festival-only items.",
+      "Sells fireworks in bulk.",
+      "Carries seasonal recipes."
+    ],
+    "drops": [
+      "Trade only.",
+      "Cannot be killed."
+    ]
+  }
+]

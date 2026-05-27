@@ -105,7 +105,25 @@
       "Bash(\"E:/Programs/repos/hallowz/GameNine/Assets/ScriptableObjects/Items/Automation/DriveRackItem.asset\":*)",
       "Bash(\"E:/Programs/repos/hallowz/GameNine/Assets/ScriptableObjects/Items/Automation/ComputerTerminalItem.asset\":*)",
       "Bash(\"E:/Programs/repos/hallowz/GameNine/Assets/ScriptableObjects/Items/Automation/StorageDriveItem.asset\":*)",
-      "Bash(\"E:/Programs/repos/hallowz/GameNine/Assets/ScriptableObjects/Items/Automation/NetworkCableItem.asset\":*)"
+      "Bash(\"E:/Programs/repos/hallowz/GameNine/Assets/ScriptableObjects/Items/Automation/NetworkCableItem.asset\":*)",
+      "Bash(git check-ignore *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git branch *)",
+      "Bash(npm --version)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(winget list --id OpenJS.NodeJS -e 2>&1 | Select-Object -First 5; Write-Output \"---\"; \\(Get-Command node, node.exe, nodejs -ErrorAction SilentlyContinue | Select-Object -First 3\\))",
+      "Bash(py -c ' *)",
+      "mcp__UnityMCP__set_active_instance",
+      "Bash(git -C \"E:/Programs/repos/hallowz/GameNine\" mv \"Assets/Scripts/Inventory/ItemDefinition.cs\" \"Assets/Scripts/_Legacy/Inventory/ItemDefinition.cs\")",
+      "Bash(git -C \"E:/Programs/repos/hallowz/GameNine\" mv \"Assets/Scripts/Inventory/ItemDefinition.cs.meta\" \"Assets/Scripts/_Legacy/Inventory/ItemDefinition.cs.meta\")",
+      "Bash(git -C \"E:/Programs/repos/hallowz/GameNine\" mv \"Assets/Scripts/Inventory/ItemDatabase.cs\" \"Assets/Scripts/_Legacy/Inventory/ItemDatabase.cs\")",
+      "Bash(git -C \"E:/Programs/repos/hallowz/GameNine\" mv \"Assets/Scripts/Inventory/ItemDatabase.cs.meta\" \"Assets/Scripts/_Legacy/Inventory/ItemDatabase.cs.meta\")",
+      "Bash(powershell -NoProfile -Command \"Get-Content 'E:/Programs/repos/hallowz/GameNine/Design Documents/GameDesign/data/items.json' -TotalCount 80\")",
+      "PowerShell($json = Get-Content 'E:/Programs/repos/hallowz/GameNine/Design Documents/GameDesign/data/items.json' -Raw | ConvertFrom-Json; $names = $json | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name; $total = 0; $withRecipes = 0; foreach \\($n in $names\\) { $it = $json.$n; if \\($it.recipes -and $it.recipes.Count -gt 0\\) { $withRecipes++; $total += $it.recipes.Count } }; \"Items with recipes: $withRecipes\"; \"Total recipes: $total\")"
     ]
   }
 }

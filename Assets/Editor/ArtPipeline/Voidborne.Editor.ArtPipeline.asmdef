@@ -1,0 +1,19 @@
+{
+    "name": "Voidborne.Editor.ArtPipeline",
+    "rootNamespace": "Voidborne.Editor.ArtPipeline",
+    "references": [
+        "Voidborne",
+        "Unity.ProBuilder"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

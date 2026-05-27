@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28f5858218f1554aa43abaa8b8b6dcf, type: 3}
+  m_Name: the_wanderer
+  m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcDefinition
+  id: the_wanderer
+  displayName: The Wanderer
+  description: The first trader the player meets. Travels alone with a pack mule.
+    Has a different stock every visit.
+  section: Travelling Merchants
+  behaviors:
+  - Visits the base if Trade Post + Caravan Beacon are placed.
+  - Stays for 1-2 in-game days, then leaves.
+  - Stock changes between visits.
+  - Sometimes carries rare ingredients no other source has.
+  abilities:
+  - Trades any item for any other (with markup).
+  - Will buy player surplus.
+  - Sometimes shares rumors about distant strongholds.
+  dropOrTradeItems:
+  - Cannot be attacked (will leave forever).
+  - Trade only.
+  isKillable: 0
+  isQuestGiver: 0
+  prefab: {fileID: 0}

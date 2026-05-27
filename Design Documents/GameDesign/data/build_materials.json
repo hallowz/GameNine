@@ -1,0 +1,138 @@
+[
+  {
+    "id": "stone",
+    "label": "Stone",
+    "base": "stone",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 1
+  },
+  {
+    "id": "wood",
+    "label": "Wood",
+    "base": "wood_planks",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 1
+  },
+  {
+    "id": "brick",
+    "label": "Brick",
+    "base": "brick",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 1
+  },
+  {
+    "id": "iron",
+    "label": "Iron",
+    "base": "iron_plate",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "copper",
+    "label": "Copper",
+    "base": "copper_plate",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "titanium",
+    "label": "Titanium",
+    "base": "titanium_plate",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "glass",
+    "label": "Glass",
+    "base": "glass",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "obsidian",
+    "label": "Obsidian",
+    "base": "obsidian",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 1
+  },
+  {
+    "id": "bone",
+    "label": "Bone",
+    "base": "bone_plate",
+    "via": "taxidermy",
+    "color": "beast",
+    "baseQty": 1
+  },
+  {
+    "id": "chitin",
+    "label": "Chitin",
+    "base": "chitin_plate",
+    "via": "taxidermy",
+    "color": "beast",
+    "baseQty": 1
+  },
+  {
+    "id": "frost",
+    "label": "Frost",
+    "base": "frost_crystal",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 1
+  },
+  {
+    "id": "ash",
+    "label": "Ash",
+    "base": "ashen_soil",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "marsh",
+    "label": "Marsh",
+    "base": "marsh_silt",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "cinder",
+    "label": "Cinder",
+    "base": "cinder_soil",
+    "via": "carpenter_bench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "vord",
+    "label": "VORD-Plated",
+    "base": "vord_scrap",
+    "via": "assembler",
+    "color": "exotic",
+    "baseQty": 2
+  },
+  {
+    "id": "kin",
+    "label": "Kin-Ruin",
+    "base": "kin_remnant",
+    "via": "workbench",
+    "color": "build",
+    "baseQty": 2
+  },
+  {
+    "id": "void",
+    "label": "Void-Etched",
+    "base": "void_crystal",
+    "via": "etcher",
+    "color": "exotic",
+    "baseQty": 1
+  }
+]

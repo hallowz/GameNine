@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e4842b747e1bc145bb4dd75d74c1b03, type: 3}
+  m_Name: rootback
+  m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
+  id: rootback
+  displayName: Rootback
+  description: Smaller herd animal. Provides quality leather.
+  behaviors:
+  - Travels in family groups.
+  - Flees from predators.
+  - Drops quality leather when killed.
+  - Can be milked for goat-milk-like product.
+  habitat: Badlands Fauna
+  dropItemIds:
+  - Quality Hide x1-2
+  - Raw Meat x2
+  - Milk x1 (rarely)
+  isTameable: 0
+  isPassive: 1
+  isAggressive: 1
+  baseHealth: 50
+  baseSpeed: 3
+  prefab: {fileID: 0}

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: vord_drone
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: vord_drone
+  displayName: Vord Drone
+  description: The most common corrupted Kin. Rank-and-file of every Vord stronghold.
+    Was once a Kin laborer or farmer.
+  tier: 0
+  family: 5
+  behaviors:
+  - Slow approach, swings clumsily.
+  - Easily killed individually; dangerous in groups.
+  - No ranged ability.
+  - Tends to clump near the boss for support.
+  abilities:
+  - "Clumsy Swing \u2014 basic melee"
+  - "Lunge Bite \u2014 short-range attack"
+  - "Death Spasm \u2014 releases small spore puff on death"
+  dropItemIds:
+  - Vord Scrap x1-2
+  - Memory Echo (rare)
+  - Small amount of corruption material
+  boss_section: Vord Fodder
+  isBoss: 0
+  isFinale: 0
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

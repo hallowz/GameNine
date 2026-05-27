@@ -1,0 +1,191 @@
+[
+  {
+    "id": "iron_plate",
+    "recipe": {
+      "via": "campfire",
+      "inputs": [
+        {
+          "id": "iron_ingot",
+          "qty": 1
+        },
+        {
+          "id": "royal_jelly",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: royal jelly catalyzes the crude smelt. Beekeeper shortcut."
+    }
+  },
+  {
+    "id": "capacitor",
+    "recipe": {
+      "via": "workbench",
+      "inputs": [
+        {
+          "id": "copper_wire",
+          "qty": 1
+        },
+        {
+          "id": "sigil_carving",
+          "qty": 1
+        },
+        {
+          "id": "glass",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: mystic-stored charge in glass. Skips the press."
+    }
+  },
+  {
+    "id": "servo",
+    "recipe": {
+      "via": "forge",
+      "inputs": [
+        {
+          "id": "spring",
+          "qty": 1
+        },
+        {
+          "id": "bone_plate",
+          "qty": 1
+        },
+        {
+          "id": "gear",
+          "qty": 1
+        },
+        {
+          "id": "copper_wire",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: bone-cased clockwork servo. No electronics needed."
+    }
+  },
+  {
+    "id": "circuit_board",
+    "recipe": {
+      "via": "press",
+      "inputs": [
+        {
+          "id": "copper_wire",
+          "qty": 1
+        },
+        {
+          "id": "soul_essence",
+          "qty": 1
+        },
+        {
+          "id": "silica_dust",
+          "qty": 1
+        },
+        {
+          "id": "sigil_carving",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: spirit-traced sigils replace etched lines."
+    }
+  },
+  {
+    "id": "glass",
+    "recipe": {
+      "via": "campfire",
+      "inputs": [
+        {
+          "id": "silica_sand",
+          "qty": 1
+        },
+        {
+          "id": "beeswax",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: beeswax + sand fired together yields rough glass."
+    }
+  },
+  {
+    "id": "leather",
+    "recipe": {
+      "via": "composter",
+      "inputs": [
+        {
+          "id": "hide",
+          "qty": 1
+        },
+        {
+          "id": "spore_cluster",
+          "qty": 1
+        },
+        {
+          "id": "royal_jelly",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: fungal+honey tanning. Slow but clean."
+    }
+  },
+  {
+    "id": "battery_pack",
+    "recipe": {
+      "via": "workbench",
+      "inputs": [
+        {
+          "id": "sigil_carving",
+          "qty": 2
+        },
+        {
+          "id": "soul_essence",
+          "qty": 1
+        },
+        {
+          "id": "copper_wire",
+          "qty": 1
+        },
+        {
+          "id": "iron_plate",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: spirit-bound charge cell. Mystic shortcut."
+    }
+  },
+  {
+    "id": "spring",
+    "recipe": {
+      "via": "workbench",
+      "inputs": [
+        {
+          "id": "sinew",
+          "qty": 2
+        },
+        {
+          "id": "bone",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: bone-tension spring. Bestmaster shortcut."
+    }
+  },
+  {
+    "id": "power_cable_t1",
+    "recipe": {
+      "via": "loom",
+      "inputs": [
+        {
+          "id": "copper_wire",
+          "qty": 1
+        },
+        {
+          "id": "silk_cable",
+          "qty": 1
+        },
+        {
+          "id": "plant_fiber",
+          "qty": 1
+        }
+      ],
+      "notes": "SYNERGY: woven copper-silk cable. Insulated by plant fiber."
+    }
+  }
+]

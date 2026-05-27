@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: vord_carrier
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: vord_carrier
+  displayName: Vord Carrier
+  description: Large beast-of-burden Vord. Carries supplies and equipment between
+    strongholds.
+  tier: 0
+  family: 5
+  behaviors:
+  - Travels between strongholds in pairs.
+  - Non-aggressive unless attacked.
+  - Drops significant loot if defeated.
+  - Other Vord will defend it if attacked nearby.
+  abilities:
+  - "Kick \u2014 defensive only"
+  - "Heavy Slam \u2014 when cornered"
+  - "Bray Alert \u2014 calls nearby Vord on death"
+  dropItemIds:
+  - Vord Scrap x6-10
+  - Crafted materials from its packs (random)
+  - Carrier Yoke (Bestmaster component)
+  - Spirit Anchor (rare)
+  boss_section: Vord Fodder
+  isBoss: 0
+  isFinale: 0
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

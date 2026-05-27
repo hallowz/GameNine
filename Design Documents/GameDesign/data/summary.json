@@ -1,0 +1,48 @@
+{
+  "total_items": 1031,
+  "items_by_kind": {
+    "source": 62,
+    "machine": 43,
+    "component": 206,
+    "product": 720
+  },
+  "sources_by_src": {
+    "fauna": 18,
+    "flora": 21,
+    "ore": 15,
+    "soil": 4,
+    "exotic": 4
+  },
+  "build_materials": 17,
+  "form_templates": 5,
+  "deco_blocks": 45,
+  "synergy_alts": 9,
+  "category_counts": {
+    "food": 96,
+    "power": 54,
+    "weapon": 42,
+    "ammo": 29,
+    "armor": 41,
+    "beast": 14,
+    "robot": 10,
+    "defense": 36,
+    "target": 9,
+    "spirit": 5,
+    "scholar": 10,
+    "vehicle": 83,
+    "automation": 54,
+    "loop": 52,
+    "gadget": 42,
+    "build": 130,
+    "deco": 45
+  },
+  "npc_total": 70,
+  "npc_by_category": {
+    "boss": 30,
+    "finale": 2,
+    "fodder": 11,
+    "wildlife": 18,
+    "named": 6,
+    "trader": 3
+  }
+}

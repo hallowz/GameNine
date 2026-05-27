@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: maw_of_the_abyss
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: maw_of_the_abyss
+  displayName: Maw of the Abyss
+  description: "In a deep cave that opens into the void. A gravity well that pulls
+    everything \u2014 including the player \u2014 toward an event horizon."
+  tier: 1
+  family: 4
+  behaviors:
+  - Player is constantly pulled toward the central pit.
+  - Falling into the pit is instant death.
+  - Must fight while moving against the pull.
+  - Maw has tentacles that swing across the platform.
+  abilities:
+  - "Gravity Pull \u2014 constant force toward pit"
+  - "Tentacle Sweep \u2014 wide platform attack"
+  - "Void Inhale \u2014 periodic increase in pull strength"
+  - "Final Swallow \u2014 pit expands, less platform"
+  dropItemIds:
+  - Heart Fragment (1 of 7)
+  - Void Crystal x2
+  - Singularity Charge (gadget unlock)
+  - Spirit Anchor (the Council member who first opened the rift)
+  boss_section: Aberrant Family
+  isBoss: 1
+  isFinale: 0
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

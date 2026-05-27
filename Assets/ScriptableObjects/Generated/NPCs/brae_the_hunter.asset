@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28f5858218f1554aa43abaa8b8b6dcf, type: 3}
+  m_Name: brae_the_hunter
+  m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcDefinition
+  id: brae_the_hunter
+  displayName: Brae the Hunter
+  description: Fourth rescued Kin. Found in the Frozen Peaks. Hunted the Frost Reaver
+    before being rescued.
+  section: Kin Survivors
+  behaviors:
+  - Goes on hunts with the player if invited.
+  - Provides intelligence about distant strongholds.
+  - Trains the player in tracking (unlocks Hunter's Hood crafting).
+  - Sleeps in the Scout's Tent at the base.
+  abilities:
+  - Offers Hunter quests through the Bounty Board.
+  - Unlocks 4 Hunter-archetype recipes.
+  - Will accompany the player into difficult zones (rare).
+  dropOrTradeItems:
+  - Cannot be killed (escapes danger).
+  - 'Death: Spirit unlocks tracking-related legendary tools.'
+  isKillable: 0
+  isQuestGiver: 1
+  prefab: {fileID: 0}

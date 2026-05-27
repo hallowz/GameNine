@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: stone_warden
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: stone_warden
+  displayName: Stone Warden
+  description: Tier 1 Warden, guarding a small Lowlands ruin. Slow but devastating
+    melee fight.
+  tier: 1
+  family: 1
+  behaviors:
+  - Slow movement, telegraphed attacks.
+  - "Becomes faster as cracks widen \u2014 at 50% HP, charges briefly."
+  - Cannot be staggered by light attacks.
+  - 'Vulnerable spot: the glowing core in his chest, exposed after a charge.'
+  abilities:
+  - "Maul Slam \u2014 straight-line AOE"
+  - "Quake Stomp \u2014 circular AOE, knocks player back"
+  - "Boulder Throw \u2014 ranged option, dodgeable"
+  - "Charge Rush \u2014 only at lower HP, exposes core after"
+  dropItemIds:
+  - Smith's Hammer (Forge recipe unlock)
+  - Stone Cube x12, Iron Ingot x4
+  - Warden's Core (masterwork tool material)
+  - Spirit Anchor
+  boss_section: Warden Family
+  isBoss: 1
+  isFinale: 0
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

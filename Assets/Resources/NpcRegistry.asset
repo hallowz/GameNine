@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df94d62686fb8ca47bf2447e30280a27, type: 3}
+  m_Name: NpcRegistry
+  m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcRegistry
+  allNpcs:
+  - {fileID: 11400000, guid: 38ef8a0307f25aa49b947d68b0fbf9f6, type: 2}
+  - {fileID: 11400000, guid: d1e00fe15293f154793591332d9ab9b9, type: 2}
+  - {fileID: 11400000, guid: 7ab8fbc22b2aa224a92e6a9d9f483554, type: 2}
+  - {fileID: 11400000, guid: fc880a81b0d5baf41ac250eb31289eb8, type: 2}
+  - {fileID: 11400000, guid: 1d6ab4ca25b0f5d499cd355e679eb8d2, type: 2}
+  - {fileID: 11400000, guid: abe133db2589f074093843d1d1f8d675, type: 2}
+  - {fileID: 11400000, guid: b9f434204c410814b9ee3bee053df598, type: 2}
+  - {fileID: 11400000, guid: d7f5c897d3075a14da6630b79a3b537c, type: 2}
+  - {fileID: 11400000, guid: 7d78bb1f0ecc06f43ace0e4cad6143a4, type: 2}

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28f5858218f1554aa43abaa8b8b6dcf, type: 3}
+  m_Name: kor_the_scholar
+  m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcDefinition
+  id: kor_the_scholar
+  displayName: Kor the Scholar
+  description: Fifth rescued Kin. Found on a Sky Island. Reveals the truth about
+    VORD's origin.
+  section: Kin Survivors
+  behaviors:
+  - Establishes a Reading Lectern at the base.
+  - Decodes Kin Tablets and VORD Recordings the player brings.
+  - Reveals key story lore over multiple conversations.
+  - Often paired with the Apothecary discussing old Kin theology.
+  abilities:
+  - Unlocks all Scholar archetype recipes.
+  - Will translate any unknown text.
+  - 'Personality: wise, sometimes overwhelming with information.'
+  dropOrTradeItems:
+  - Cannot be killed.
+  - 'Death: Spirit unlocks the Knowledge Crystal endgame recipe.'
+  isKillable: 0
+  isQuestGiver: 1
+  prefab: {fileID: 0}
