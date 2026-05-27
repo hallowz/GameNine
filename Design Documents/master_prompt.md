@@ -1733,7 +1733,7 @@ Status codes:
 | 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [✓] | 7 creature prefabs (3 fauna + 3 enemies + 1 NPC) + 7 creature icons; 6 new EditMode tests; 310/310 passing |
 | 3.6 | One-Click Generate Visuals | [✓] | Volume 3 (visual pipeline) COMPLETE for M2 scope. GenerateAllVisuals chains all 5 stages; 2 new EditMode tests; 312/312 passing |
 | 4.1 | UI Style Kit | [✓] | JetBrains Mono SDF baked; UIStyle + UIBuilder + 7 EditMode tests; 319/319 passing |
-| 4.2 | HUD Layout | [ ] | |
+| 4.2 | HUD Layout | [✓] | HotbarUI/SlotUI/CrosshairUI restyled to UIStyle; new HudUI (4 bars); 6 EditMode tests; 325/325 passing |
 | 4.3 | Inventory Panel | [ ] | |
 | 4.4 | Machine UI Frame (includes howItWorks block) | [ ] | |
 | 4.5 | Tooltip (DialogUI deferred to M6) | [ ] | |
@@ -1982,6 +1982,249 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 4 Chunk 4.2 (HUD Layout)
+Notes:
+
+VERDICT: PASS. V4.2 flipped from [D] to [✓]. No fixes required.
+Compile clean (0 errors, 0 warnings). EditMode tests 325/325 passing
+in 11.86s (matches implementer's report exactly).
+
+CHECKLIST VERIFICATION:
+
+Restyle behaviour preservation — PASS.
+- HotbarUI input bindings (1-9 digits + scroll wheel) are owned by
+  WeaponSwitcher.HandleInventoryInput; HotbarUI was not changed in
+  that respect and only mirrors PlayerInventory.SelectedHotbarIndex.
+- _hotbarCount reads from playerInventory.Hotbar.SlotCount; no
+  hardcoded 9 anywhere. Bar width, grid constraint, slot loop, and
+  key labels all adapt to the model.
+
+UIStyle references — PASS.
+- HotbarUI: 0 hardcoded Colors; sizes/font all read from UIStyle.
+- SlotUI: ColorNormal/Hover/Selected wrap UIStyle.PanelLight/Border/
+  Accent. Color.white on item icon and Color.black on stack-label
+  outline are non-themed utility usages (sprite tint + readability),
+  not palette overrides.
+- CrosshairUI: line tint pulled from UIStyle.Text (was hardcoded
+  white pre-V4.2).
+- HudUI: bar fill colours (Health/Stamina/Temp/Corruption) are
+  static readonly Color fields declared on HudUI itself, which is
+  reasonable — these are HUD-semantic, not palette. Backgrounds,
+  borders, text, dim-text all come from UIStyle.
+
+Deviation #1 (5-slot hotbar) — ACCEPTED.
+- PlayerInventory.Hotbar = new Inventory(5, 1) is the canonical
+  model state per project_index_device.md (Index device 5-slot
+  bracer). HotbarUI now adapts to whatever PlayerInventory exposes,
+  so future expansion is one constructor change away. The spec
+  headline of 9 slots was authored before the Index device pivot.
+
+Stack count rule — PASS.
+- SlotUI.SetVisuals sets _stackLabel.enabled = (qty > 1) AND
+  _stackLabel.text = "" when qty == 1. Both halves of the strict
+  rule are honoured. Verified by Hotbar_StackCountHiddenWhenOne.
+
+HudUI structure — PASS.
+- 4 stacked rows: HealthBar / StaminaBar / TemperatureBar /
+  CorruptionBar (top to bottom on screen), anchored bottom-left
+  of canvas with 16px margin.
+- Public API SetHealth/SetStamina/SetTemperature/SetCorruption
+  with min/max overloads and a TemperatureMarkerNormalized read-
+  only probe (used by the EditMode test).
+- Numeric labels render "X / Y" via $"{RoundToInt(c)} / {RoundToInt(m)}"
+  for HP/STA/CRPT and "X°C" for temperature.
+- Temperature is bidirectional: marker positioned at
+  0.5 + clamp((C - mid)/halfRange, -1, 1) * 0.5; cold pins left,
+  hot pins right, comfortable centres.
+
+Deviation #3 (PlayerManager polling) — ACCEPTED.
+- Update() guards `if (_playerManager != null)`; PlayerManager is
+  the M2 placeholder API exposing CurrentHealth/MaxHealth/
+  CurrentStamina/MaxStamina (verified in Player/PlayerManager.cs).
+- Polling block is 3 lines, one place to swap when V14/V15 ship
+  dedicated PlayerHealth/PlayerStamina components. Start() probes
+  via PlayerManager.Instance first, FindFirstObjectByType fallback.
+- Missing-player path logs once and falls back to defaults; will
+  not crash.
+
+UIManager font preload — PASS.
+- UIManager.Awake calls `_ = UIStyle.Font;` BEFORE any Build*
+  method so the fallback warning surfaces during boot.
+
+EnsureBuilt seam — PASS.
+- Idempotent (early return on _built flag). Awake() calls it
+  automatically; production runtime path is unaffected.
+- EditMode test uses it because AddComponent in NUnit context does
+  not auto-invoke Awake.
+
+Tests — PASS.
+- 6 new tests added: Hud_HealthBarUpdatesOnSetHealth,
+  Hud_StaminaBarUpdatesOnSetStamina,
+  Hud_TemperatureMarkerPositionsCorrectly (cold/comfort/hot),
+  Hud_CorruptionDefaultsToZero, Hud_HealthAndStaminaDefaultToFull,
+  Hotbar_StackCountHiddenWhenOne.
+- Total EditMode 325/325 (was 319/319 pre-V4.2). Delta exactly +6.
+
+Compile — PASS.
+- refresh_unity ran clean. read_console returned 0 error/warning
+  entries (filter: error+warning).
+
+Scope adherence — PASS.
+- InventoryUI / MachineUI / TooltipUI / DialogUI untouched
+  (V4.3-V4.5 own them).
+- IndexBracerController / IndexMessageDisplay untouched (diegetic
+  exception preserved).
+- StaminaBarUI legacy bar still present — flagged for V4.6
+  consolidation pass per implementer's heads-up.
+- No new health/stamina simulation (V14/V15 own).
+- No WorldSpace Canvas removals (V4.6 owns).
+
+Coop constraint — PASS.
+- HudUI never serializes any state, never modifies sim values,
+  reads only public-API getters. Stack count is derived from
+  Inventory.GetSlot, which is owner-authoritative.
+
+Codebase rules — PASS.
+- No emojis. No #if UNITY_EDITOR guards in runtime code.
+  UIStyle.Font is used (with its own fallback warning).
+
+HEADS-UPS FOR V4.3 (Inventory Panel):
+- The implementer's V4.3 heads-ups in the previous log entry are
+  accurate; nothing to add.
+- One small observation: UIManager.BuildCraftingPanel still
+  references "inventory panel is centered at (0,0) and ~502px
+  wide (9 cols × 50 + gaps + padding)" in a comment. The
+  inventory panel itself hasn't been restyled yet (V4.3 owns it)
+  so this is informational, not a bug.
+
+NEXT UP: V4.3 (Inventory Panel — Minecraft-style).
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 4 Chunk 4.2 (HUD Layout)
+Notes:
+
+V4.2 flipped from [ ] to [D]. Restyled the existing hotbar/slot/crosshair
+to read from UIStyle and added a new HudUI with four stacked status bars
+(Health/Stamina/Temperature/Corruption) anchored bottom-left.
+
+FILES RESTYLED:
+- Assets/Scripts/UI/HotbarUI.cs     — palette + slot size + font now from UIStyle.
+  Background uses UIStyle.Panel, top accent line UIStyle.Border (1px),
+  KeyHint label uses UIStyle.TextDim + FontSizeSmall + UIStyle.Font.
+  SlotSize/SlotGap constants removed in favour of UIStyle.SlotSize /
+  UIStyle.SlotGap. Slot count adapts to PlayerInventory.Hotbar.SlotCount
+  (currently 5 per the Index device design — see DEVIATION below).
+  Input bindings (1-5 keys + scroll) untouched; WeaponSwitcher owns them.
+- Assets/Scripts/UI/SlotUI.cs       — hardcoded ColorNormal / ColorHover /
+  ColorSelected replaced with UIStyle.PanelLight / Border / Accent.
+  Selection border offset by UIStyle.BorderWidth on each side for the
+  hollow-frame look. Stack-count label uses UIStyle.Font, UIStyle.Text,
+  FontSizeSmall. Stack count is now strictly hidden when quantity == 1
+  (both .enabled=false and .text="") per V4.2 spec.
+- Assets/Scripts/UI/CrosshairUI.cs  — line tint UIStyle.Text instead of
+  hardcoded Color.white. No other behavioural change; spread / FOV-aware
+  sizing already met M2 acceptance.
+
+FILES CREATED:
+- Assets/Scripts/UI/HudUI.cs        — NEW MonoBehaviour. Builds four
+  stacked rows on Awake (EnsureBuilt idempotent for tests). Public API:
+  SetHealth/SetStamina/SetTemperature/SetCorruption + read-only state
+  properties + TemperatureMarkerNormalized for tests. Temperature gauge
+  is bidirectional with a marker that slides along a Panel-backed track
+  with UIStyle.Border outline. Polls PlayerManager.Instance each frame
+  for Health/Stamina if present (V14/V15 will replace with dedicated
+  Health/Stamina components later — currently uses the PlayerManager
+  placeholder API). Falls back silently to defaults if no PlayerManager.
+- Assets/Tests/EditMode/HudUITests.cs — 6 EditMode tests.
+
+FILES MODIFIED:
+- Assets/Scripts/UI/UIManager.cs    — added Voidborne.UI.Style using
+  directive; force-load _ = UIStyle.Font; in Awake() per V4.1 heads-up;
+  added BuildHud() that parents a HudUI MonoBehaviour to _canvas.
+
+TESTS (+6 new, all pass):
+- Hud_HealthBarUpdatesOnSetHealth
+- Hud_StaminaBarUpdatesOnSetStamina
+- Hud_TemperatureMarkerPositionsCorrectly  (cold/comfort/hot, normalized 0/0.5/1)
+- Hud_CorruptionDefaultsToZero
+- Hud_HealthAndStaminaDefaultToFull
+- Hotbar_StackCountHiddenWhenOne          (also covers >1 visibility)
+
+EditMode total: 325/325 passing in 10.88s (was 319/319). 0 failed, 0
+skipped. 0 new compile errors. 0 new compile warnings.
+
+DEVIATIONS:
+- Hotbar is 5 slots, not 9 as the V4.2 spec headline says. The bound
+  PlayerInventory.Hotbar is hardcoded to 5 slots (Index device design,
+  see memory note project_index_device.md). Restyle was meant to be
+  COSMETIC so changing the inventory model is out of scope. HotbarUI
+  now reads _hotbarCount from PlayerInventory.Hotbar.SlotCount, so any
+  future bump to 9 will propagate automatically without another UI
+  change. Number labels and grid layout adapt the same way.
+- HudUI exposes a public EnsureBuilt() that Awake() calls. EditMode
+  tests in this project's runner do NOT auto-invoke Awake on a freshly
+  AddComponent'd MonoBehaviour (confirmed by a probe that set a flag
+  inside Awake and read it back from the test — flag was false).
+  EnsureBuilt is the test seam; production code never calls it
+  directly. The same pattern is used by SlotUI.Init / HotbarUI.Init.
+- HudUI uses PlayerManager.Instance for Health/Stamina, not the
+  hypothetical PlayerHealth / PlayerStamina components from V14/V15
+  which do not exist yet. PlayerManager.CurrentHealth/MaxHealth and
+  CurrentStamina/MaxStamina are the M2 placeholder API. When the
+  dedicated components land in V14/V15 the polling block in
+  HudUI.Update is the only place that needs to change.
+- Temperature/Corruption have no driving system in M2; HudUI defaults
+  them to 20°C / 0 corruption and ApplyAll stamps them once. No
+  Update-loop work for these two bars; SetTemperature / SetCorruption
+  are public so future systems can drive them.
+
+V4.3 HEADS-UPS (Inventory Panel):
+- Stack count rule is owner-authoritative and now strictly hidden when
+  quantity == 1. InventoryUI should expect SlotUI to obey this; do not
+  rely on label text matching "1" for any single-stack visual case.
+- Selection-border thickness is UIStyle.BorderWidth (1px). Inventory
+  slots use the same SlotUI so the hover/selection visuals propagate
+  automatically. If V4.3 wants a thicker frame for "selected for craft"
+  it should add a new layer, not widen the existing border (that would
+  break the hotbar selection contract).
+- SlotUI._background.color is set on hover/exit only, never on Refresh.
+  V4.3 slot grids can rely on hovering working without an extra wiring
+  step.
+- HudUI is parented to the Canvas as a sibling of InventoryPanel; the
+  inventory panel covers it when open. If V4.3 wants the HUD visible
+  during inventory, raise HudUI's sibling index after BuildInventoryPanel
+  in UIManager. Out of scope here.
+
+V4.5 HEADS-UPS (Tooltip):
+- UIBuilder.Text already wires UIStyle.Font + textWrappingMode=Normal.
+  V4.5 should not need to set those by hand.
+- TooltipUI is still using its old palette (was scope-guarded out of
+  V4.1/V4.2). When V4.5 restyles it, the helper signatures (Panel,
+  Text, Border, SlotBg) are all the kit it needs.
+
+CANVAS / FONT BOOT:
+- UIStyle.Font is now touched on UIManager.Awake (via `_ = UIStyle.Font;`)
+  so the fallback warning, if any, surfaces during boot instead of on
+  the first text draw. Matches V4.1 heads-up.
+- Screen-space Canvas already exists (InventoryCanvas, sort order 100);
+  no Boot.unity changes required.
+
+OUT OF SCOPE / NOT TOUCHED:
+- InventoryUI, MachineUI, TooltipUI, DialogUI — V4.3/V4.4/V4.5 own them.
+- Index device UI (IndexMessageDisplay, bracer cyan tint) — diegetic
+  exception per V4.1 review entry. Untouched.
+- Player health/stamina simulation — V14/V15.
+- Old in-world Canvas instances — V4.6.
+- StaminaBarUI (the legacy thin bar above the hotbar) — still in place;
+  it is bracer-screen-only and serves a different role than the HUD
+  health/stamina bars. V4.6 may consolidate it once the diegetic bracer
+  pass is reviewed.
 ```
 
 ```

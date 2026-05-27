@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Voidborne.Combat;
+using Voidborne.UI.Style;
 
 namespace Voidborne.UI
 {
@@ -128,7 +129,9 @@ namespace Voidborne.UI
             go.transform.SetParent(parent, false);
 
             Image img  = go.AddComponent<Image>();
-            img.color  = Color.white;
+            // V4.2 restyle: line tint sourced from UIStyle.Text rather than
+            // hardcoded white so a future palette tweak propagates here too.
+            img.color  = UIStyle.Text;
 
             RectTransform rt = img.rectTransform;
             rt.anchorMin        = new Vector2(0.5f, 0.5f);

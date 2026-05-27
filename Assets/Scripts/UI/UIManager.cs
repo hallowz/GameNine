@@ -8,6 +8,7 @@ using Voidborne;
 using Voidborne.Automation;
 using Voidborne.Player;
 using Voidborne.UI;
+using Voidborne.UI.Style;
 using Voidborne.Vehicles;
 
 /// <summary>
@@ -51,6 +52,7 @@ public class UIManager : MonoBehaviour
     // ---------------------------------------------------------------
     private Canvas       _canvas;
     private HotbarUI     _hotbarUI;
+    private HudUI        _hudUI;
     private StaminaBarUI _staminaBarUI;
     private InventoryUI  _inventoryUI;
     private CraftingUI   _craftingUI;
@@ -100,8 +102,14 @@ public class UIManager : MonoBehaviour
         }
         Instance = this;
 
+        // Force-load the UI font early so any fallback warning surfaces
+        // during UIManager init rather than on the first text draw.
+        // Per V4.1 heads-up.
+        _ = UIStyle.Font;
+
         BuildCanvas();
         BuildHotbar();
+        BuildHud();
         BuildStaminaBar();
         BuildAmmoUI();
         BuildInventoryPanel();
@@ -946,6 +954,24 @@ public class UIManager : MonoBehaviour
         rt.anchoredPosition = new Vector2(0, 10);
 
         _hotbarUI = hotbarGO.AddComponent<HotbarUI>();
+    }
+
+    private void BuildHud()
+    {
+        // V4.2 HUD — health/stamina/temperature/corruption stack, bottom-left.
+        // Anchored to bottom-left of the canvas; the HudUI manages its own
+        // internal child layout.
+        GameObject hudGO = new GameObject("HudUI", typeof(RectTransform));
+        hudGO.transform.SetParent(_canvas.transform, false);
+
+        RectTransform rt = hudGO.GetComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0f, 0f);
+        rt.anchorMax        = new Vector2(0f, 0f);
+        rt.pivot            = new Vector2(0f, 0f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta        = new Vector2(260f, 200f);
+
+        _hudUI = hudGO.AddComponent<HudUI>();
     }
 
     private void BuildStaminaBar()

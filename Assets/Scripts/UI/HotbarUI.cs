@@ -1,28 +1,37 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Voidborne.UI.Style;
 
 /// <summary>
-/// Always-visible 5-slot hotbar on the Index bracer face.
-/// Scroll wheel or 1-5 keys select the active slot (gold highlight).
+/// Always-visible hotbar at the bottom of the screen.
+/// Scroll wheel or 1-N keys select the active slot (Accent-coloured frame).
 /// Subscribes to PlayerInventory.OnInventoryChanged to refresh.
+///
+/// V4.2 restyle: visuals now read from UIStyle (Panel, PanelLight, Accent,
+/// Border, Text, SlotSize, SlotGap, FontSizeSmall). Slot backgrounds are
+/// built via UIBuilder.SlotBg. The selected-slot frame uses UIBuilder.Border
+/// tinted UIStyle.Accent with an inset PanelLight panel for the hollow-frame
+/// look the HTML reference uses.
+///
+/// Slot count is driven by the bound PlayerInventory.Hotbar.SlotCount so
+/// the hotbar layout adapts if the inventory model changes; input bindings
+/// (1-9 keys + scroll wheel) are owned by WeaponSwitcher and unchanged.
 /// </summary>
 public class HotbarUI : MonoBehaviour
 {
     // ---------------------------------------------------------------
     //  Constants
     // ---------------------------------------------------------------
-    private const float SlotSize     = 50f;
-    private const float SlotSpacing  = 4f;
-    private const float BarPaddingH  = 8f;
-    private const float BarPaddingV  = 6f;
-    private const int   HotbarCount  = 5;
+    private const float BarPaddingH = 8f;
+    private const float BarPaddingV = 6f;
 
     // ---------------------------------------------------------------
     //  References
     // ---------------------------------------------------------------
     private PlayerInventory _playerInventory;
     private readonly List<SlotUI> _slots = new List<SlotUI>();
+    private int _hotbarCount;
 
     // ---------------------------------------------------------------
     //  Init (called by UIManager)
@@ -31,6 +40,7 @@ public class HotbarUI : MonoBehaviour
     public void Init(PlayerInventory playerInventory)
     {
         _playerInventory = playerInventory;
+        _hotbarCount = playerInventory.Hotbar.SlotCount;
         BuildBar();
         RefreshAll();
         UpdateSelection(_playerInventory.SelectedHotbarIndex);
@@ -65,7 +75,6 @@ public class HotbarUI : MonoBehaviour
     {
         if (selectedIndex == _prevSelectedIndex) return;
 
-        // Deselect previous, select new (2 updates instead of 9)
         if (_prevSelectedIndex >= 0 && _prevSelectedIndex < _slots.Count)
             _slots[_prevSelectedIndex].SetSelected(false);
         if (selectedIndex >= 0 && selectedIndex < _slots.Count)
@@ -95,49 +104,56 @@ public class HotbarUI : MonoBehaviour
 
     private void BuildBar()
     {
-        float totalWidth  = HotbarCount * SlotSize + (HotbarCount - 1) * SlotSpacing + BarPaddingH * 2;
-        float totalHeight = SlotSize + BarPaddingV * 2;
+        float slotSize = UIStyle.SlotSize;
+        float slotGap  = UIStyle.SlotGap;
+
+        float totalWidth  = _hotbarCount * slotSize + (_hotbarCount - 1) * slotGap + BarPaddingH * 2f;
+        float totalHeight = slotSize + BarPaddingV * 2f;
 
         RectTransform rt = GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(totalWidth, totalHeight);
 
-        // Background
+        // Background — UIStyle.Panel
         Image bg = gameObject.AddComponent<Image>();
-        bg.color = new Color(0.08f, 0.08f, 0.10f, 0.88f);
+        bg.color = UIStyle.Panel;
+        bg.raycastTarget = false;
 
-        // Thin top border line
+        // Thin top border line — UIStyle.Border
         GameObject topBorder = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
         topBorder.transform.SetParent(transform, false);
-        topBorder.GetComponent<Image>().color = new Color(0.35f, 0.35f, 0.35f, 0.8f);
+        Image topImg = topBorder.GetComponent<Image>();
+        topImg.color = UIStyle.Border;
+        topImg.raycastTarget = false;
         RectTransform topRT = topBorder.GetComponent<RectTransform>();
-        topRT.anchorMin  = Vector2.zero;
-        topRT.anchorMax  = new Vector2(1, 1);
-        topRT.offsetMin  = Vector2.zero;
-        topRT.offsetMax  = new Vector2(0, -(totalHeight - 2));
+        topRT.anchorMin  = new Vector2(0f, 1f);
+        topRT.anchorMax  = new Vector2(1f, 1f);
+        topRT.pivot      = new Vector2(0.5f, 1f);
+        topRT.sizeDelta  = new Vector2(0f, UIStyle.BorderWidth);
+        topRT.anchoredPosition = Vector2.zero;
 
         // Grid container — GridLayoutGroup ensures even spacing
         GameObject gridGO = new GameObject("SlotGrid", typeof(RectTransform));
         gridGO.transform.SetParent(transform, false);
         RectTransform gridRT = gridGO.GetComponent<RectTransform>();
-        gridRT.anchorMin        = new Vector2(0, 0);
-        gridRT.anchorMax        = new Vector2(0, 0);
-        gridRT.pivot            = new Vector2(0, 0);
+        gridRT.anchorMin        = new Vector2(0f, 0f);
+        gridRT.anchorMax        = new Vector2(0f, 0f);
+        gridRT.pivot            = new Vector2(0f, 0f);
         gridRT.anchoredPosition = new Vector2(BarPaddingH, BarPaddingV);
         gridRT.sizeDelta        = new Vector2(
-            HotbarCount * SlotSize + (HotbarCount - 1) * SlotSpacing,
-            SlotSize);
+            _hotbarCount * slotSize + (_hotbarCount - 1) * slotGap,
+            slotSize);
 
         GridLayoutGroup glg = gridGO.AddComponent<GridLayoutGroup>();
-        glg.cellSize        = new Vector2(SlotSize, SlotSize);
-        glg.spacing         = new Vector2(SlotSpacing, SlotSpacing);
+        glg.cellSize        = new Vector2(slotSize, slotSize);
+        glg.spacing         = new Vector2(slotGap, slotGap);
         glg.startCorner     = GridLayoutGroup.Corner.UpperLeft;
         glg.startAxis       = GridLayoutGroup.Axis.Horizontal;
         glg.childAlignment  = TextAnchor.MiddleLeft;
         glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
-        glg.constraintCount = HotbarCount;
+        glg.constraintCount = _hotbarCount;
 
         // Slots
-        for (int i = 0; i < HotbarCount; i++)
+        for (int i = 0; i < _hotbarCount; i++)
         {
             GameObject slotGO = new GameObject($"HotbarSlot_{i}", typeof(RectTransform), typeof(Image));
             slotGO.transform.SetParent(gridGO.transform, false);
@@ -146,7 +162,7 @@ public class HotbarUI : MonoBehaviour
             slot.Init(_playerInventory.Hotbar, i);
             _slots.Add(slot);
 
-            // Number label (1-9) top-left of slot
+            // Number label (1-N) top-left of slot — UIStyle.TextDim + FontSizeSmall
             AddKeyLabel(slotGO.transform, (i + 1).ToString());
         }
     }
@@ -157,16 +173,16 @@ public class HotbarUI : MonoBehaviour
             typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
         lbl.transform.SetParent(parent, false);
         TMPro.TMP_Text t = lbl.GetComponent<TMPro.TMP_Text>();
-        t.text            = text;
-        t.color           = new Color(0.6f, 0.6f, 0.6f, 0.7f);
-        t.fontSize        = 9f;
-        t.alignment       = TMPro.TextAlignmentOptions.TopLeft;
-        t.raycastTarget   = false;
+        t.text          = text;
+        t.font          = UIStyle.Font;
+        t.color         = UIStyle.TextDim;
+        t.fontSize      = UIStyle.FontSizeSmall;
+        t.alignment     = TMPro.TextAlignmentOptions.TopLeft;
+        t.raycastTarget = false;
         RectTransform rt = lbl.GetComponent<RectTransform>();
-        rt.anchorMin  = Vector2.zero;
-        rt.anchorMax  = Vector2.one;
-        rt.offsetMin  = new Vector2(3, 0);
-        rt.offsetMax  = new Vector2(-2, -2);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = new Vector2(3f, 0f);
+        rt.offsetMax = new Vector2(-2f, -2f);
     }
-
 }
