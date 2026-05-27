@@ -17,9 +17,12 @@ MonoBehaviour:
   ingredients:
   - itemId: iron_ore
     qty: 1
-  - itemId: coal
-    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: furnace
-  notes: 
+  notes: "Picky on furnace? No \u2014 Furnace is forgiving thermal. Specific recipe
+    matches first; property fallback could substitute ore-like inputs at reduced
+    efficiency."
   isBootstrap: 0
   isSynergy: 0

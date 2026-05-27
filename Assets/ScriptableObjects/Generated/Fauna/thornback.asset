@@ -14,19 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
   id: thornback
   displayName: Thornback
-  description: Aggressive Badlands predator. Pack hunter. Difficult tame, valuable
-    mount.
+  description: 'M3 aggressive wildlife - the one hostile non-Vord creature in the
+    Core build. Pack hunter. Required for the combat-feels-good test: a hostile that
+    bites back and isn''t an enemy boss.'
   behaviors:
   - Hunts in packs of 3-4.
   - Charges at the player from concealment.
-  - Spikes are weaponizable.
-  - Bonded Thornback is a deadly hunting mount.
-  habitat: Badlands Fauna
+  - Reacts to hit with flinch; ragdolls on death.
+  habitat: Lowlands Fauna
   dropItemIds:
-  - Sharp Bone Tip x2-3
+  - raw_meat x1
+  - Sharp Bone Tip x2-3 (future ammo material)
   - Thornback Hide x1
-  - Predator Meat x1
-  isTameable: 1
+  isTameable: 0
   isPassive: 0
   isAggressive: 0
   baseHealth: 50

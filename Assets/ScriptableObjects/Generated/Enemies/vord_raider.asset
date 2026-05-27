@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34eb5acfa10d0c4eaf2a89dc1f0b291, type: 3}
+  m_Name: vord_raider
+  m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
+  id: vord_raider
+  displayName: Vord Raider
+  description: M4 vehicle-driving fodder - the chase enemy. Drives a corrupted Vord
+    cart and pursues the player. Validates driver AI (path-follow, pursue, collision
+    avoidance) and gunner AI (aim while moving). Spawned by a simple director that
+    rolls for a raid encounter when the player drives on a road.
+  tier: 0
+  family: 5
+  behaviors:
+  - Drives a Vord Cart along roads.
+  - Pursues player vehicles within sight range.
+  - Fires a primitive rifle from the gunner seat while in motion.
+  - Disengages when its vehicle is below 30% HP.
+  abilities:
+  - Drive (pursue) - simple path-following AI on roads
+  - Mounted Fire - inaccurate but persistent shots from the cart
+  - Ramming - collides with player vehicle if direct line
+  dropItemIds:
+  - Vord Scrap x2-3
+  - Crude Rifle (rare)
+  - Bullets x3-5
+  boss_section: Vord Fodder
+  isBoss: 0
+  isFinale: 0
+  baseHealth: 30
+  baseSpeed: 4
+  prefab: {fileID: 0}

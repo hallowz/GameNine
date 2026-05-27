@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: press
   displayName: Press
-  tier: 5
+  tier: 3
   gridWidth: 1
   gridHeight: 2
   needsPower: 1
-  powerDrawWatts: 250
+  powerDrawWatts: 150
   isAutomatable: 0
   category: 4
+  processType: 6
+  howItWorks: "Compresses or extrudes compatible inputs into sheets, wire, or casings.
+    Powered \u2014 requires electricity. Forgiving on input class but picky on physical
+    fit (you can't press a liquid)."

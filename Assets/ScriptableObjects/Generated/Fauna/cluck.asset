@@ -14,17 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
   id: cluck
   displayName: Cluck
-  description: Small bird-like creature. Lays eggs. Common around any settled area.
+  description: M2 passive wildlife - critical for the synergy sandbox. Lays eggs.
+    Can be milked (the canonical 'weird path' interaction; future cow replaces this).
+    Drops the milk that fuels the milk-in-boiler discovery.
   behaviors:
   - Stays close to where it spawned.
   - Easy to catch by hand.
-  - Lays eggs in nests if kept in Animal Pen.
-  - Cluck calls attract more Clucks.
+  - Lays eggs in nests if kept in Animal Pen (M2 has no pen yet - eggs drop on the
+    ground at a low rate).
+  - Can be 'milked' - lore-bending placeholder for the future cow.
   habitat: Lowlands Fauna
   dropItemIds:
-  - Egg x1 (passive)
-  - Poultry x1-2 (if killed)
-  - Feather x2-3
+  - egg x1 (passive)
+  - milk x1 (passive, slower than egg)
+  - raw_meat x1-2 (if killed)
   isTameable: 0
   isPassive: 0
   isAggressive: 0

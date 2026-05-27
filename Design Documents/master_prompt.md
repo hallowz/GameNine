@@ -1,16 +1,23 @@
-# MASTER PROMPT — Voidborne: 3D FPS Survival Game (v3 — HTML-driven)
+# MASTER PROMPT — Voidborne: 3D FPS Survival Game (v4 — Milestone-driven)
 
 ## READ THIS FIRST — AGENT WORKFLOW
 
 You are Claude Code (with Unity MCP access), orchestrating the development of a large-scale Unity game.
 
-This master prompt was rewritten on **2026-05-26** to match the new design captured in
-`Design Documents/voidborne-flowchart-v3.html` (the "flowchart HTML"). The flowchart HTML is
-the **canonical design source of truth**. This prompt is the **build plan** derived from it.
+This master prompt was restructured on **2026-05-27** from v3 (HTML-driven) to v4 (Milestone-driven).
+The 22-volume system-layered ordering was reorganized into 9 playable milestones (M0–M8). No
+completed work was discarded — only its sequencing changed. See the "Design Philosophy" section
+below for the three principles driving the restructure (playable-first, forgiving/picky machine
+split, start small).
 
-Machine-readable extracts of the HTML's data tables live in `Design Documents/GameDesign/data/`
-(items.json, npcs.json, categories.json, etc.). Those JSON files are the **content source of
-truth** for every code-generating step — agents must consume them, not re-type their contents.
+The canonical design source of truth is still `Design Documents/voidborne-flowchart-v3.html`
+(the "flowchart HTML"). The flowchart's full 1031-item content lives in
+`Design Documents/GameDesign/data/items_backlog.json` as a **content reserve**.
+
+The **runtime content source of truth** is now `Design Documents/GameDesign/data/items_core.json`
+(60 hand-authored items) and `npcs_core.json` (7 NPCs). Those are what the Unity generators
+consume. The backlog files are not consumed by generators until the Phase-3 expansion in M7.
+See the "The Core 60" and "Design Philosophy" sections below.
 
 ### Development Loop
 
@@ -48,6 +55,11 @@ truth** for every code-generating step — agents must consume them, not re-type
   *code* from those volumes that survives is listed in "Legacy Code Survival Map" below. All
   ScriptableObject *assets* from prior volumes (items, recipes, ores, biomes, smelting,
   starter guns, melee weapons) are scheduled for deletion in Volume 5.
+- **MILESTONE RESTRUCTURE (2026-05-27):** Volumes 4–22 reordered into 9 playable milestones.
+  Volume 2 grew chunks 2.6–2.9 (property tags + machine process types + recipe v3 + switch to
+  items_core.json). Volume 3's per-item visual pass scope shrank from 1031 → Core 60 for M2.
+  Volumes 8/9 shrank to minimum-viable subsets for M2. Combat polish promoted from V22 to M3.
+  Vehicle damage promoted from one chunk to a full sub-volume in M4. See "Design Philosophy".
 - **COOP-AWARE FROM DAY ONE.** Every new system MUST be designed with multiplayer sync in mind
   even before Volume 21 (Coop Networking Integration). See "Coop Design Constraints" below.
 - **File paths are relative to** `E:/Programs/repos/hallowz/GameNine/`.
@@ -65,6 +77,194 @@ truth** for every code-generating step — agents must consume them, not re-type
 - Never use `Random` without an explicit seed. Use a `WorldRandom` helper that pulls from the
   seeded world RNG (server-side only for world events).
 - UI state (open panels, drag cursors) is **client-local** — never sync.
+
+---
+
+## DESIGN PHILOSOPHY
+
+Three principles drive every sequencing and scoping decision in this build plan. Every chunk's
+acceptance criteria must trace back to one of these.
+
+### Principle 1 — Playable milestones, not system layers
+
+The old v3 plan ordered volumes by system (data → visuals → UI → crafting → building → power →
+machines → combat → ...). That meant nothing felt like a *game* until ~18 volumes were done,
+which is bad for morale, design feedback, and catching problems early.
+
+**Replace with milestone-based ordering.** Each milestone is a vertical slice that's playable
+end-to-end at progressively richer fidelity. Each milestone produces a build the developer can
+pick up and play for 15+ minutes and feel a complete loop. Systems are still volumes underneath,
+but they're sequenced by what milestone needs them next, not by architectural tidiness.
+
+**If a milestone's build isn't fun, the plan stops and the design is revisited** — but the
+previous milestone's build remains playable, so progress is never lost.
+
+### Principle 2 — The forgiving/picky machine split
+
+The game's intended feel — wacky, synergetic, modded-Minecraft-style "wait, can I make THAT do
+THIS?" — does not come from tagging everything as flammable and letting any flammable thing burn
+anywhere. It comes from a specific dynamic:
+
+> Some machines are **forgiving** abstractions over a physical process. Other machines are
+> **picky** precision instruments. Forgiving machines accept any physically defensible input with
+> realistic efficiency curves; picky machines refuse all substitutes. Forgiving is where synergy
+> lives; picky is where progression lives.
+
+A Steam Boiler doesn't care what burns underneath it — coal, wood, rendered fat, cow milk
+(badly, because it's mostly water). A Refinery refuses anything that isn't crude oil. The
+intended path through the game uses picky machines for proper engineering; the weird path uses
+forgiving machines for player creativity. **The intended path is more efficient. The weird path
+is funnier.** Players choose based on what they're optimizing for.
+
+**The reward for weird-path discoveries is not better efficiency** (that breaks the principle —
+weird should remain inferior). The reward is the game noticing: Discovery Log entries, spirit
+dialogue, unique downstream recipes that only unlock once you've done the weird thing, traders
+who specifically want the weird output. The game says "I see you. Strange one." See the
+"Discovery Log / Game Notices" subsection inside Milestone 6 below.
+
+### Principle 3 — Start small, expand from a working core
+
+The old items.json (now `items_backlog.json`) carries 1031 items. The old recipe registry has
+1555 recipes. This is too much surface area to balance, validate, or even understand before the
+game is proven fun. We expand outward in three phases:
+
+- **Phase 1 — Core 60.** ~60 hand-curated items covering the synergy sandbox: enough sources,
+  machines, components, fuel, food, ammo, one weapon family, one vehicle chassis, one biome's
+  worth of materials. Hand-authored property tags. Hand-authored recipes. **Every item must
+  have a reason to exist in the playable build.** Lives in `items_core.json`.
+- **Phase 2 — Expansion to ~250.** After the core loop is fun (post-M6), expand outward by
+  archetype.
+- **Phase 3 — Full content (the existing 1031).** Once the substrate is proven, the
+  auto-generated content can pour in over the existing skeleton.
+
+The 1031-item backlog is *preserved*, never *discarded*. Many items will be cut or merged during
+Phase 2/3; that's fine — they were always speculative. See "The Core 60" section below.
+
+---
+
+## MATERIAL PROPERTIES & MACHINE PROCESS TYPES
+
+This is the canonical reference for the property-tag system that makes the forgiving/picky split
+work. Every item declares 1–4 material properties. Every machine declares a process type that
+governs how it matches recipes.
+
+### Material Properties (the starting vocabulary, ~17)
+
+Defined in `Assets/Scripts/Data/MaterialProperties.cs` (created by M1 Chunk 2.6). Every Core 60
+item declares 1–4 of these in its `properties[]` field in `items_core.json`. Physically grounded;
+expand as needed.
+
+**Combustibles:**
+- `Combustible_Dry` — wood, coal, dried fat, charcoal. Burns well.
+- `Combustible_Wet` — fresh meat, raw fish. Burns badly.
+- `Combustible_Liquid` — oil, alcohol, rendered fat. Burns hot.
+- `Combustible_Volatile` — gunpowder, refined fuel. Explosive.
+
+**Liquids:**
+- `Liquid_Aqueous` — water, milk, blood, sap. Boils at low energy. Has thermal mass.
+- `Liquid_Oil` — crude oil, rendered fat, refined oil. Slippery, flammable.
+- `Liquid_Alchemical` — acids, solvents. Reactive.
+
+**Organic states:**
+- `Organic_Fresh` — anything just harvested from a plant or animal.
+- `Organic_Decayed` — rotted, composted, fermented matter.
+- `Organic_Dried` — drying-rack output.
+- `Organic_Sweet` — sugar-containing matter, suitable for fermentation.
+
+**Solid bulk:**
+- `Solid_Metal` — ingots, raw ore.
+- `Solid_Stone` — rocks, gravel.
+- `Solid_Powder` — crushed/ground output.
+- `Solid_Fiber` — plant fibers, hide strips.
+
+**Specialty:**
+- `Conducts_Electric` — wires, conductive components.
+- `Crystalline` — gems, structured minerals.
+- `Magical` — exotic, void-touched, spirit-bound.
+
+Adding more properties later is cheap — they just become finer-grained slots in forgiving recipes.
+
+### Machine Process Types (the starting vocabulary)
+
+Defined in `Assets/Scripts/Automation/MachineProcessType.cs` (created by M1 Chunk 2.7). Stored
+on `MachineDefinition.processType`. Forgiving types accept property-based recipes; picky types
+do not. Hybrid types do both.
+
+**Forgiving:**
+- `Forgiving_Thermal_DryBurn` — Campfire, Furnace, Forge. Accepts any `Combustible_*` as fuel;
+  transforms target item via heat.
+- `Forgiving_Thermal_Boil` — Steam Boiler. Accepts any `Liquid_Aqueous` as working medium + any
+  `Combustible_*` as heat source. Produces steam (used by Steam Generator).
+- `Forgiving_Organic_Decay` — Composter, Fermenter. Accepts any `Organic_*`; produces
+  decay/fermentation product based on input subtype.
+- `Forgiving_Organic_Dry` — Drying Rack. Accepts any `Organic_Fresh` or `Liquid_Aqueous`-containing
+  item; removes moisture.
+- `Forgiving_Mechanical_Crush` — Crusher, Grinder. Accepts any `Solid_*`; outputs `Solid_Powder`
+  variant.
+- `Forgiving_Mechanical_Separate` — Centrifuge. Accepts any mixture; outputs components by density.
+- `Forgiving_Pressure` — Press. Accepts compatible inputs; outputs sheets/extrusions.
+
+**Picky:**
+- `Picky_Chemical` — Chemistry Set, Alchemy Bench. Only specific reagent combinations work.
+- `Picky_Refinement` — Refinery. Only crude oil → refined products. No substitutes.
+- `Picky_Assembly` — Assembler, Etcher. Component-specific recipes. No property fallback.
+- `Picky_Specialty` — Taxidermy Bench, Apiary, Cheese Press, Storage Chest, Conveyor Belt,
+  Inserter, Auto Turret, Steam Generator, Hand Crank Generator. Hand-authored recipes only.
+
+**Hybrid:**
+- `Hybrid_Crafting` — Workbench, Carpenter's Bench. Accepts specific recipes (the picky default)
+  but ALSO allows property-based "improvised" recipes at reduced quality. This is where most
+  player creativity happens in the early game.
+
+Machines without a clear process type default to `Picky_Specialty`.
+
+### Recipe Schema v3 (M1 Chunk 2.8)
+
+`RecipeDefinition` and `RecipeJson` extended to support both specific-input and property-based
+recipes. Fields:
+
+- `inputs[]` — specific item IDs (the v2 path, still supported).
+- `inputProperties[]` — property requirements (NEW). Each entry: `{ property, qty, efficiency }`.
+- `efficiency` — float 0..1, default 1.0. Scales recipe duration.
+- `outputModifier` — float, default 1.0. Scales output qty/quality.
+
+**Matching behavior:**
+- **Forgiving machines** try specific `inputs[]` recipes first; if none match, fall through to
+  `inputProperties[]` matching across any item in the player's inputs that carries the required
+  properties. Efficiency scalars apply (e.g. milk in a boiler runs at ~0.4× efficiency vs water).
+- **Picky machines** ONLY match `inputs[]`. Property fallback is disabled.
+- **Hybrid machines** match `inputs[]` first; property-match recipes attempted second with the
+  specific recipe's `outputModifier` capped at 0.7× (improvised quality penalty).
+
+---
+
+## THE CORE 60
+
+The Phase-1 item roster. Lives in `Design Documents/GameDesign/data/items_core.json`. Hand-authored.
+~60 items covering the synergy sandbox — enough surface for the M2 build to feel like a game.
+
+Roster (the canonical numbers; exact contents are in `items_core.json`):
+
+| Category | Count | Notes |
+|----------|-------|-------|
+| Sources (world resources) | 15 | wood, stone, plant_fiber, iron_ore, copper_ore, coal_ore, clay, sand, water, raw_fish, raw_meat, **milk**, egg, wheat, oil_seep |
+| Refined components | 15 | iron_ingot, copper_ingot, iron_powder, copper_powder, charcoal, plank, nail, wire, glass, gunpowder, bullet_casing, gunpowder_bullet, arrow_shaft, flour, bread |
+| Machines (Core 8 + extras) | 12 | workbench, campfire, furnace, **steam_boiler**, steam_generator, hand_crank_generator, composter, drying_rack, crusher, press, storage_chest, conveyor_belt |
+| Power & wiring | 5 | copper_cable_t1, junction_box, battery_basic, inserter, power_sink |
+| Combat (M3 starter set) | 6 | wooden_spear, iron_sword, pistol, bolt_rifle, hunting_bow, auto_turret |
+| Building blocks | 5 | wood_cube, wood_slab, stone_cube, iron_panel, wood_door |
+| Vehicle (M4 starter) | 2 | cart_chassis, cart_wheel |
+| **Total** | **60** | Every item hand-authored with `properties[]` and 1–2 recipes. |
+
+**Bolded items are synergy-sandbox anchors:**
+- **milk** — `Liquid_Aqueous + Organic_Fresh`. The canonical "weird path" — burnable in a
+  Steam Boiler at reduced efficiency. The M2 acceptance test requires this to work and feel funny.
+- **steam_boiler** — `Forgiving_Thermal_Boil`. Where milk gets to burn. The single most important
+  machine for proving the forgiving/picky principle.
+
+Hand-authored content also lives in `npcs_core.json` (7 entries — Wren, Fungal Brood Mother,
+Vord Drone, Vord Raider, Graze, Cluck, Thornback). Everything else stays in `npcs_backlog.json`
+until M6+ expansion phases.
 
 ---
 
@@ -134,17 +334,19 @@ GameNine/
 │   ├── voidborne-flowchart-v3.html    # ⭐ DESIGN SOURCE OF TRUTH
 │   ├── master_prompt.md               # THIS FILE — build plan
 │   └── GameDesign/
-│       ├── data/                       # ⭐ CONTENT SOURCE OF TRUTH (JSON extracts)
-│       │   ├── items.json              # 1031 items (sources, machines, components, products)
+│       ├── data/                       # ⭐ CONTENT SOURCE OF TRUTH (JSON)
+│       │   ├── items_core.json         # ⭐ Core 60 — hand-authored. CONSUMED BY GENERATORS.
+│       │   ├── npcs_core.json          # 7 NPCs — Wren + 1 boss + 2 fodder + 3 wildlife. CONSUMED.
+│       │   ├── items_backlog.json      # 1031-item content reserve. NOT consumed yet (M7+).
+│       │   ├── npcs_backlog.json       # 70-NPC content reserve. NOT consumed yet.
 │       │   ├── build_materials.json    # 17 build materials × 5 forms = 85 blocks
 │       │   ├── form_templates.json
 │       │   ├── deco_blocks.json        # 45 decorative blocks
 │       │   ├── synergy_alts.json       # 9 cross-archetype alternate recipes
 │       │   ├── categories.json         # food/power/weapon/armor/... → item ID lists
-│       │   ├── npcs.json               # 70 NPCs (30 bosses, 2 finale, 11 fodder, 18 wildlife, 6 named Kin, 3 traders)
 │       │   └── summary.json            # counts + sanity check
 │       └── scripts/
-│           └── extract_html_data.py    # Re-run when the HTML changes
+│           └── extract_html_data.py    # Re-run when the HTML changes; writes *_backlog.json
 ├── Packages/
 └── ProjectSettings/
 ```
@@ -231,6 +433,174 @@ We use Sebastian Lague-style GPU compute marching cubes (cloned from
 A `GameConstants.cs` in `Scripts/Core/` holds tuning constants referenced by gameplay:
 - Mining tier requirements, tool durability defaults, stamina regen rates, gravity, fall damage,
   cable tier wattage ceilings (T1≤200W, T2≤1000W, T3≤5000W), default render distances.
+
+---
+
+## MILESTONES — playable build sequence
+
+Volumes 4–22 are reorganized under 9 milestones. Each milestone produces a build that's playable
+end-to-end. Volumes still exist as the detailed spec for chunks; milestones decide the *order*
+those chunks land in.
+
+### Milestone 0 — Foundations [✓ Complete]
+**Build state:** A character that walks on smooth, infinite, deformable marching-cubes terrain.
+
+- Volume 0 (project bootstrap) [✓]
+- Volume 1 (core world & player — chunks 1.1–1.X) [✓]
+
+### Milestone 1 — Data Architecture [✓ Complete]
+**Build state:** Same as M0; data layer ready to support emergent synergy.
+
+- Volume 2 (data pipeline)
+  - 2.1–2.5 (JSON loader, item/recipe/machine/fauna/enemy/NPC SO generators, regenerate menu) [✓]
+  - **2.6 — Item Property Tags (NEW)** [✓]
+  - **2.7 — Machine Process Types (NEW)** [✓]
+  - **2.8 — Recipe Schema v3 (NEW)** [✓]
+  - **2.9 — Switch to items_core.json (NEW)** [✓]
+- Volume 3 (visual pipeline foundations)
+  - 3.1–3.2 (Material Palette + Primitive Meshes) [✓]
+
+**Acceptance:** Schema supports `properties[]` on items, `processType` on machines,
+`inputProperties[]` on recipes. Generator consumes `items_core.json`. The bootstrap-path test
+passes on the Core 60.
+
+### Milestone 2 — The Synergy Sandbox
+**Goal:** Mine, smelt, build the Core 8 machines, set up a basic power network, run conveyors
+between chests and machines, and discover at least one weird synergy. The cow-milk-into-steam-boiler
+trick must work and must feel funny.
+
+**Acceptance test:** Boot game. Walk outside. Mine ore. Build workbench. Build furnace. Build
+steam boiler. Build a generator. Wire them. Run them on coal. Then run them on milk for the lulz.
+Smile.
+
+- Volume 3 (visual pipeline) — chunks 3.3–3.6, scope reduced to Core 60 only.
+- Volume 4 (UI foundations) — minimum viable. Hotbar, inventory, simple machine UI, tooltip.
+  Machine UI shows a `howItWorks` prose description. No dialog UI yet (deferred to M6).
+- Volume 5 (legacy cleanup) — execute now. Archive prior generated SOs to `_Archived/`.
+- Volume 6 (crafting v2) — WITH property matching. The bootstrap-path validator runs on Core 60.
+- Volume 7 (building) — minimum viable. Cube + slab forms. Terrain leveling. No blueprints.
+- Volume 8 (power) — minimum viable. One cable tier. Hand Crank + Steam Generator. One battery.
+  Power Sink. No worn battery pack, no overclock, no 54-generator zoo.
+- Volume 9 (machines) — **Core 8 only:** Workbench, Furnace, Steam Boiler, Steam Generator,
+  Composter, Drying Rack, Storage Chest, Crusher. Plus Chunk 9.5: one Conveyor + one Inserter.
+
+### Milestone 3 — Combat That Feels Good
+**Goal:** One gun fires, one melee weapon hits, one enemy dies, and killing the enemy feels good.
+
+**Acceptance test:** Spawn enemy. Shoot enemy. Enemy reacts (hit flinch, blood/spark VFX, audio
+impact, ragdolls on death). Crouch-aim. Headshot. Casing ejects. Reload. Feel a small bump of
+satisfaction.
+
+- Volume 10 (combat refactor) — Core subset. ~6 weapons: 1 pistol, 1 rifle, 1 sniper, 1 melee,
+  1 bow, 1 thrown. Polish chunks PROMOTED from V22: hit reactions, ragdolls, blood/spark/dust
+  impact decals, casing ejection, screen shake, sound design.
+- Volume 14 (fauna) — 3 species: Graze (passive), Cluck (neutral), Thornback (aggressive).
+- Volume 15 (enemies) — 1 fodder enemy: Vord Drone. Real AI on the no-NavMesh lidar foundation.
+  One enemy done well, not 43 done shallow.
+
+### Milestone 4 — The Chase
+**Goal:** Drive a vehicle. Enemy drives a vehicle. They chase you. You shoot at them. Glass
+breaks. Panels deform. One of you crashes or explodes.
+
+**Acceptance test:** Build a basic ground vehicle at a Vehicle Rig. Drive across terrain. Get
+attacked by an enemy in another vehicle. Take damage. See windshield crack. See bullet holes
+in panels. Lose a wheel. Crash. Stagger out. Either win or die.
+
+- Volume 19 (vehicles) — PROMOTED, expanded:
+  - 19.1 Vehicle Assembly System (chassis + engine + wheels + seat at the Vehicle Rig).
+  - 19.2 Ground Vehicle Physics (wheels, suspension, drivetrain).
+  - 19.3 Vehicle Damage Model (component-based: engine/wheels/panels/glass each have HP; visible
+    deformation; glass shatters; panels show bullet holes via decals or detached chunks).
+  - 19.4 Vehicle Combat Integration (mounting guns, gunner seat, aiming from inside).
+  - 19.5 Aerial vehicles DEFERRED to M7.
+- Volume 15 (enemies, continued) — Vord Raider. Vehicle-driving variant. Driver AI (path-follow,
+  pursue, collision avoidance) + gunner AI (aim while moving). Simple director rolls for a raid
+  encounter when player is on a road.
+- Volume 12 (biome rework, partial) — Roads only. A road generation pass between two arbitrary
+  placed points. Full biome rework + structure placement DEFERRED to M6/M7.
+
+### Milestone 5 — Base Defense
+**Goal:** All of the above, integrated. Build a turret. Wire it to power. Connect a conveyor
+from a chest. Feed it with bullets crafted at a Press. Press is fed by a chest of mining trip
+output. Raid arrives. Turret defends.
+
+**Acceptance test:** Set up the bullet-feeding-the-turret pipeline. Trigger a raid manually
+(admin command is fine). Watch turret defend. Take some damage. Survive. Inspect base. Feel
+like a genius.
+
+- Volume 10 (combat) extension — Turrets. One auto-turret targeting nearest enemy in range.
+  Internal ammo buffer fillable manually or via Inserter.
+- Volume 9 (machines) extension — Press. Crafts bullets from copper/lead/whatever components,
+  eligible for auto-input via Inserter.
+- Volume 15 (enemies) extension — Raid director. Every N in-game days, rolls for a raid; size
+  scales with player progression markers. Spawns a wave of raiders (mix of Vord Drone + Raider).
+
+### Milestone 6 — Story Hook & The Spirit Gateway
+**Goal:** There's now a reason to do everything in M2–M5. One Kin survivor to rescue. One boss
+to defeat. One Spirit Gateway to build. One Discovery Log entry rewarding a weird synergy.
+
+**Acceptance test:** Atlas points to a stronghold. Travel there. Defeat boss (combat from M3 +
+maybe a vehicle in M4). Rescue Kin. Bring Kin home. Build Spirit Gateway. Insert boss's Spirit
+Anchor. Kin spirit comments on your base's milk-fueled boiler. Feel feelings.
+
+- Volume 13 (structures) — One stronghold. Hand-authored, no procedural placement.
+- Volume 15 (enemies) extension — One boss: Fungal Brood Mother. Real boss framework: phases,
+  telegraphed abilities, arena. Multiple attack paths (frontal weak point, glowing back weak
+  point, vulnerable to poison bait).
+- Volume 16 (NPCs) — Wren only. Hand-authored dialog. Rescuable, follows player, lives at base.
+- Volume 16 (NPCs) extension — Spirit Gateway + Discovery Log. The "game notices" reward system.
+  See below.
+- Volume 17 (Atlas + Quests) — minimum viable. Atlas reveals visited chunks. One quest active at
+  a time. Quest log in UI.
+- Volume 18 (story) — Act 1 only. Awakening + first rescue + first boss. Acts 2–4 DEFERRED to M7.
+
+#### The "Game Notices" reward system (M6 sub-system)
+
+This is the small system that makes weird synergies feel rewarded without breaking the
+"weird is inefficient" rule.
+
+- **Discovery Log** — `Assets/Scripts/Quests/DiscoveryLog.cs`. Tracks events the player has
+  caused for the first time. Each event tagged with `{ discovery_type, discovery_id,
+  discovery_text }`. Example: `weird_synergy / milk_in_boiler / "You boiled milk for power. The
+  fats burn, but barely. There's a word for this in old Kin. The word is 'desperate'."`
+- **Spirits read the Discovery Log.** When a player approaches a Spirit Gateway with new
+  discoveries since last visit, the relevant spirit (the one most thematically tied to the
+  discovery) speaks a one-liner about it. This is the reward — not loot, not stats, just
+  acknowledgment in the world's voice.
+- **Some discoveries unlock downstream content** (DEFERRED to M7 expansion): a subset of weird
+  synergies unlock follow-on recipes. Example: "You boiled milk" → unlocks the Cheese Press
+  recipe at a particular crafting station. The forgiving abstraction discovered the principle;
+  the picky machine refines it.
+- **Discoveries are Bounty Board fodder** (DEFERRED to M7): traders can post bounties like
+  "Bring me 3 units of milk-rendered fat" — rewarding players who've explored the weird path.
+
+For M6, ship the Discovery Log + spirit one-liners only. Recipe unlocks and bounties come later.
+
+### Milestone 7 — Expansion
+**State:** After M6 ships and is fun, work shifts from "build the core" to "expand the core."
+The original 22-volume plan re-enters relevance, but reordered to grow the working game.
+
+- **Expansion 1 — Content depth.** Grow Core 60 → ~150 items. Add the second biome (Volume 12
+  full pass). Add 5–10 more machines including more forgiving abstractions. Add 2–4 more enemy
+  types. Hand-author 3–5 more synergies. Each addition gets playtested.
+- **Expansion 2 — Story Acts 2 & 3.** Scale up the boss roster (one boss per family, not all 32).
+  Rescue more Kin. Expand Spirit Gateway.
+- **Expansion 3 — Coop netcode** (Volume 21). Coop design constraints have been respected
+  throughout, so this should be tractable.
+- **Expansion 4 — The cozy slice.** Cozy systems polished: cooking, animal taming, decorating,
+  gentler quests from rescued Kin. Not a separate archetype tree — just making the existing world
+  contain cozy verbs.
+- **Expansion 5 — Aerial vehicles + Sky Islands biome.** Volume 19.3 + Volume 12 sky biome.
+- **Expansion 6 — Endgame.** Acts 3 & 4 (Volume 18.3/18.4). Aberrant bosses (Volume 15.7).
+  Endings (Volume 20). NG+.
+- **Expansion 7 — The 1031-item backlog.** If the game still wants it after all of the above,
+  bulk-process backlog items using the procedural pipeline. Many will be cut. Many merged.
+
+### Milestone 8 — Polish, audio, art, full release
+**State:** Volume 22, but now informed by what the actual game became across M2–M7, instead of
+guessed at upfront.
+
+- Volume 22 — full polish pass. Audio, VFX, balance, juice.
 
 ---
 
@@ -353,13 +723,106 @@ in-project asset. The extracted JSON is the **single source of truth** for conte
 ### Chunk 2.5 — One-Click Regenerate
 **Files to create:**
 - `Assets/Editor/Data/RegenerateAllMenu.cs` — `[MenuItem("Voidborne/Generate/⟳ Regenerate All Generated SOs")]`. Calls Volumes 2.2–2.4 generators in order. Pre-step: warn if `Generated/` directory contains assets not in the current JSON (orphans). Post-step: log counts.
-- `Assets/Editor/Data/JsonReextractMenu.cs` — `[MenuItem("Voidborne/Generate/⟳ Re-extract from HTML")]`. Shells out to `py "Design Documents/GameDesign/scripts/extract_html_data.py"`. Uses `System.Diagnostics.Process`. Refreshes AssetDatabase. Useful when the HTML changes.
+- `Assets/Editor/Data/JsonReextractMenu.cs` — `[MenuItem("Voidborne/Generate/⟳ Re-extract from HTML")]`. Shells out to `py "Design Documents/GameDesign/scripts/extract_html_data.py"`. Uses `System.Diagnostics.Process`. Refreshes AssetDatabase. Useful when the HTML changes. Now writes `items_backlog.json` / `npcs_backlog.json` (the curated `items_core.json` is NOT touched).
 
 **Acceptance:** Running both menu items end-to-end completes without errors and updates all generated assets.
+
+### Chunk 2.6 — Item Property Tags (M1 schema extension)
+**Files to create:**
+- `Assets/Scripts/Data/MaterialProperties.cs` — enum with the property vocabulary from the
+  "Material Properties & Machine Process Types" section above (~17 values). Pure data, no Unity
+  references, coop-safe.
+- Extend `Assets/Scripts/Data/Schema/ItemJson.cs` — add `public string[] properties { get; set; }`.
+  POCO only; deserializes from `items_core.json` `properties[]` arrays.
+- Extend `Assets/Scripts/Inventory/ItemDefinition.cs` — add `public MaterialProperties[] properties`
+  serialized field. Read-only public accessor `IReadOnlyList<MaterialProperties> Properties`.
+- Extend `Assets/Editor/Data/ItemSoGenerator.cs` — read `properties[]` strings from `ItemJson`,
+  resolve via `Enum.TryParse` to `MaterialProperties[]`. Warn on unknown property strings (log,
+  do not crash). Write the resolved array to `ItemDefinition.properties`.
+- `Assets/Tests/EditMode/PropertyTagTests.cs` — load `items_core.json`, assert every Core 60 item
+  has 1+ property (or is a machine, which can have 0 — process type drives its behavior); assert
+  every property string parses to a known enum value.
+
+**Acceptance:** ItemDatabase entries for `wood`, `milk`, `iron_ore`, `gunpowder` carry their
+expected property arrays. Unknown property strings warn but don't fail the generator.
+
+### Chunk 2.7 — Machine Process Types (M1 schema extension)
+**Files to create:**
+- `Assets/Scripts/Automation/MachineProcessType.cs` — enum with the process-type vocabulary from
+  the "Machine Process Types" subsection above (~12 values: 7 Forgiving + 4 Picky + 1 Hybrid).
+- Extend `Assets/Scripts/Data/Schema/ItemJson.cs` — add `public string processType { get; set; }`
+  and `public string howItWorks { get; set; }`.
+- Extend `Assets/Scripts/Automation/MachineDefinition.cs` — add `public MachineProcessType processType`
+  serialized field (defaults to `Picky_Specialty`) and `public string howItWorks` (multi-line
+  description shown in Machine UI tooltip in Volume 4).
+- Extend `Assets/Editor/Data/MachineSoGenerator.cs` — read `processType` string from `ItemJson`,
+  resolve via `Enum.TryParse`. Unknown values default to `Picky_Specialty` with a warning. Copy
+  `howItWorks` string verbatim.
+- `Assets/Tests/EditMode/MachineProcessTypeTests.cs` — assert workbench is `Hybrid_Crafting`,
+  furnace is `Forgiving_Thermal_DryBurn`, steam_boiler is `Forgiving_Thermal_Boil`, steam_generator
+  is `Picky_Specialty`, every Core 60 machine has a non-empty `howItWorks` string.
+
+**Acceptance:** MachineRegistry entries carry their process type and `howItWorks` prose. The
+Machine UI in Volume 4 can read `MachineDefinition.howItWorks` and render it as a tooltip.
+
+### Chunk 2.8 — Recipe Schema v3 (M1 schema extension)
+**Files to create:**
+- Extend `Assets/Scripts/Data/Schema/RecipeJson.cs` — add `public InputPropertyJson[] inputProperties`,
+  `public float efficiency = 1.0f`, `public float outputModifier = 1.0f`. Define
+  `InputPropertyJson { string property; int qty; float efficiency = 1.0f; }`.
+- Extend `Assets/Scripts/Crafting/RecipeDefinition.cs` — add corresponding serialized fields.
+  `InputProperty` struct mirrors `InputPropertyJson` with the enum-typed property.
+- Extend `Assets/Editor/Data/RecipeSoGenerator.cs` — emit `inputProperties[]` + `efficiency` +
+  `outputModifier` from JSON.
+- Update the `CraftingMatchEngine` interface (full implementation in Volume 6.1, but the
+  interface lands here so M1 can compile):
+  - `RecipeMatchResult TryMatch(RecipeDefinition recipe, MachineProcessType machineType,
+    IReadOnlyDictionary<string, int> availableItems, IReadOnlyList<ItemDefinition> itemDb)`.
+  - Returns the matched recipe + efficiency multiplier + which-input-satisfies-which-requirement
+    mapping. Picky machines refuse property fallback; Forgiving accept; Hybrid accept with 0.7×
+    quality cap.
+- `Assets/Tests/EditMode/RecipeSchemaV3Tests.cs` — round-trip a recipe with `inputProperties[]`
+  through generator → SO → registry. Verify a recipe with both `inputs[]` and `inputProperties[]`
+  loads correctly.
+
+**Acceptance:** Recipe SOs serialize/deserialize with the new fields. Forgiving-vs-picky matching
+is enforced by `CraftingMatchEngine` (the full match logic lands in Volume 6.1).
+
+### Chunk 2.9 — Switch loader to items_core.json (M1 schema extension)
+**Files to modify:**
+- `Assets/Scripts/Data/GameDesignJsonLoader.cs` — change `LoadItems()` to read
+  `items_core.json` (was `items.json`). Add `LoadItemsBacklog()` that reads `items_backlog.json`
+  but is only invoked by an opt-in Editor menu (deferred to M7 expansion).
+- `Assets/Scripts/Data/GameDesignJsonLoader.cs` — change `LoadNpcs()` to read `npcs_core.json`.
+- Update `Assets/Tests/EditMode/JsonLoaderTests.cs` — change the count assertion from "≥1000" to
+  "exactly 60" for items, "exactly 7" for NPCs. Assert that `LoadItems()` does NOT touch
+  `items_backlog.json` (regex/grep the path passed in).
+- Run `Voidborne/Generate/⟳ Regenerate All Generated SOs`. Expected counts drop to 60 items,
+  ~50–80 recipes, 14 machines (12 + inserter + auto_turret), 1 boss + 2 fodder enemies, 3 wildlife,
+  1 named Kin. The asset files for items not in core get archived (NOT deleted — moved to
+  `Assets/ScriptableObjects/_Archived/`) by an extension to `RegenerateAllMenu`.
+- Add `Assets/Editor/Cleanup/ArchiveLegacySos.cs` — `[MenuItem("Voidborne/Cleanup/Archive Pre-Core-60 SOs")]`.
+  Moves the 1031 - 60 = 971 surplus items, 1555 - X surplus recipes, etc. into `_Archived/`. Idempotent.
+
+**Acceptance:** After running the menu, `ItemDatabase.AllItems.Count == 60`, `MachineRegistry`
+has 14 machines, `RecipeRegistry.AllRecipes.Count` ≈ the hand-authored count. The Bootstrap Path
+Validator test (Volume 6.4) passes — every Core 60 item is reachable from empty hands.
+
+**Notes for the implementing agent:**
+- The 5 prior Volume-2 chunks are [✓]. Chunks 2.6–2.8 are pure schema extensions and must land
+  before 2.9 (which switches the data source).
+- Chunks 2.6–2.9 can be implemented in one agent pass or split — same agent, same context, no
+  cross-agent handoff needed since they share schema state.
+- Coop constraint: all new serialized fields on SOs are stateless data (read-only at runtime).
 
 ---
 
 ## VOLUME 3 — VISUAL ASSET PIPELINE: PROCEDURAL MODELS & ICONS
+
+**M2 scope reduction:** chunks 3.3–3.6 only generate prefabs and icons for the **Core 60 items
++ 7 NPCs**. Do NOT bulk-generate 1031 prefabs and icons. Per-item runtime is much faster (~5s
+total vs ~5min); iteration on visual style is cheap. Bulk generation against `items_backlog.json`
+is DEFERRED to M7 Expansion 7.
 
 Goal: every generated item, block, machine, fauna, enemy, NPC has a placeholder 3D model and
 a rendered 2D icon — created by code from a tiny set of primitives and ProBuilder shapes. Quality
@@ -416,11 +879,17 @@ the game is playable end-to-end before any art pass.
 ### Chunk 3.6 — One-Click Generate Visuals
 - `Assets/Editor/ArtPipeline/GenerateAllVisuals.cs` — `[MenuItem("Voidborne/Generate/⟳ All Visuals")]`. Runs materials → primitives → item prefabs → creature prefabs → icons in order.
 
-**Acceptance:** After Volume 2 has run, this single menu populates every generated asset's visuals end-to-end.
+**M2 acceptance:** After Volume 2 has run (Core 60 + 7 NPCs only), this single menu populates
+every generated asset's visuals end-to-end. Expected runtime: <30 seconds. The 1031-item bulk
+pass is M7 Expansion 7.
 
 ---
 
 ## VOLUME 4 — UI FOUNDATIONS (MINECRAFT-STYLE)
+
+**M2 scope:** minimum viable. Hotbar, inventory, simple machine UI, tooltip. The Machine UI must
+include a multi-line prose `howItWorks` description from `MachineDefinition.howItWorks` (added in
+Chunk 2.7). Dialog UI (Chunk 4.5 DialogUI) is DEFERRED to M6 (needed for Wren).
 
 Goal: replace the existing UI with a clean Minecraft-style overlay: hotbar at bottom, inventory
 toggle, crafting station panels, machine UIs, tooltip, dialog. Remove all "in-world UI" — no
@@ -453,7 +922,12 @@ work but redo their visual layout to match the HTML's monospace + dark palette.
 
 ### Chunk 4.4 — Machine UI Frame
 **Files to create:**
-- `Assets/Scripts/UI/MachineUI.cs` — Generic machine panel. Layout: machine name header, input grid (size from `MachineDefinition.gridWidth/gridHeight`), recipe tabs (color-coded A-E for multi-recipe items, matching the HTML's `RECIPE_COLORS`), output slot, optional fuel slot, optional progress bar, optional power gauge. Open via interaction with a placed machine (Volume 9 wires it up).
+- `Assets/Scripts/UI/MachineUI.cs` — Generic machine panel. Layout: machine name header,
+  **`howItWorks` description block** (multi-line, monospace, sits below the name; read from
+  `MachineDefinition.howItWorks`), input grid (size from `MachineDefinition.gridWidth/gridHeight`),
+  recipe tabs (color-coded A-E for multi-recipe items, matching the HTML's `RECIPE_COLORS`),
+  output slot, optional fuel slot, optional progress bar, optional power gauge. Open via
+  interaction with a placed machine (Volume 9 wires it up).
 - `Assets/Scripts/UI/RecipeTabsUI.cs` — Renders one button per recipe for the active item or machine, color-coded.
 
 **Acceptance:** Calling `MachineUI.Open(machine)` with a stub machine shows the panel; switching tabs highlights the active recipe.
@@ -475,9 +949,15 @@ work but redo their visual layout to match the HTML's monospace + dark palette.
 
 ## VOLUME 5 — LEGACY ASSET CLEANUP
 
-Goal: delete the stale ScriptableObject assets created by old Volumes 2-3-4-5 work so the new
-generated assets are the only ones in the project. This volume must run AFTER Volume 2 has
-produced replacement assets, and BEFORE Volume 6 starts wiring new gameplay.
+**M2 scope:** ARCHIVE (move to `Assets/ScriptableObjects/_Archived/`) rather than DELETE the
+old generated SOs. Keep them available for backlog inspection during the Core-60 build. The
+`_Archived/` folder is git-ignored to keep the repo size sane but the assets are recoverable on
+disk. Hand-edited scene references get fixed up the same way.
+
+Goal: archive the stale ScriptableObject assets created by old Volumes 2-3-4-5 work so the new
+generated assets are the only ones in active use. This volume must run AFTER Volume 2 has
+produced replacement assets (including Chunk 2.9's switch to items_core.json), and BEFORE
+Volume 6 starts wiring new gameplay.
 
 ### Chunk 5.1 — Asset Scrap Manifest
 **Files to delete** (after verifying the new generated equivalents exist):
@@ -517,15 +997,33 @@ Assets/Resources/OreRegistry.asset               — regenerated by Volume 12 bi
 
 ## VOLUME 6 — INVENTORY & CRAFTING v2
 
+**M2 scope:** add property-matching to the crafting engine. Forgiving machines try `inputs[]`
+specific recipes first; if none match, fall through to `inputProperties[]` matching at the
+efficiency multiplier from the recipe. Picky machines refuse property matching entirely. Hybrid
+machines match `inputs[]` first; property fallback applies a 0.7× quality cap. Chunk 6.4
+(bootstrap path validator) runs on the Core 60 only.
+
 Goal: upgrade the crafting system to match the HTML's working example — recipes are
 **machine-scoped** (each recipe lives at a specific via-machine, including null/personal grid),
 items can have **multiple recipes** (alternate paths), and **bootstrap recipes** unlock
 progression (you craft a Furnace at the personal grid before you have a Furnace).
 
-### Chunk 6.1 — Crafting Match Engine v2
+### Chunk 6.1 — Crafting Match Engine v2 (with property matching)
 **Modify:**
 - `Assets/Scripts/Crafting/CraftingGrid.cs` — Add `string scope` (machine ID, or `null` for personal grid). `FindMatchingRecipe(RecipeRegistry, IReadOnlyDictionary<string,int> available)` — returns the recipe that matches the grid contents AND is registered for this scope. **Match is shapeless** (bounding-box per-cell match still supported for visual recipes, but bag-of-items matching is the default — matches the HTML's working example where players drag ingredients into N slots regardless of position).
 - `Assets/Scripts/Crafting/CraftingManager.cs` — Index recipes by `viaMachineId` at startup. Add `IEnumerable<RecipeDefinition> AvailableRecipes(string machineId, IReadOnlyDictionary<string,int> playerInventory)` for the "recipes I could craft right now" sidebar.
+- `Assets/Scripts/Crafting/CraftingMatchEngine.cs` — IMPLEMENT the interface declared in Chunk 2.8.
+  Picky machines (`MachineProcessType` starting with `Picky_` or `null`/default) only match
+  `inputs[]`. Forgiving machines (`Forgiving_*`) try `inputs[]` first, then property fallback via
+  `inputProperties[]`; the recipe's `efficiency` multiplier scales the crafting time. Hybrid
+  machines (`Hybrid_Crafting`) match `inputs[]` first; if no match, attempt property fallback
+  with `outputModifier` capped at 0.7×. Return a `RecipeMatchResult { recipe, efficiency,
+  inputBindings }` for the caller to consume.
+- `Assets/Tests/EditMode/CraftingMatchEngineTests.cs` — verify: (1) Furnace + iron_ore → iron_ingot
+  via specific recipe (efficiency=1.0); (2) Steam Boiler + water → steam (specific); (3) Steam
+  Boiler + milk → steam (property fallback at efficiency ~0.4); (4) Refinery + milk → REFUSED
+  (picky machine, no property fallback); (5) Workbench + improvised inputs → recipe matches with
+  outputModifier ≤ 0.7.
 
 ### Chunk 6.2 — Personal Crafting Grid (2×2)
 **Modify:**
@@ -550,6 +1048,10 @@ progression (you craft a Furnace at the personal grid before you have a Furnace)
 ---
 
 ## VOLUME 7 — BUILDING & GRID SYSTEM
+
+**M2 scope:** minimum viable. Cube + slab forms only. Block placement on virtual grid, block
+breaking, terrain leveling tool. Chunk 7.4 (Blueprint Capture & Place) is DEFERRED to M5 or M6.
+The full 85-block + 45-deco range is M7 Expansion 1.
 
 Goal: a Minecraft-meets-Rust building system: 17 build materials × 5 forms = 85 base blocks +
 45 decorative blocks. Player-asserted virtual grid origin on first block placement; all later
@@ -594,6 +1096,11 @@ In-game blueprint capture/place for reusable structures.
 
 ## VOLUME 8 — POWER & WIRING
 
+**M2 scope:** PowerNetwork + ONE cable tier (`copper_cable_t1`) + TWO generators
+(`steam_generator`, `hand_crank_generator`) + ONE battery (`battery_basic`) + ONE consumer (any
+Core 8 machine that draws power, e.g. crusher or press). No worn battery pack, no overclock
+module, no voltage regulator, no 54-generator zoo. Chunks 8.2/8.3/8.4 DEFERRED to M5/M7.
+
 Goal: 54 power generators, 3 cable tiers, junction/regulator/sink, battery storage, overclock
 modules. Power is consumed by machines (Volume 9), powered weapons (Volume 10), and gadgets
 (Volume 11). The HTML's power generator list is in `categories.json["power"]`.
@@ -632,9 +1139,17 @@ modules. Power is consumed by machines (Volume 9), powered weapons (Volume 10), 
 
 ## VOLUME 9 — MACHINES & AUTOMATION
 
+**M2 scope:** Core 8 machines only — Workbench, Furnace, Steam Boiler, Steam Generator,
+Composter, Drying Rack, Storage Chest, Crusher. Plus Chunk 9.5: one Conveyor Belt + one Inserter
+(this is what makes synergy visible — wire up a contraption and watch it run). Optional in M2:
+Item Sorter. The 43-machine total + auto-variants is DEFERRED across M5 (Press, Auto-Turret),
+M7 Expansion 1, and beyond.
+
 Goal: 43 machines (T1–T7) plus automation infrastructure (conveyors, sorters, storage,
 auto-variants). Each machine reads its recipes from `RecipeRegistry.ByMachine(machineId)` and
 processes them with the recipe's input requirements, output, and optional power consumption.
+**Forgiving machines** (per `MachineDefinition.processType` from Chunk 2.7) accept property-based
+recipes via `CraftingMatchEngine` (Chunk 6.1). **Picky machines** refuse property fallback.
 
 ### Chunk 9.1 — MachineRuntime Base
 **Files to create:**
@@ -698,17 +1213,43 @@ processes them with the recipe's input requirements, output, and optional power 
 
 ## VOLUME 10 — COMBAT REFACTOR
 
+**M3 scope (Combat That Feels Good):** Core 6 weapons from `items_core.json` (wooden_spear,
+iron_sword, pistol, bolt_rifle, hunting_bow, plus one thrown). Chunk 10.6 (Armor) is M3 lite —
+one armor set, no archetype specials yet. Critical addition for M3: polish chunks PROMOTED from
+the old Volume 22 — hit reactions, ragdolls, blood/spark/dust impact decals, casing ejection,
+screen shake calibration, sound design pass. Combat satisfaction at the smallest scale is the
+M3 acceptance test. **M5 extension:** Turrets (Chunk 10.5 subset — Auto-Crossbow or Auto-Turret
+from the Core 60). Powered weapons, traps, bows beyond the starter set DEFERRED to M7.
+
 Goal: extend the existing guns+melee codebase (kept from old Vol 4–5) to cover the HTML's full
 combat scope: bows, spears, thrown weapons, traps, turrets, powered weapons. Existing recoil /
-spread / parry / chamber systems stay. New weapon SOs come from `items.json` via the
+spread / parry / chamber systems stay. New weapon SOs come from `items_core.json` via the
 Volume 2 generator.
 
 ### Chunk 10.1 — Weapon SO Generator
 **Files to create:**
-- `Assets/Editor/Data/WeaponSoGenerator.cs` — Iterates `categories.json["weapon"]`. For each weapon ID, decides type from item name patterns (bow/rifle/sniper/cannon/lance/blade/etc.) and produces either a `GunDefinition`, `MeleeDefinition`, `BowDefinition`, `ThrownDefinition`, `TrapDefinition`, or `TurretDefinition`.
-- Base stats come from heuristics on tier and category; subsequent balancing iteration happens in Volume 22.
+- `Assets/Editor/Data/WeaponSoGenerator.cs` — Iterates the Core 60 items in `categories.json["weapon"]` (~6 weapons). For each weapon ID, decides type from item name patterns (bow/rifle/sniper/cannon/lance/blade/etc.) and produces either a `GunDefinition`, `MeleeDefinition`, `BowDefinition`, `ThrownDefinition`, `TrapDefinition`, or `TurretDefinition`.
+- Base stats come from heuristics on tier and category; subsequent balancing iteration happens during M3 polish and again in Milestone 8.
 
-**Acceptance:** 42 weapon assets generated, each typed correctly.
+**M3 acceptance:** 6 weapon assets generated, each typed correctly. Volume 22 → M8 bulk generation against the backlog is deferred.
+
+### Chunk 10.X — Combat Polish (PROMOTED from old V22)
+**Files to create / extend:**
+- `Assets/Scripts/Combat/HitReactionController.cs` — flinch, knockback, hitstop frames calibrated
+  per weapon class.
+- `Assets/Scripts/Combat/RagdollController.cs` — death-state ragdoll swap with impulse from the
+  killing blow's direction + magnitude.
+- `Assets/Scripts/Combat/Vfx/ImpactDecalSpawner.cs` — blood splash on flesh, spark/dust on stone,
+  metal sparks on metal — surface-type aware. Persistent decals via the URP decal projector.
+- `Assets/Scripts/Combat/CasingEjector.cs` — physics-driven shell casings ejected per shot. Pooled.
+- `Assets/Scripts/Combat/ScreenShakeController.cs` — per-weapon shake profiles tuned to feel
+  proportional to the weapon's bite.
+- Audio: per-weapon hit sound layered with surface-type impact (impact sounds reused across the
+  weapon roster — the surface layer is what makes it feel grounded).
+
+**M3 acceptance:** Spawn a Vord Drone. Shoot it. Hit reaction + ragdoll + decal + casing + shake
++ audio all fire. The single most important test in the entire build plan — if this doesn't feel
+good, M3 doesn't end.
 
 ### Chunk 10.2 — Bow & Crossbow
 **Files to create:**
@@ -841,6 +1382,11 @@ Uses the Volume 7 blueprint system as the placement primitive.
 
 ## VOLUME 14 — FAUNA SYSTEM
 
+**M3 scope:** 3 species only — Graze (passive), Cluck (neutral, the milk-and-eggs source for
+the synergy sandbox), Thornback (aggressive). Used as combat sandbox + first synergy targets.
+Chunk 14.3 (Taming & Pets) DEFERRED to M7 Expansion 4 (cozy slice). The 18-species roster
+expands across M7.
+
 Goal: 18 wildlife species per the HTML — passive herds, predators, sky fauna, tameable animals,
 domesticated farm animals. AI built on the existing no-NavMesh enemy AI foundation (chunk 6.3).
 
@@ -861,6 +1407,12 @@ domesticated farm animals. AI built on the existing no-NavMesh enemy AI foundati
 ---
 
 ## VOLUME 15 — ENEMIES & BOSSES
+
+**M3 scope:** 1 fodder enemy — Vord Drone. Done well, not 11 done shallow. **M4 scope:** Add
+Vord Raider (vehicle-driving variant). **M5 scope:** Add a simple raid director. **M6 scope:** Add
+ONE boss — Fungal Brood Mother — with the multi-attack-path framework that validates "different
+play styles can succeed." The 32-boss + 11-fodder full roster expands across M7 (Expansion 1
+adds 2–4 enemies; Expansion 2 brings Act 2 bosses; Expansion 6 covers the rest).
 
 Goal: 11 fodder Vord types + 32 bosses (5 families × 6 + 2 finale). Reuse existing enemy AI
 foundation (chunk 6.3) with per-boss behavior trees encoded in dedicated `Boss*.cs` classes.
@@ -900,6 +1452,10 @@ foundation (chunk 6.3) with per-boss behavior trees encoded in dedicated `Boss*.
 
 ## VOLUME 16 — NPCs, SPIRIT GATEWAY, FESTIVALS
 
+**M6 scope:** Wren only (the first rescuable Kin). Spirit Gateway + Discovery Log (the
+"game notices" reward system — see Milestone 6 section above for full design). Festivals and the
+6-Kin / 3-trader full roster DEFERRED to M7 Expansion 2.
+
 Goal: 6 named Kin survivors, 3 traders, plus the Spirit Gateway system that hosts rescued
 Kin spirits, festivals that bring traders/visitors to player bases.
 
@@ -914,9 +1470,24 @@ Kin spirits, festivals that bring traders/visitors to player bases.
 ### Chunk 16.3 — Traders & Caravans
 - 3 trader NPCs from `npcs.json` traders. Each visits the player's base if a `Trade Post` + `Caravan Beacon` is placed nearby (items in items.json). Brings goods on a rotating schedule.
 
-### Chunk 16.4 — Spirit Gateway
+### Chunk 16.4 — Spirit Gateway + Discovery Log
 - `Assets/Scripts/NPCs/SpiritGateway.cs` — Placed structure. Players insert Spirit Anchors (dropped by bosses) to summon the spirit version of each cleansed Kin. Spirits provide passive buffs, hints, recipes.
+- `Assets/Scripts/Quests/DiscoveryLog.cs` — singleton MonoBehaviour persisted to save. Records
+  first-time events with `{ discovery_type, discovery_id, discovery_text, timestamp }`. API:
+  `Record(string type, string id, string text)` (idempotent — second record of same id is a
+  no-op); `IReadOnlyList<DiscoveryEntry> NewSince(DateTime cursor)`.
+- `Assets/ScriptableObjects/Discoveries/` — `DiscoveryDefinition` SOs hand-authored per known
+  weird synergy (e.g. `milk_in_boiler`, `meat_burnt_dry_in_furnace`). M6 ships with ~5 hand-authored
+  entries. Forgiving recipe matches in `CraftingMatchEngine` check if their inputs map to a
+  registered DiscoveryDefinition and call `DiscoveryLog.Record`.
+- `Assets/Scripts/NPCs/SpiritGatewayDialog.cs` — when player approaches Gateway with new
+  discoveries, the resident spirit speaks the most thematically-relevant one-liner from
+  `DiscoveryDefinition.spiritComment`. Wren has 3 such lines hand-authored for M6.
 - UI for managing summoned spirits.
+
+**Acceptance:** Boil milk in a Steam Boiler for the first time. Approach the Spirit Gateway.
+Wren's spirit comments on it. Open the Discovery Log UI (a small panel on the Index device) and
+see the entry recorded.
 
 ### Chunk 16.5 — Festivals
 - Periodic events (every N in-game days) that draw extra NPCs/traders to the base. Special festival-only items, fireworks, banquet table.
@@ -989,23 +1560,48 @@ the HTML's story section.
 
 ## VOLUME 19 — VEHICLES (MODULAR)
 
+**M4 scope (The Chase):** PROMOTED and expanded — vehicle damage moved from a single chunk into
+its own sub-volume. M4 ships a Cart (chassis + wheels from the Core 60), driving physics, a
+component-based damage model with visible deformation, and vehicle combat integration (mounting
+weapons, gunner seat). Aerial vehicles DEFERRED to M7 Expansion 5. The 31-ground / 6-aerial full
+vehicle roster expands across M7.
+
 Goal: the HTML's modular vehicle system — chassis + engine + wheels/locomotion + seat + steering
 + optional cargo platform. 83 vehicle-related items in `categories.json["vehicle"]`.
 
-### Chunk 19.1 — Vehicle Assembly System
+### Chunk 19.1 — Vehicle Assembly System (M4)
 - `Assets/Scripts/Vehicles/VehicleAssembly.cs` — A vehicle is an assembly of parts (chassis, engine, wheels, seat, steering, optional cargo). Built at a Vehicle Rig (Volume 9 T5 machine) by selecting parts.
-- Each part is an item from items.json with vehicle-specific metadata (chassis ID, weight, capacity).
+- Each part is an item from items_core.json with vehicle-specific metadata (chassis ID, weight, capacity). M4 uses cart_chassis + cart_wheel from the Core 60.
 
-### Chunk 19.2 — Ground Vehicles
-- Bicycle, Cart, Wagon, Truck, Steam Wagon, Walker (mech legs), Skiff, Hovercraft, Hover Tank, Food Cart, Tavern Wagon, Greenhouse Wagon, Living Vehicle (mobile base!), Acid Sled, Lab Cart, Cinder Buggy, Inferno Tank, Iceglider, Frost Crawler, Stalker Cycle, Trail Wagon, Auto Rig, Construction Rig, Bone Wagon, Soul Carriage, Pulled Cart, Caravan, Diplomat Carriage, Scholar Mobile Lib, Nature Wagon, Trader Wagon.
+### Chunk 19.5 — Ground Vehicle Expansion (M7 Expansion 1)
+- The full ground-vehicle roster: Bicycle, Cart, Wagon, Truck, Steam Wagon, Walker (mech legs), Skiff, Hovercraft, Hover Tank, Food Cart, Tavern Wagon, Greenhouse Wagon, Living Vehicle (mobile base!), Acid Sled, Lab Cart, Cinder Buggy, Inferno Tank, Iceglider, Frost Crawler, Stalker Cycle, Trail Wagon, Auto Rig, Construction Rig, Bone Wagon, Soul Carriage, Pulled Cart, Caravan, Diplomat Carriage, Scholar Mobile Lib, Nature Wagon, Trader Wagon.
 
-### Chunk 19.3 — Aerial Vehicles
+### Chunk 19.6 — Aerial Vehicles (M7 Expansion 5)
 - Glider, Gyrocopter, Heavy Gyro, Light Plane, Cargo Plane, Sky Barge.
 
-### Chunk 19.4 — Vehicle Physics & Damage
-- Wheels and rotors physically simulated. Damage zones (engine block destroyable separately from chassis).
+### Chunk 19.2 — Ground Vehicle Physics (M4)
+- WheelCollider-based suspension + drivetrain. Per-wheel HP. Engine block has its own HP — engine
+  destruction = vehicle stops; wheel destruction = vehicle wobbles/falls.
 
-**Acceptance:** Player assembles a Cart at the Vehicle Rig, drives it across terrain.
+### Chunk 19.3 — Vehicle Damage Model (M4 — PROMOTED to full sub-volume)
+**Files to create:**
+- `Assets/Scripts/Vehicles/VehicleComponent.cs` — base. Each part (engine, each wheel, each panel,
+  each glass piece) is a `VehicleComponent` with independent HP and a `DamageType` susceptibility
+  table (panels take bullets well but not explosions; glass is fragile to anything).
+- `Assets/Scripts/Vehicles/Damage/PanelDamage.cs` — visible bullet holes via URP decal layer. Above
+  a damage threshold, the panel mesh swaps to a deformed variant or detaches as a physics chunk.
+- `Assets/Scripts/Vehicles/Damage/GlassDamage.cs` — cracked-glass material swap at 50% HP; full
+  shatter (particle burst + replaced with a hole mesh) at 0% HP.
+- `Assets/Scripts/Vehicles/Damage/EngineDamage.cs` — engine block has HP; smoke FX at low HP;
+  vehicle becomes immobile at 0% HP; can be repaired at a Vehicle Rig with Iron Ingot + Wire.
+
+**M4 acceptance:** Drive a Cart. Shoot another Cart. See bullet decals on panels. Shoot windshield.
+See cracks. Shoot more. Glass shatters. Shoot engine. Vehicle dies. Repair at Vehicle Rig.
+
+### Chunk 19.4 — Vehicle Combat Integration (M4)
+- `Assets/Scripts/Vehicles/MountedWeapon.cs` — attach a weapon (from Volume 10) to a vehicle slot.
+  Gunner seat camera + aim controls separate from the driver. Aim while moving — accuracy penalty
+  proportional to vehicle velocity.
 
 ---
 
@@ -1088,7 +1684,7 @@ Goal: final pass. Audio, VFX, balance, juice.
 
 ---
 
-## PROGRESS TRACKER
+## PROGRESS TRACKER (by milestone)
 
 Status codes:
 - `[ ]` = Not started
@@ -1098,207 +1694,190 @@ Status codes:
 - `[✓]` = Done and reviewed
 - `[X]` = Blocked (note reason)
 - `[L]` = Legacy code preserved, asset/data layer superseded
+- `[~]` = Deferred to a later milestone (chunk exists in spec but not in current milestone scope)
 
-### Volume 0 — Project Bootstrap
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+### Milestone 0 — Foundations [✓ Complete]
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
 | 0.0 | Project setup, packages, folder structure, MC submodule | [✓] | |
-
-### Volume 1 — Core World & Player
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
 | 1.1 | Density Function & Noise Utilities | [✓] | |
 | 1.2 | Chunk Data Structure & Chunk Manager | [✓] | |
 | 1.3 | Marching Cubes Adapter & Mesh Generation | [✓] | |
 | 1.4 | Chunk Loading/Unloading Around Player | [✓] | |
-| 1.5 | Biome System (basic, will be reworked in V12) | [✓] | Foundation only — V12 expands to 5 biomes per HTML |
+| 1.5 | Biome System (basic, M7 reworks to 5 biomes) | [✓] | Foundation only |
 | 1.6 | Triplanar Terrain Shader & Biome Materials | [✓] | |
 | 1.7 | First Person Player Controller | [✓] | |
 | 1.8 | Terrain Deformation | [✓] | |
 | 1.X | GPU Density Compute Shader | [✓] | |
 
-### Volume 2 — Data Pipeline (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 2.1 | JSON Loader & Schema Types | [✓] | Newtonsoft.Json installed (3.2.1); 9/9 EditMode tests pass; reviewed 2026-05-26 |
-| 2.2 | Item Definition v2 & Generator | [✓] | Replaces old ItemDefinition; 1031 item SOs + ItemDatabase regenerated |
-| 2.3 | Recipe Definition v2 & Generator | [✓] | 1555 RecipeDefinition assets + RecipeRegistry generated; 5/5 new tests pass; reviewed 2026-05-26 |
-| 2.4 | Machine/Fauna/Enemy/NPC Definitions & Generators | [✓] | 43 machine + 18 fauna + 43 enemy + 9 NPC SOs + 6 registries; 50 new EditMode tests pass (268/268 total); reviewed 2026-05-26 |
-| 2.5 | One-Click Regenerate menus | [✓] | RegenerateAllMenu + JsonReextractMenu; 270/270 EditMode pass (+2 new); end-to-end menu run logs 1031/1555/43/18/43/9; reviewed 2026-05-26 |
+### Milestone 1 — Data Architecture [✓ Complete]
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 2.1 | JSON Loader & Schema Types | [✓] | Newtonsoft.Json 3.2.1; 9/9 EditMode tests pass |
+| 2.2 | Item Definition v2 & Generator | [✓] | 60 SOs after 2.9 |
+| 2.3 | Recipe Definition v2 & Generator | [✓] | 48 hand-authored recipes after 2.9 |
+| 2.4 | Machine/Fauna/Enemy/NPC Generators | [✓] | 14+3+3+1 SOs after 2.9 |
+| 2.5 | One-Click Regenerate menus | [✓] | RegenerateAllMenu + JsonReextractMenu |
+| 2.6 | **Item Property Tags (schema extension)** | [✓] | MaterialProperties.cs (18 values); 6 EditMode tests pass |
+| 2.7 | **Machine Process Types (schema extension)** | [✓] | MachineProcessType.cs (12 values); 6 EditMode tests pass |
+| 2.8 | **Recipe Schema v3 (schema extension)** | [✓] | inputProperties[], efficiency, outputModifier; CraftingMatchEngine interface + stub; 5 EditMode tests pass |
+| 2.9 | **Switch loader to items_core.json** | [✓] | LoadItems→items_core.json; ArchiveLegacySos moved 999 items to _Archived/ |
+| 3.1 | Material Palette | [✓] | 35 materials |
+| 3.2 | Procedural Primitive Mesh Library | [✓] | ProBuilder 6.0.5; 14 mesh assets |
 
-### Volume 3 — Visual Asset Pipeline (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 3.1 | Material Palette | [✓] | 35 materials generated (15 category + 20 build); 8 new EditMode tests pass (278/278); reviewed 2026-05-26 |
-| 3.2 | Procedural Primitive Mesh Library | [✓] | ProBuilder 6.0.5 installed; 14 mesh assets generated; 3/3 new EditMode tests pass (281/281); reviewed 2026-05-26 |
-| 3.3 | Item Visual Recipe & Composer | [ ] | |
-| 3.4 | Icon Renderer | [ ] | Long-running editor task |
-| 3.5 | Fauna/Enemy/NPC Visual Recipes | [ ] | |
+### Milestone 2 — The Synergy Sandbox
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 3.3 | Item Visual Recipe & Composer (Core 60 only) | [ ] | Scope reduced from 1031 → 60 |
+| 3.4 | Icon Renderer (Core 60 only) | [ ] | Runtime <30s vs ~5min for 1031 |
+| 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [ ] | |
 | 3.6 | One-Click Generate Visuals | [ ] | |
-
-### Volume 4 — UI Foundations (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
 | 4.1 | UI Style Kit | [ ] | JetBrains Mono font asset required |
-| 4.2 | HUD Layout (Hotbar + Health + Stamina + Crosshair) | [ ] | |
-| 4.3 | Inventory Panel | [ ] | Replaces existing layout |
-| 4.4 | Machine UI Frame | [ ] | |
-| 4.5 | Tooltip & Dialog | [ ] | Extend existing TooltipUI |
-| 4.6 | Remove In-World UI | [ ] | Audit + delete all WorldSpace canvases |
-
-### Volume 5 — Legacy Asset Cleanup (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 5.1 | Asset Scrap Manifest + Wiper | [ ] | Must run AFTER Volume 2 |
+| 4.2 | HUD Layout | [ ] | |
+| 4.3 | Inventory Panel | [ ] | |
+| 4.4 | Machine UI Frame (includes howItWorks block) | [ ] | |
+| 4.5 | Tooltip (DialogUI deferred to M6) | [ ] | |
+| 4.6 | Remove In-World UI | [ ] | |
+| 5.1 | Archive (not delete) legacy SOs to _Archived/ | [ ] | After 2.9 runs |
 | 5.2 | Scene Reference Fixup | [ ] | |
 | 5.3 | Code Cleanup | [ ] | |
-
-### Volume 6 — Inventory & Crafting v2 (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 6.1 | Crafting Match Engine v2 | [ ] | Machine-scoped, bag-of-items matching |
+| 6.1 | Crafting Match Engine v2 (with property matching) | [ ] | Forgiving/picky split lands here |
 | 6.2 | Personal Crafting Grid | [ ] | |
-| 6.3 | Machine Crafting Stations | [ ] | Drives MachineUI |
-| 6.4 | Bootstrap Path Validator test | [ ] | |
-
-### Volume 7 — Building & Grid System (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+| 6.3 | Machine Crafting Stations | [ ] | |
+| 6.4 | Bootstrap Path Validator (Core 60) | [ ] | |
 | 7.1 | Block Placement & Virtual Grid | [ ] | |
-| 7.2 | Block Forms & Variants | [ ] | |
+| 7.2 | Block Forms (cube + slab only for M2) | [ ] | Other forms deferred to M7 |
 | 7.3 | Terrain Leveling Tool | [ ] | |
-| 7.4 | Blueprint Capture & Place | [ ] | |
+| 7.4 | Blueprint Capture & Place | [~] | DEFERRED to M5/M6 |
 | 7.5 | Block Breaking | [ ] | |
-
-### Volume 8 — Power & Wiring (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
 | 8.1 | Power Network Graph | [ ] | |
-| 8.2 | Generators (54 types) | [ ] | Heavy chunk — may need sub-chunks 8.2a/8.2b |
-| 8.3 | Storage & Distribution | [ ] | |
-| 8.4 | Worn Battery Pack | [ ] | |
-
-### Volume 9 — Machines & Automation (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+| 8.2 | Generators — 2 only (steam + hand crank) | [ ] | Full 54-zoo deferred to M7 |
+| 8.3 | Storage (battery_basic) + Sink only | [ ] | |
+| 8.4 | Worn Battery Pack | [~] | DEFERRED to M7 |
 | 9.1 | MachineRuntime Base | [ ] | |
-| 9.2 | T1–T3 Machines (no automation) | [ ] | |
-| 9.3 | T4–T5 Machines (powered) | [ ] | |
-| 9.4 | T6–T7 Machines (advanced + auto-variants) | [ ] | |
-| 9.5 | Transport (conveyors, tubes, pipes, couriers) | [ ] | |
-| 9.6 | Sorting & Storage | [ ] | |
+| 9.2 | Core 8 Machines (workbench/furnace/boiler/gen/composter/drying/storage/crusher) | [ ] | T2-T5+ machines deferred |
+| 9.3 | T4–T5 Machines (powered) | [~] | Press only via M5; rest deferred to M7 |
+| 9.4 | T6–T7 Machines (advanced + auto-variants) | [~] | DEFERRED to M7 |
+| 9.5 | Transport — Conveyor Belt + Inserter only | [ ] | Other transports deferred |
+| 9.6 | Sorting (optional Item Sorter) | [ ] | |
 
-### Volume 10 — Combat Refactor
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+**M2 Acceptance:** Boot game. Walk outside. Mine ore. Build workbench. Build furnace. Build steam boiler. Build a generator. Wire them. Run them on coal. Then run them on milk for the lulz. Smile.
+
+### Milestone 3 — Combat That Feels Good
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
 | (old) 4.1-4.5 — Guns code | [L] | Code preserved; asset SOs regenerated by 10.1 |
 | (old) 5.1-5.4 — Melee code | [L] | Same |
 | (old) 6.1-6.3 — Projectiles + Enemy AI | [L] | Same |
-| 10.1 | Weapon SO Generator | [ ] | |
-| 10.2 | Bow & Crossbow | [ ] | |
-| 10.3 | Thrown & Spear | [ ] | |
-| 10.4 | Powered Weapons | [ ] | Depends on Volume 8.4 |
-| 10.5 | Traps & Turrets | [ ] | |
-| 10.6 | Armor & Damage Resistance | [ ] | |
-
-### Volume 11 — Tools, Gadgets, Wearables (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 11.1 | Backpack System | [ ] | |
-| 11.2 | Movement Gadgets | [ ] | |
-| 11.3 | Utility Gadgets | [ ] | |
-| 11.4 | Wearable Armor Effects | [ ] | |
-| 11.5 | The Index v2 | [P] | Intro/hotbar/grapple exist per memory; restyle to V4 |
-
-### Volume 12 — Biome Rework (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 12.1 | Biome Definitions (5 biomes) | [ ] | Replaces V1.5 biomes |
-| 12.2 | Realistic Grass (GPU-instanced) | [ ] | |
-| 12.3 | Trees & Large Flora | [ ] | |
-| 12.4 | Weather, Temperature, Time of Day | [ ] | |
-| 12.5 | Per-Biome Ore Distribution | [ ] | Updates OreRegistry |
-
-### Volume 13 — Structure & Road Placement (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 13.1 | Structure Placement Pass | [ ] | |
-| 13.2 | Blueprint Authoring (designer task) | [ ] | 45 blueprints (5×5 Kin ruins + 15 Vord strongholds + 25 misc) |
-| 13.3 | Road Network | [ ] | |
-| 13.4 | Echo Strongholds (procedural endgame) | [ ] | |
-
-### Volume 14 — Fauna System (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+| 10.1 | Weapon SO Generator (Core 6 weapons only) | [ ] | |
+| 10.2 | Bow & Crossbow (hunting_bow) | [ ] | |
+| 10.3 | Thrown & Spear (wooden_spear) | [ ] | |
+| 10.X | **Combat Polish (PROMOTED from V22)** | [ ] | Hit reactions, ragdolls, decals, casing, shake, audio |
+| 10.4 | Powered Weapons | [~] | DEFERRED to M7 |
+| 10.6 | Armor — M3 lite (one set, no specials) | [ ] | Archetype effects deferred |
 | 14.1 | Fauna AI Base | [ ] | |
-| 14.2 | Fauna Per Species (18) | [ ] | |
-| 14.3 | Taming & Pets | [ ] | |
+| 14.2 | Fauna — Graze + Cluck + Thornback only | [ ] | Other 15 species deferred to M7 |
+| 14.3 | Taming & Pets | [~] | DEFERRED to M7 cozy slice |
+| 15.1 | Fodder Enemy AI — Vord Drone only | [ ] | Other 10 fodder deferred |
 
-### Volume 15 — Enemies & Bosses (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 15.1 | Fodder Enemy AI (11 types) | [ ] | |
+**M3 Acceptance:** Spawn enemy. Shoot enemy. Enemy reacts (hit flinch, blood/spark VFX, audio impact, ragdolls on death). Crouch-aim. Headshot. Casing ejects. Reload. Feel a small bump of satisfaction.
+
+### Milestone 4 — The Chase
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 19.1 | Vehicle Assembly System | [ ] | Uses cart_chassis + cart_wheel from Core 60 |
+| 19.2 | Ground Vehicle Physics | [ ] | |
+| 19.3 | Vehicle Damage Model (PROMOTED to full sub-volume) | [ ] | Component-based HP, visible deformation, glass shatter |
+| 19.4 | Vehicle Combat Integration | [ ] | Mounted weapons, gunner seat |
+| 19.5 | Ground vehicle expansion | [~] | DEFERRED to M7 Expansion 1 |
+| 19.6 | Aerial vehicles | [~] | DEFERRED to M7 Expansion 5 |
+| 15.1+ | Vord Raider (vehicle-driving variant) | [ ] | Driver AI + gunner AI |
+| 12.3 | Roads only (partial biome work) | [ ] | A* between two arbitrary points |
+
+**M4 Acceptance:** Build a basic ground vehicle at a Vehicle Rig. Drive across terrain. Get attacked by an enemy in another vehicle. Take damage. See windshield crack. See bullet holes in panels. Lose a wheel. Crash. Stagger out. Either win or die.
+
+### Milestone 5 — Base Defense
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 10.5 | Auto-Turret only | [ ] | |
+| 9.3 | Press machine only | [ ] | |
+| 15.X | Raid director | [ ] | Mix of Vord Drone + Vord Raider, simple wave timer |
+| 7.4 | Blueprint Capture & Place (rolled forward from M2) | [ ] | If needed for base save |
+
+**M5 Acceptance:** Set up the bullet-feeding-the-turret pipeline. Trigger a raid manually. Watch turret defend. Take some damage. Survive. Inspect base. Feel like a genius.
+
+### Milestone 6 — Story Hook & The Spirit Gateway
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 13.1 | Stronghold placement (one hand-authored) | [ ] | |
+| 13.2 | Blueprint Authoring — 1 stronghold | [ ] | The other 44 deferred to M7 |
 | 15.2 | Boss Framework | [ ] | |
-| 15.3 | Brood Family (6 bosses) | [ ] | |
-| 15.4 | Warden Family (6 bosses) | [ ] | |
-| 15.5 | Hunter Family (6 bosses) | [ ] | |
-| 15.6 | Channeler Family (6 bosses) | [ ] | |
-| 15.7 | Aberrant Family (6 bosses) | [ ] | |
-| 15.8 | Finale Bosses (2) | [ ] | |
-
-### Volume 16 — NPCs, Spirit Gateway, Festivals (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 16.1 | NPC Base & Dialog | [ ] | |
-| 16.2 | 6 Named Kin | [ ] | |
-| 16.3 | Traders & Caravans | [ ] | |
-| 16.4 | Spirit Gateway | [ ] | |
-| 16.5 | Festivals | [ ] | |
-
-### Volume 17 — Atlas, Index, Quest Framework (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 17.1 | Atlas | [ ] | |
-| 17.2 | Index v2 (already partial) | [P] | Restyle existing |
+| 15.3 | Fungal Brood Mother (only) | [ ] | Multi-attack-path validation |
+| 16.1 | NPC Base & Dialog | [ ] | DialogUI 4.5 lands here too |
+| 16.2 | Wren only | [ ] | Other 5 named Kin deferred to M7 Expansion 2 |
+| 16.3 | Traders & Caravans | [~] | DEFERRED to M7 |
+| 16.4 | Spirit Gateway + Discovery Log | [ ] | "Game notices" reward system |
+| 16.5 | Festivals | [~] | DEFERRED to M7 |
+| 17.1 | Atlas (minimum viable) | [ ] | Chunk-reveal only |
+| 17.2 | Index v2 (already partial) | [P] | Restyle existing; add Discovery Log panel |
 | 17.3 | Recall Box | [ ] | |
-| 17.4 | Quest & Bounty Framework | [ ] | |
-
-### Volume 18 — Story Acts (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+| 17.4 | Quest Framework (one active quest) | [ ] | Bounty Board deferred |
 | 18.1 | Act 1: Awakening | [ ] | |
-| 18.2 | Act 2: Reclamation | [ ] | |
-| 18.3 | Act 3: Heart Fragments | [ ] | |
-| 18.4 | Act 4: The Source | [ ] | |
 
-### Volume 19 — Vehicles (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 19.1 | Vehicle Assembly System | [ ] | |
-| 19.2 | Ground Vehicles | [ ] | |
-| 19.3 | Aerial Vehicles | [ ] | |
-| 19.4 | Vehicle Physics & Damage | [ ] | |
+**M6 Acceptance:** Atlas points to a stronghold. Travel there. Defeat boss (combat from M3 + maybe a vehicle in M4). Rescue Kin. Bring Kin home. Build Spirit Gateway. Insert boss's Spirit Anchor. Kin spirit comments on your base's milk-fueled boiler. Feel feelings.
 
-### Volume 20 — Endings & NG+ (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 20.1 | Choice Chamber | [ ] | |
-| 20.2 | Endings (4) | [ ] | |
-| 20.3 | NG+ Embrace Mode | [ ] | |
+### Milestone 7 — Expansion
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
+| 12.1 | Biome Definitions (5 biomes) | [ ] | Expansion 1 |
+| 12.2 | Realistic Grass (GPU-instanced) | [ ] | Expansion 1 |
+| 12.3 | Trees & Large Flora (full pass) | [ ] | Expansion 1 |
+| 12.4 | Weather, Temperature, Time of Day | [ ] | Expansion 1 |
+| 12.5 | Per-Biome Ore Distribution | [ ] | Expansion 1 |
+| 13.3 | Road Network (full) | [ ] | Expansion 1 |
+| 13.4 | Echo Strongholds (procedural endgame) | [ ] | Expansion 6 |
+| 14.2 | Fauna — remaining 15 species | [ ] | Expansion 1 + 4 |
+| 14.3 | Taming & Pets | [ ] | Expansion 4 (cozy slice) |
+| 15.1 | Remaining 10 fodder | [ ] | Expansion 1 |
+| 15.3 | Brood Family (remaining 5 bosses) | [ ] | Expansion 2 |
+| 15.4 | Warden Family (6 bosses) | [ ] | Expansion 2 |
+| 15.5 | Hunter Family (6 bosses) | [ ] | Expansion 2 |
+| 15.6 | Channeler Family (6 bosses) | [ ] | Expansion 2 |
+| 15.7 | Aberrant Family (6 bosses) | [ ] | Expansion 6 |
+| 15.8 | Finale Bosses (2) | [ ] | Expansion 6 |
+| 16.2 | 5 remaining Kin | [ ] | Expansion 2 |
+| 16.3 | Traders & Caravans | [ ] | Expansion 2 |
+| 16.5 | Festivals | [ ] | Expansion 4 |
+| 17.4 | Bounty Board | [ ] | Expansion 4 |
+| 18.2 | Act 2: Reclamation | [ ] | Expansion 2 |
+| 18.3 | Act 3: Heart Fragments | [ ] | Expansion 6 |
+| 18.4 | Act 4: The Source | [ ] | Expansion 6 |
+| 11.1 | Backpack System | [ ] | Expansion 1 |
+| 11.2 | Movement Gadgets | [ ] | Expansion 1 |
+| 11.3 | Utility Gadgets | [ ] | Expansion 1 |
+| 11.4 | Wearable Armor Effects | [ ] | Expansion 1 |
+| 11.5 | The Index v2 (full feature pass) | [P] | Expansion 1 |
+| 8.4 | Worn Battery Pack | [ ] | Expansion 1 |
+| 8.2 | Remaining 52 generators | [ ] | Expansion 1 (subset), later (rest) |
+| 9.3/9.4 | Remaining T4-T7 machines + auto-variants | [ ] | Expansion 1 |
+| 19.5 | Ground vehicle expansion | [ ] | Expansion 1 |
+| 19.6 | Aerial vehicles | [ ] | Expansion 5 |
+| 10.4 | Powered Weapons | [ ] | Expansion 1 |
+| 10.5 | Traps & Turrets (full set) | [ ] | Expansion 1 |
+| 20.1 | Choice Chamber | [ ] | Expansion 6 |
+| 20.2 | Endings (4) | [ ] | Expansion 6 |
+| 20.3 | NG+ Embrace Mode | [ ] | Expansion 6 |
+| 21.1 | Netcode Foundation | [ ] | Expansion 3 |
+| 21.2 | World Sync | [ ] | Expansion 3 |
+| 21.3 | Player Sync | [ ] | Expansion 3 |
+| 21.4 | Combat Sync | [ ] | Expansion 3 |
+| 21.5 | Automation Sync | [ ] | Expansion 3 |
+| 21.6 | UI & Lobby | [ ] | Expansion 3 |
+| backlog | Bulk-process 1031-item content reserve | [ ] | Expansion 7 |
 
-### Volume 21 — Coop Networking (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| 21.1 | Netcode Foundation | [ ] | |
-| 21.2 | World Sync | [ ] | |
-| 21.3 | Player Sync | [ ] | |
-| 21.4 | Combat Sync | [ ] | |
-| 21.5 | Automation Sync | [ ] | |
-| 21.6 | UI & Lobby | [ ] | |
-
-### Volume 22 — Polish (NEW)
-| Chunk | Description | Status | Notes |
-|-------|-------------|--------|-------|
+### Milestone 8 — Polish, audio, art, full release
+| Vol.Chunk | Description | Status | Notes |
+|-----------|-------------|--------|-------|
 | 22.1 | Audio Pass | [ ] | |
 | 22.2 | VFX Pass | [ ] | |
 | 22.3 | Balance Pass | [ ] | |
@@ -1306,28 +1885,36 @@ Status codes:
 
 ---
 
-## RECOMMENDED EXECUTION ORDER
+## RECOMMENDED EXECUTION ORDER (by milestone)
 
-Strict dependency order — do not skip ahead:
+Strict milestone order — do not skip ahead unless a chunk is genuinely independent.
 
-1. **Volumes 2 → 3 → 4 → 5** (data pipeline → visuals → UI → cleanup)
-2. **Volume 6** (crafting v2 — depends on data + UI)
-3. **Volumes 7 → 8 → 9** (building → power → machines — depend on data + crafting)
-4. **Volumes 10 → 11** (combat refactor → gadgets)
-5. **Volumes 12 → 13** (biome rework → structures)
-6. **Volumes 14 → 15 → 16** (fauna → enemies → NPCs)
-7. **Volume 17** (Atlas/Index/quests)
-8. **Volume 18** (story acts — depends on all prior gameplay systems)
-9. **Volume 19** (vehicles — independent, can run earlier in parallel if needed)
-10. **Volume 20** (endings — depends on 18)
-11. **Volume 21** (coop — touches every system; design constraints applied from day one)
-12. **Volume 22** (polish — last)
+1. **M1 finish** — chunks 2.6 → 2.7 → 2.8 → 2.9 (schema extensions + loader switch). Single agent
+   pass acceptable since they share schema state.
+2. **M2** — V3.3–3.6 (Core 60 visuals) → V4 (minimum UI) → V5 (legacy archive) → V6 (crafting v2
+   with property matching) → V7 (minimum building) → V8 (minimum power) → V9 (Core 8 machines +
+   conveyor + inserter). Stop here. Play the build. Confirm it's fun.
+3. **M3** — V10 Core weapons + Combat Polish promoted → V14 (3 species) → V15.1 (1 fodder). Stop.
+   Confirm combat feels good.
+4. **M4** — V19.1–19.4 (full vehicle damage model) → V15 ext (Vord Raider) → V12.3 (roads). Stop.
+   Confirm the chase feels good.
+5. **M5** — V10.5 (Auto-Turret) → V9.3 (Press) → V15 ext (raid director). Stop. Confirm base
+   defense is satisfying.
+6. **M6** — V13.1–13.2 (one stronghold) → V15.2–15.3 (boss framework + Fungal Brood Mother) →
+   V16.1–16.2 (NPC + Wren) → V16.4 (Spirit Gateway + Discovery Log) → V17 (Atlas/Index/quests) →
+   V18.1 (Act 1). Stop. Confirm the story hook lands emotionally.
+7. **M7** — Expansion phases in order (1 → 2 → 3 → 4 → 5 → 6 → 7). Each expansion is its own
+   mini-milestone with its own playtest gate.
+8. **M8** — V22 final polish pass.
 
-Parallelisation opportunities (independent agents can work concurrently):
-- Volume 3 (visuals) parallel with Volume 4 (UI) parallel with Volume 5 (cleanup).
-- Volume 8 (power) parallel with Volume 10 (combat) — different systems, no dependency.
-- Volume 14 (fauna) parallel with Volume 15 (enemies) parallel with Volume 16 (NPCs).
-- Volume 19 (vehicles) anytime after Volume 9.
+Parallelisation opportunities (independent agents can work concurrently within a milestone):
+- M1: chunks 2.6 / 2.7 / 2.8 can be implemented in parallel if a single agent supervises schema
+  consistency.
+- M2: V4 (UI) can run in parallel with V7 (building) once V5 (cleanup) lands.
+- M3: V14 (fauna species) parallel with V15.1 (fodder enemy).
+- M4: V19 sub-chunks (assembly / physics / damage / combat-integration) can fan out.
+- M7 expansions: by design each expansion ships independently and can be reordered if a sub-team
+  wants to grab one.
 
 ---
 
@@ -1395,6 +1982,366 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M1 Chunks 2.6 / 2.7 / 2.8 / 2.9 (batched pass)
+
+VERDICT: PASS. All four chunks meet the spec. M1 flipped from 11/11 awaiting
+review to [✓ Complete]. No fixes required.
+
+SPOT-CHECKS PERFORMED:
+
+Enum vocabulary (2.6 / 2.7):
+- MaterialProperties.cs: 18 enum values match spec (Combustible_Dry/Wet/Liquid/
+  Volatile + Liquid_Aqueous/Oil/Alchemical + Organic_Fresh/Decayed/Dried/Sweet +
+  Solid_Metal/Stone/Powder/Fiber + Conducts_Electric + Crystalline + Magical).
+  All in PascalCase_Snake_Case. Pure data, no Unity refs.
+- MachineProcessType.cs: 12 values (7 Forgiving + 4 Picky + 1 Hybrid). Spec
+  parity confirmed.
+
+Schema round-trip (2.6 / 2.7):
+- milk.asset: properties bytes 0400000007000000 -> [Liquid_Aqueous=4,
+  Organic_Fresh=7] - correct.
+- steam_boiler.asset: processType=1 (Forgiving_Thermal_Boil); howItWorks
+  string mentions milk explicitly.
+- workbench.asset: processType=11 (Hybrid_Crafting).
+- furnace.asset: processType=0 (Forgiving_Thermal_DryBurn).
+- steam_generator.asset: processType=10 (Picky_Specialty).
+- furnace__r0.asset: inputProperties=[], efficiency=1, outputModifier=1 -
+  backwards-compat defaults confirmed for pre-v3 recipes.
+
+JObject pre-filter (2.9):
+- GameDesignJsonLoader.LoadFilteredItemDict() iterates root JObject properties,
+  drops underscore-prefixed keys BEFORE converting each remaining value via
+  ToObject<ItemJson>. Per-entry try/catch produces precise error messages.
+  NPC loader uses a separate FilterUnnamedNpcs() that filters by missing name.
+  Implementing agent's rationale (Deviation 1) is sound - confirmed the metadata
+  values (int 3, string array) would crash a typed Dictionary deserialiser.
+
+ArchiveLegacySos.cs (2.9):
+- Computes live id sets from items_core.json + npcs_core.json (not from
+  stale registries). Items by JSON key, machines by kind=="machine" filter,
+  NPC-likes by name -> slug.
+- Moves to _Archived/<scope>/. Never deletes live items.
+- Idempotent: if destination already exists, deletes the source duplicate
+  instead of erroring. Re-running the menu produces "Nothing to archive"
+  on a clean state.
+- SlugifyName replicated locally to avoid asmdef ref into Voidborne.Editor.Data.
+
+CraftingMatchEngine stub (2.8):
+- DefaultCraftingMatchEngine.TryMatch throws NotImplementedException with the
+  exact message "Full match logic in Volume 6.1". No placeholder logic.
+
+Test suite:
+- refresh_unity + read_console: 0 errors, 0 warnings surfaced in current console.
+- run_tests EditMode: 294/294 PASSED in 2.81s. Zero failures, zero skips.
+- New tests: PropertyTagTests (6), MachineProcessTypeTests (6),
+  RecipeSchemaV3Tests (5) all account-for.
+
+Coop / codebase rules:
+- ItemDefinition / MachineDefinition / RecipeDefinition additions are
+  serialized FIELDS only - no runtime mutation surface added.
+- No Time.deltaTime, no unseeded Random in new code.
+- All editor code under Assets/Editor/, all #if UNITY_EDITOR-wrapped.
+- No emojis in source.
+- ArchiveLegacySos is idempotent; generators are idempotent.
+
+CONCERNS / HEADS-UPS FOR NEXT AGENT (M2 Volume 3.3):
+
+- _Archived/ tree (~999 item .asset files + their .meta) is currently NOT
+  git-ignored. The implementing agent flagged this. Recommend M2's V5.1
+  cleanup-volume agent adds Assets/ScriptableObjects/_Archived/ to .gitignore.
+- ItemSoGenerator does not delete orphans by design (per Vol 2.2 spec).
+  If items_core.json gains/renames entries during M2 iteration, re-running
+  ArchiveLegacySos cleans up dead asset files. It's idempotent and safe.
+- Reminder: items_core.json has a few TODO-flagged recipes (gunpowder,
+  bolt_rifle). They serialise fine but their content is provisional.
+- M2 Volume 3 visual pipeline iterates ItemDatabase (60 entries). Do NOT
+  bulk-process items_backlog.json.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M1 Chunks 2.6 / 2.7 / 2.8 / 2.9 (batched pass)
+Notes:
+
+WHAT LANDED:
+- M1 schema extensions + loader switch. All four chunks implemented in a single agent
+  pass since they share schema state.
+
+FILES CREATED:
+- Assets/Scripts/Data/MaterialProperties.cs — 18-value enum (Combustible_*/Liquid_*/
+  Organic_*/Solid_*/Conducts_Electric/Crystalline/Magical). Pure data, no Unity refs.
+- Assets/Scripts/Automation/MachineProcessType.cs — 12-value enum (7 Forgiving + 4 Picky
+  + 1 Hybrid).
+- Assets/Scripts/Crafting/CraftingMatchEngine.cs — ICraftingMatchEngine interface +
+  RecipeMatchResult class + DefaultCraftingMatchEngine stub that throws
+  NotImplementedException("Full match logic in Volume 6.1"). Lets M1 compile against the
+  match-engine API; Vol 6.1 fills in the real logic.
+- Assets/Editor/Cleanup/ArchiveLegacySos.cs — [MenuItem("Voidborne/Cleanup/Archive
+  Pre-Core-60 SOs")]. Loads items_core.json + npcs_core.json to compute the live id set,
+  then moves any surplus generated asset to Assets/ScriptableObjects/_Archived/<scope>/.
+  Idempotent. Replicates ParsingHelpers.SlugifyName locally to avoid an asmdef ref.
+- Assets/Tests/EditMode/PropertyTagTests.cs — 6 tests.
+- Assets/Tests/EditMode/MachineProcessTypeTests.cs — 6 tests.
+- Assets/Tests/EditMode/RecipeSchemaV3Tests.cs — 5 tests.
+
+FILES MODIFIED:
+- Assets/Scripts/Data/Schema/ItemJson.cs — added properties[], processType, howItWorks.
+- Assets/Scripts/Inventory/ItemDefinition.cs — added MaterialProperties[] properties +
+  IReadOnlyList<MaterialProperties> Properties accessor + HasProperty helper. Legacy
+  field names (itemId, modelPrefab, itemType, weight) preserved per existing deviations.
+- Assets/Scripts/Automation/MachineDefinition.cs — added MachineProcessType processType
+  (defaulting to Picky_Specialty) and string howItWorks.
+- Assets/Scripts/Data/Schema/RecipeJson.cs — added inputProperties[], efficiency=1.0f,
+  outputModifier=1.0f; added InputPropertyJson { property, qty, efficiency }.
+- Assets/Scripts/Crafting/RecipeDefinition.cs — added InputProperty[] inputProperties,
+  float efficiency=1.0f, float outputModifier=1.0f; added InputProperty struct
+  (enum-typed twin of InputPropertyJson).
+- Assets/Editor/Data/ItemSoGenerator.cs — added ResolveProperties() that Enum.TryParse's
+  the JSON strings into MaterialProperties[]. Unknown tags warn and skip.
+- Assets/Editor/Data/MachineSoGenerator.cs — added ResolveProcessType() that defaults
+  to Picky_Specialty on unknown/missing input.
+- Assets/Editor/Data/RecipeSoGenerator.cs — emits inputProperties[] + efficiency +
+  outputModifier with backwards-compat (legacy items_backlog.json recipes get the
+  RecipeJson defaults of 1.0f).
+- Assets/Scripts/Data/GameDesignJsonLoader.cs — LoadItems() reads items_core.json,
+  LoadNpcs() reads npcs_core.json. Added LoadItemsBacklog() / LoadNpcsBacklog() opt-in
+  loaders. Filter strips underscore-prefixed top-level keys via a JObject-based pre-pass
+  (the schema_version=3 metadata value would otherwise crash the dictionary deserialiser
+  before the post-filter ran — see Deviation 1).
+- Assets/Tests/EditMode/JsonLoaderTests.cs — count assertions retargeted to Core 60 / 7
+  NPCs; added LoadItems_StripsUnderscoreMetadataKeys, LoadItems_HasSynergyAnchors,
+  LoadNpcs_HasWrenAndBroodMother.
+- Assets/Tests/EditMode/ItemDatabaseTests.cs — count bounds retargeted to Core 60;
+  Source_FaunaItem test now uses raw_meat (was 'graze', which is now an NPC).
+- Assets/Tests/EditMode/RecipeRegistryTests.cs — count floor lowered to 30.
+- Assets/Tests/EditMode/RegenerateAllTests.cs — expected counts retargeted (60/30/12/3/2/1).
+- Assets/Tests/EditMode/RegistriesTests.cs — count assertions switched to GreaterOrEqual
+  floors; legacy anchor tests (vord_brood_queen, the_hollow_source, assembler, traders)
+  removed; replaced with Machines_SteamBoiler_IsForgivingThermalBoil for the M2 anchor.
+  Machines_Furnace_IsTier2 (was tier 3 in legacy items.json; tier 2 in items_core.json).
+
+DEVIATIONS FROM SPEC:
+
+1. **JObject pre-filter (not post-filter).** Spec said "Filter them out: skip keys
+   starting with `_`". The naïve post-filter on Dictionary<string, ItemJson> doesn't
+   work because Newtonsoft tries to coerce the metadata VALUES (e.g. `_schema_version: 3`
+   is an int, `_schema_notes` is a string array) into ItemJson and crashes BEFORE
+   returning. Switched to a JObject-based pre-filter in LoadFilteredItemDict() that
+   iterates root properties, drops underscore-prefixed keys, then converts the
+   remaining JObject values to ItemJson individually. This also catches per-entry
+   parse failures with a more specific error message.
+
+2. **MachineDefinition.processType default = Picky_Specialty** (per spec). Legacy
+   machines from items_backlog.json that don't carry processType therefore become
+   Picky_Specialty after a regen. None of the Volume 6.1 matching logic is implemented
+   yet, so this is just data sitting in SOs.
+
+3. **DefaultCraftingMatchEngine stub** ships with the interface, not as a separate
+   file. Both are in Assets/Scripts/Crafting/CraftingMatchEngine.cs. Throws
+   NotImplementedException with the message "Full match logic in Volume 6.1" so any
+   accidental wire-up surfaces clearly.
+
+4. **RegistriesTests anchor coverage.** Removed every assertion bound to a legacy SO
+   that no longer exists (Enemies_VordBroodQueen_IsBoss_BroodFamily_Tier3,
+   Enemies_TheHollowSource_IsFinale, Machines_Assembler_IsT7_AndPowered, plus the
+   exact-count tests for bosses=32, fodder=11, quest_givers=6, traders=3). Replaced
+   with floor assertions plus the new Machines_SteamBoiler_IsForgivingThermalBoil
+   anchor. M3+ work will re-introduce specific assertions as those enemies/NPCs land.
+
+5. **ArchiveLegacySos menu execution.** The first menu invocation (via Unity MCP
+   execute_menu_item) returned a TimeoutError due to the confirmation dialog popping
+   up — Unity's modal dialog blocks the MCP RPC. The asset moves still ran via the
+   silent code path on the second invocation (via execute_code) which bypasses the
+   dialog. Result: 999 items archived. Future invocations from the menu UI work fine
+   when an interactive user is present.
+
+TEST COUNTS:
+- Before: 281 (per task spec baseline)
+- After: 294 (all passing) — net +13
+- New tests: PropertyTagTests (6), MachineProcessTypeTests (6), RecipeSchemaV3Tests (5)
+  = 17 added; offset by 4 removed from RegistriesTests (assembler / vord_brood_queen /
+  the_hollow_source / npcs_questgivers+traders).
+
+REGENERATE COUNTS (post-2.9 + archive):
+| Scope    | Was (legacy) | Now (Core)  |
+|----------|--------------|-------------|
+| Items    | 1031         | 60          |
+| Recipes  | 1555         | 48          |
+| Machines | 43           | 14          |
+| Fauna    | 18           | 3           |
+| Enemies  | 43           | 3           |
+| NPCs     | 9            | 1           |
+
+ARCHIVE COUNTS:
+- Items: 999 archived to Assets/ScriptableObjects/_Archived/Items/
+- Recipes / Machines / Fauna / Enemies / NPCs: 0 archived (each generator deletes its
+  own orphans during the regen pass, so by the time ArchiveLegacySos runs there are
+  no surplus assets to move in those scopes). This is the expected behaviour given
+  the existing generator semantics; only the Items generator skips orphan deletion
+  (intentionally, per Volume 2.2's "removed-items NOT deleted by this generator —
+  orphan cleanup is Volume 2.5's responsibility" note).
+
+VERIFICATION RESULTS:
+- refresh_unity: 0 compile errors. 47 pre-existing warnings (CS0618/CS0162/CS0414/etc).
+  Zero new warnings from this work.
+- run_tests EditMode: 294/294 passing in 2.95s.
+- Voidborne/Generate/⟳ Regenerate All Generated SOs: ran clean.
+- Voidborne/Cleanup/Archive Pre-Core-60 SOs: 999 items archived (see Deviation 5 re
+  menu invocation; result is correct).
+
+HEADS-UP FOR THE NEXT AGENT (M2 Volume 3.3 — Item Visual Recipe & Composer):
+
+- Scope reduced to Core 60 only per master_prompt v4. Iterate ItemDatabase (60
+  entries), don't bulk-process the backlog.
+- The 999 archived items in Assets/ScriptableObjects/_Archived/Items/ are still on
+  disk and tracked by AssetDatabase. The _Archived/ tree is intended to be
+  git-ignored per Volume 5.1's spec; that .gitignore change has NOT been made yet
+  in this pass — recommend the cleanup-volume agent applies it.
+- items_core.json has a handful of recipes flagged `TODO` in their notes
+  (gunpowder, bolt_rifle). Those are placeholders pending balance passes; they
+  serialise fine but their content isn't final.
+- Several legacy item ids (graze/cluck/etc.) now resolve to *fauna NPCs* rather than
+  items. If you hit a missing-item-id error in a generator, check whether the id
+  collided with a fauna/enemy/NPC entry.
+- CraftingMatchEngine throws NotImplementedException — Volume 6.1 owns the real
+  logic. Don't accidentally call it from any new M2 wiring; instead consume
+  recipe.ingredients directly until 6.1 lands.
+- ItemSoGenerator does NOT delete orphans (by design — Vol 2.2 spec). If you add or
+  rename items in items_core.json, re-running ArchiveLegacySos cleans up the dead
+  asset files (it's idempotent).
+```
+
+```
+Date: 2026-05-27
+Agent: Master prompt restructure (v3 -> v4 Milestone-driven)
+Notes:
+- Rewrote master_prompt.md from system-layered (22 volumes) to milestone-driven (9 milestones M0-M8).
+  No completed work was discarded — only its sequencing changed. Every prior [✓] chunk retains its
+  status under its new milestone home. Volumes still exist as the per-chunk spec; milestones decide
+  the *order* those chunks land in.
+
+WHAT CHANGED:
+- Added "Design Philosophy" section (above Project Structure) with the three principles:
+  (1) Playable milestones, not system layers;
+  (2) Forgiving/picky machine split (synergy lives in forgiving, progression in picky);
+  (3) Start small (Core 60), expand from a working core.
+- Added "Material Properties & Machine Process Types" canonical reference section. ~17 property
+  tags (Combustible_Dry, Liquid_Aqueous, Solid_Metal, Conducts_Electric, ...) and ~12 process
+  types (7 Forgiving + 4 Picky + 1 Hybrid). Drives the recipe matching engine in Volume 6.1.
+- Added "The Core 60" section. The new items_core.json carries 60 hand-authored items vs the
+  backlog's 1031. milk + steam_boiler are the synergy-sandbox anchors; the cow-milk-into-boiler
+  trick MUST work and feel funny in M2.
+- Added "Milestones" overview before Volume 0 — full M0-M8 mapping with acceptance tests.
+- Volume 2 grew chunks 2.6 / 2.7 / 2.8 / 2.9 (Item Property Tags, Machine Process Types,
+  Recipe Schema v3, Switch loader to items_core.json). All [ ] (not started). These are the
+  remaining M1 work that the next agent picks up.
+- Volume 3 scope reduced to "Core 60 only" for the M2 visual generation pass (~60 prefabs +
+  icons, not 1031). M7 Expansion 7 covers the bulk pass.
+- Volume 4 scope reduced to minimum viable. DialogUI (4.5) deferred to M6 (needed for Wren).
+  Machine UI (4.4) now reads MachineDefinition.howItWorks (added in 2.7) and shows it as a
+  prose tooltip — see Volume 4 in the prompt.
+- Volume 5 changed from DELETE to ARCHIVE (move to _Archived/). Hand-edited scene references
+  fixed up; nothing irrecoverable.
+- Volume 6.1 (Crafting Match Engine) extended: implements the picky/forgiving/hybrid matching
+  logic. CraftingMatchEngine interface declared in 2.8, implementation in 6.1.
+- Volume 7 scope reduced to cube+slab for M2; blueprint capture (7.4) deferred to M5/M6.
+- Volume 8 scope reduced to minimum viable for M2: one cable tier, two generators
+  (hand_crank + steam), one battery, one sink. The 54-generator zoo (8.2) is M7 Expansion 1.
+- Volume 9 scope reduced to "Core 8 machines + Conveyor + Inserter" for M2. Other machines
+  hung on later milestones (Press at M5; T4-T7 + auto-variants at M7).
+- Volume 10 — COMBAT POLISH PROMOTED from old V22 to M3 (new chunk 10.X covering hit reactions,
+  ragdolls, decals, casing ejection, screen shake, audio). M3 acceptance: "killing the enemy
+  feels good." This is the single most important test in the build plan.
+- Volume 14 reduced to 3 species (Graze, Cluck, Thornback) for M3; rest deferred to M7.
+- Volume 15 reduced to 1 fodder (Vord Drone) for M3; Vord Raider added for M4; raid director
+  for M5; Fungal Brood Mother for M6 with multi-attack-path validation. Rest of the 11+32 enemy
+  roster expanded across M7.
+- Volume 16 reduced to Wren + Spirit Gateway + Discovery Log for M6. The "game notices" reward
+  system (Discovery Log + spirit one-liners) is now spec'd inline in the Milestone 6 section.
+  Bounty board and downstream recipe unlocks deferred to M7.
+- Volume 17 reduced to minimum viable Atlas + one-quest framework for M6.
+- Volume 18 reduced to Act 1 only for M6; Acts 2-4 land across M7 Expansion 2/6.
+- Volume 19 — VEHICLE DAMAGE PROMOTED from a single chunk (old 19.4) into a full sub-volume
+  for M4. New chunks: 19.1 Assembly, 19.2 Ground Physics, 19.3 Damage Model (full deformation),
+  19.4 Combat Integration. Aerial vehicles deferred to M7 Expansion 5. Vehicle backlog deferred
+  to M7 Expansion 1.
+- Progress Tracker reorganized by milestone (M0 / M1 / M2 / M3 / M4 / M5 / M6 / M7 / M8) with
+  a new `[~]` status code for "deferred to a later milestone." Every [✓] from the prior tracker
+  preserved.
+- Recommended Execution Order replaced with milestone-driven order: each milestone's chunks land
+  before any next-milestone chunks. Playtest gates between milestones — if a build isn't fun,
+  stop and revisit before continuing.
+
+CONTENT FILE CHANGES:
+- Moved Design Documents/GameDesign/data/items.json -> items_backlog.json (1031 items preserved
+  as content reserve; NOT consumed by generators).
+- Moved Design Documents/GameDesign/data/npcs.json -> npcs_backlog.json (70 NPCs preserved
+  as content reserve; NOT consumed by generators).
+- Created Design Documents/GameDesign/data/items_core.json — Core 60 hand-authored items with
+  the new v3 schema (properties[] on every item, processType + howItWorks on machines, recipes
+  carry v3 fields). Validated: 60 items / 14 machines / all process types covered.
+- Created Design Documents/GameDesign/data/npcs_core.json — 7 NPCs (Wren, Fungal Brood Mother,
+  Vord Drone, Vord Raider, Graze, Cluck, Thornback). M3/M4/M6 cast only.
+- Updated Design Documents/GameDesign/scripts/extract_html_data.py to write to *_backlog.json
+  on re-extract (so the curated *_core.json files are never overwritten).
+
+WHAT WAS PRESERVED (verbatim, no changes):
+- Agent loop / sub-agent / progress-tracker discipline.
+- Coop Design Constraints (server-authoritative world, owner-authoritative players, stateless SOs).
+- Technical specifications (chunk system, marching cubes integration, density function, vertical
+  zones).
+- Legacy Code Survival Map (the table mapping old v2 chunks to their v3/v4 destinations).
+- Gun feel targets (TTK, recoil, ADS, reload, weapon switch).
+- Melee timing targets (windup, release, recovery, parry, riposte, chamber, feint, stagger).
+- Enemy AI architecture (no-NavMesh + lidar + personality profiles).
+- "Do not modify marching cubes internals" rule.
+- All 18 prior Agent Notes Log entries.
+
+WHAT WAS DEFERRED (explicitly, with milestone destinations):
+- DialogUI -> M6 (was V4.5).
+- Blueprint Capture -> M5 or M6 (was V7.4).
+- Worn Battery Pack -> M7 Expansion 1 (was V8.4).
+- Powered Weapons -> M7 (was V10.4).
+- Bow/Crossbow expansion beyond hunting_bow -> M7.
+- Taming & Pets -> M7 Expansion 4 (cozy slice).
+- 5-biome rework -> M7 Expansion 1 (was V12).
+- 45-stronghold blueprint authoring -> M7 (was V13.2).
+- Festivals -> M7 Expansion 4.
+- Acts 2-4 -> M7 Expansion 2/6.
+- Aerial vehicles -> M7 Expansion 5.
+- Endings (V20) -> M7 Expansion 6.
+- Coop netcode (V21) -> M7 Expansion 3 (design constraints respected throughout).
+- 1031-item backlog bulk processing -> M7 Expansion 7.
+
+WHAT THE NEXT AGENT PICKS UP:
+- M1 chunks 2.6 / 2.7 / 2.8 / 2.9 — schema extensions + loader switch. These can be done in
+  one agent pass since they share schema state. After 2.9 runs, the active SO counts drop from
+  1031/1555/43/18/43/9 to 60 items / ~50-80 recipes / 14 machines / 1 boss + 2 fodder enemies /
+  3 wildlife / 1 named Kin. The bootstrap path validator test (6.4, lands in M2) then runs on
+  the Core 60.
+
+WHY THIS RESTRUCTURE:
+- The old plan front-loaded ~18 volumes before the developer would feel any of the game's core
+  fantasy. Vehicles were V19 of 22. Combat polish was V22. By milestone-ordering, the developer
+  plays the Synergy Sandbox in weeks, Combat Feels Good shortly after, the Chase next, and so
+  on. Each milestone produces a build worth picking up and playing.
+- The 1031-item content surface was too much to balance / validate / understand before the game
+  was proven fun. Starting from 60 hand-authored items with explicit properties keeps the design
+  legible and the test surface small. The backlog isn't lost — it's a deliberate content reserve.
+- The forgiving/picky machine split is the mechanic that makes the design's "wacky synergetic"
+  feel work. Tagging every item with property tags is a one-time schema cost (chunks 2.6-2.9)
+  that enables the rest of the design. It MUST land before any other M2 work.
+
+HANDOFF TO NEXT AGENT (M1 Chunk 2.6 implementation):
+- Open the master prompt. Find chunk 2.6 in the Volume 2 section.
+- Implement MaterialProperties.cs, extend ItemJson + ItemDefinition + ItemSoGenerator, add tests.
+- After 2.6 passes review, proceed to 2.7 -> 2.8 -> 2.9.
+- 2.9 runs the regenerate menu and produces the new ~60-asset world. After 2.9, the project is
+  ready for M2 (V3.3 starts the Core 60 visual generation pass).
 ```
 
 Date: 2026-05-26

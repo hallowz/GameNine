@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: stone
   displayName: Stone
-  description: mined drop
-  kind: 2
-  source: 0
+  description: surface rock
+  kind: 0
+  source: 4
   categories: []
   itemType: 0
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 16
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0c000000

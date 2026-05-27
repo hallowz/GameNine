@@ -15,12 +15,13 @@ MonoBehaviour:
   outputItemId: composter
   outputQty: 1
   ingredients:
-  - itemId: wood_planks
+  - itemId: wood
     qty: 6
   - itemId: stone
     qty: 2
-  - itemId: iron_plate
-    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

@@ -15,12 +15,13 @@ MonoBehaviour:
   outputItemId: storage_chest
   outputQty: 1
   ingredients:
-  - itemId: wood_planks
+  - itemId: plank
     qty: 6
-  - itemId: iron_plate
-    qty: 1
-  - itemId: hinge
-    qty: 1
+  - itemId: nail
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

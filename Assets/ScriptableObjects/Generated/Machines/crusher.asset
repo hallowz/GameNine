@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: crusher
   displayName: Crusher
-  tier: 6
+  tier: 2
   gridWidth: 3
   gridHeight: 3
-  needsPower: 1
-  powerDrawWatts: 300
+  needsPower: 0
+  powerDrawWatts: 0
   isAutomatable: 0
   category: 7
+  processType: 4
+  howItWorks: Grinds solids into powder. Accepts ANY Solid_* (Metal/Stone/Fiber).
+    Output is the powdered form of the input. Used for ore preparation, flour milling,
+    bone meal.

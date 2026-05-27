@@ -15,9 +15,12 @@ MonoBehaviour:
   outputItemId: iron_panel
   outputQty: 1
   ingredients:
-  - itemId: iron_plate
+  - itemId: iron_ingot
     qty: 2
-  viaMachineId: carpenter_bench
-  notes: Thin wall. Yields 3 panels per recipe.
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: press
+  notes: 
   isBootstrap: 0
   isSynergy: 0

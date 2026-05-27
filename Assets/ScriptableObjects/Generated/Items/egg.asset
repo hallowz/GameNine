@@ -14,17 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: egg
   displayName: Egg
-  description: laid
-  kind: 2
-  source: 0
+  description: laid by Cluck
+  kind: 0
+  source: 1
   categories:
   - food
   itemType: 4
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 16
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 07000000

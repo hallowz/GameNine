@@ -41,5 +41,32 @@ namespace Voidborne.Data.Schema
         /// <summary>Nullable. True if this product is a decorative block.</summary>
         [JsonProperty("_deco")]
         public bool? deco;
+
+        // -------------------------------------------------------------------
+        // V3 schema additions (Volume 2.6 / 2.7) - items_core.json only.
+        // The legacy items_backlog.json never carries these fields.
+        // -------------------------------------------------------------------
+
+        /// <summary>
+        /// Nullable. Material property tags (V2.6). String values that resolve to
+        /// <see cref="Voidborne.Data.MaterialProperties"/> via <c>Enum.TryParse</c>.
+        /// Most items declare 1-4 entries; machines typically declare none (their
+        /// behaviour is governed by <see cref="processType"/>).
+        /// </summary>
+        public string[] properties;
+
+        /// <summary>
+        /// Nullable (machines only, V2.7). Process-type vocabulary entry that resolves to
+        /// <see cref="Voidborne.Automation.MachineProcessType"/> via <c>Enum.TryParse</c>.
+        /// Forgiving/picky/hybrid distinction drives the crafting match engine in Volume 6.1.
+        /// Unknown values default to <c>Picky_Specialty</c> with a generator warning.
+        /// </summary>
+        public string processType;
+
+        /// <summary>
+        /// Nullable (machines only, V2.7). Multi-line prose description shown in the Machine UI
+        /// tooltip (Volume 4.4). Copied verbatim from JSON to <c>MachineDefinition.howItWorks</c>.
+        /// </summary>
+        public string howItWorks;
     }
 }

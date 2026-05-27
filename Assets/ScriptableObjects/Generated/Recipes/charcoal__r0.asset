@@ -17,7 +17,10 @@ MonoBehaviour:
   ingredients:
   - itemId: wood
     qty: 1
-  viaMachineId: furnace
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: drying_rack
   notes: 
   isBootstrap: 0
   isSynergy: 0

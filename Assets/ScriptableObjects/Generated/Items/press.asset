@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: press
   displayName: Press
-  description: "T5 \u2014 plates / casings"
+  description: "T3 \u2014 compression/extrusion (powered)"
   kind: 1
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 

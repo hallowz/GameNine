@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: furnace
   displayName: Furnace
-  tier: 3
+  tier: 2
   gridWidth: 3
   gridHeight: 3
   needsPower: 0
   powerDrawWatts: 0
   isAutomatable: 0
   category: 1
+  processType: 0
+  howItWorks: 'Heat applied to ore yields ingots. Burns most dry combustibles; wet
+    inputs reduce efficiency. Bootstrap recipe: crude smelt at Campfire (slower,
+    lower yield) before you have a Workbench-built Furnace.'

@@ -15,17 +15,17 @@ MonoBehaviour:
   outputItemId: cart_chassis
   outputQty: 1
   ingredients:
-  - itemId: wood_plank_bundle
-    qty: 1
-  - itemId: iron_plate_bundle
-    qty: 1
-  - itemId: axle
-    qty: 2
-  - itemId: drivetrain
-    qty: 1
-  - itemId: wood_planks
-    qty: 2
-  viaMachineId: vehicle_rig
-  notes: 
-  isBootstrap: 0
+  - itemId: iron_ingot
+    qty: 4
+  - itemId: plank
+    qty: 4
+  - itemId: nail
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: "Assembled at Vehicle Rig in M4 (Vehicle Rig is itself a later machine \u2014
+    bootstrap chassis at workbench)."
+  isBootstrap: 1
   isSynergy: 0

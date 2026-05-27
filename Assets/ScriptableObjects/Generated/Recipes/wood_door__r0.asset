@@ -15,11 +15,14 @@ MonoBehaviour:
   outputItemId: wood_door
   outputQty: 1
   ingredients:
-  - itemId: wood_planks
-    qty: 2
-  - itemId: hinge
-    qty: 1
-  viaMachineId: carpenter_bench
-  notes: Hinged. Pairs with frame slot.
+  - itemId: plank
+    qty: 4
+  - itemId: nail
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: 
   isBootstrap: 0
   isSynergy: 0

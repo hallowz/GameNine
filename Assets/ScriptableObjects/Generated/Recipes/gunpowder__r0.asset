@@ -15,13 +15,13 @@ MonoBehaviour:
   outputItemId: gunpowder
   outputQty: 1
   ingredients:
-  - itemId: saltpeter_powder
-    qty: 2
-  - itemId: charcoal
+  - itemId: coal_ore
     qty: 1
-  - itemId: sulfur
-    qty: 1
-  viaMachineId: tumbler
-  notes: 
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: "TODO \u2014 placeholder recipe; final formulation pending M2 chemistry
+    pass (saltpeter + sulfur + charcoal)."
   isBootstrap: 0
   isSynergy: 0

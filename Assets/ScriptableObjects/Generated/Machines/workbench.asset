@@ -21,3 +21,8 @@ MonoBehaviour:
   powerDrawWatts: 0
   isAutomatable: 0
   category: 0
+  processType: 11
+  howItWorks: Crafts most early-game items by laying out components in a 3x3 grid.
+    Accepts specific recipes (e.g. iron sword) AND improvised property-matching at
+    reduced quality. The workhorse of early progression. Bootstrap recipe (built
+    by hand from a personal grid).

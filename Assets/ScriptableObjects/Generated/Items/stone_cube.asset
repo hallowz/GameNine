@@ -22,9 +22,10 @@ MonoBehaviour:
   itemType: 5
   isBuildBlock: 1
   isDeco: 0
-  buildColor: build
+  buildColor: stone
   maxStackSize: 64
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0c000000

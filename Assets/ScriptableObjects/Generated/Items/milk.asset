@@ -14,16 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: milk
   displayName: Milk
-  description: extracted
-  kind: 2
-  source: 0
+  description: "milked from Cluck (and future cow). The synergy-sandbox star: can
+    be used in any forgiving thermal boiler \u2014 badly."
+  kind: 0
+  source: 1
   categories: []
   itemType: 0
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 16
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0400000007000000

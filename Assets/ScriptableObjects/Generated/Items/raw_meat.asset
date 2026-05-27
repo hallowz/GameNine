@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: raw_meat
   displayName: Raw Meat
-  description: fauna drop
-  kind: 2
-  source: 0
+  description: butchered from any fauna
+  kind: 0
+  source: 1
   categories: []
   itemType: 0
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 16
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0700000001000000

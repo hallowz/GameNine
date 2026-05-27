@@ -15,9 +15,12 @@ MonoBehaviour:
   outputItemId: wood_cube
   outputQty: 1
   ingredients:
-  - itemId: wood_planks
-    qty: 1
-  viaMachineId: carpenter_bench
-  notes: "Full 1\xD71\xD71 building cube."
+  - itemId: plank
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: 
   isBootstrap: 0
   isSynergy: 0

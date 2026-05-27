@@ -18,7 +18,10 @@ MonoBehaviour:
   - itemId: wood
     qty: 4
   - itemId: plant_fiber
-    qty: 2
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843bfa95536488b4a8d348912cbb9e51, type: 3}
+  m_Name: steam_boiler
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
+  itemId: steam_boiler
+  displayName: Steam Boiler
+  tier: 3
+  gridWidth: 3
+  gridHeight: 3
+  needsPower: 0
+  powerDrawWatts: 0
+  isAutomatable: 0
+  category: 7
+  processType: 1
+  howItWorks: "Heats a working fluid to produce steam. Accepts ANY Liquid_Aqueous
+    as the medium and ANY Combustible_* as fuel. Pure water boils efficiently. Milk
+    works \u2014 barely; the fats burn first, the water boils second, the curds clog
+    the outlet. Producing power from milk is the canonical 'weird path' synergy.
+    Steam pipes downstream to a Steam Generator."

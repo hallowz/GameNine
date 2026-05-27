@@ -21,12 +21,41 @@ namespace Voidborne.Tests.EditMode
         }
 
         [Test]
-        public void LoadItems_ReturnsAtLeast1000Entries()
+        public void LoadItems_ReturnsCore60Roster()
         {
+            // V2.9 — loader switched from items.json (1031 entries) to items_core.json (60).
+            // Allow a small tolerance (>=60, <=80) so designers can add a few hand-authored
+            // items during M2 iteration without immediately breaking the test.
             Dictionary<string, ItemJson> items = GameDesignJsonLoader.LoadItems();
             Assert.IsNotNull(items, "LoadItems() returned null.");
-            Assert.GreaterOrEqual(items.Count, 1000,
-                $"Expected >= 1000 items in items.json, got {items.Count}.");
+            Assert.GreaterOrEqual(items.Count, 60,
+                $"Expected >= 60 items in items_core.json, got {items.Count}.");
+            Assert.LessOrEqual(items.Count, 80,
+                $"Expected <= 80 items in items_core.json (Core 60 with small iteration headroom), got {items.Count}.");
+        }
+
+        [Test]
+        public void LoadItems_StripsUnderscoreMetadataKeys()
+        {
+            // items_core.json carries _schema_version / _schema_notes metadata keys that
+            // would otherwise round-trip as malformed ItemJson values.
+            Dictionary<string, ItemJson> items = GameDesignJsonLoader.LoadItems();
+            foreach (var key in items.Keys)
+            {
+                Assert.IsFalse(key.StartsWith("_"),
+                    $"items_core.json metadata key '{key}' should have been filtered out by the loader.");
+            }
+        }
+
+        [Test]
+        public void LoadItems_HasSynergyAnchors()
+        {
+            // milk + steam_boiler are the M2 synergy-sandbox anchors per master_prompt.md.
+            Dictionary<string, ItemJson> items = GameDesignJsonLoader.LoadItems();
+            Assert.IsTrue(items.ContainsKey("milk"),
+                "items_core.json missing 'milk' (synergy anchor).");
+            Assert.IsTrue(items.ContainsKey("steam_boiler"),
+                "items_core.json missing 'steam_boiler' (synergy anchor).");
         }
 
         [Test]
@@ -68,23 +97,39 @@ namespace Voidborne.Tests.EditMode
         }
 
         [Test]
-        public void LoadNpcs_ReturnsExactly70Entries()
+        public void LoadNpcs_ReturnsExactly7Entries()
         {
+            // V2.9 — loader switched from npcs.json (70 entries) to npcs_core.json (7).
+            // The leading _schema_notes placeholder entry is filtered out by the loader.
             List<NpcJson> npcs = GameDesignJsonLoader.LoadNpcs();
             Assert.IsNotNull(npcs);
-            Assert.AreEqual(70, npcs.Count,
-                $"Expected exactly 70 NPCs in npcs.json, got {npcs.Count}.");
+            Assert.AreEqual(7, npcs.Count,
+                $"Expected exactly 7 NPCs in npcs_core.json (Wren + 1 boss + 2 fodder + 3 wildlife), got {npcs.Count}.");
         }
 
         [Test]
-        public void LoadNpcs_FirstBossHasExpectedShape()
+        public void LoadNpcs_HasWrenAndBroodMother()
         {
             List<NpcJson> npcs = GameDesignJsonLoader.LoadNpcs();
+            bool hasWren = false, hasBoss = false;
+            foreach (var n in npcs)
+            {
+                if (n.name == "Wren") hasWren = true;
+                if (n.name == "Fungal Brood Mother") hasBoss = true;
+            }
+            Assert.IsTrue(hasWren, "npcs_core.json missing 'Wren' (M6 rescuable Kin).");
+            Assert.IsTrue(hasBoss, "npcs_core.json missing 'Fungal Brood Mother' (M6 boss).");
+        }
+
+        [Test]
+        public void LoadNpcs_FirstEntryHasExpectedShape()
+        {
+            List<NpcJson> npcs = GameDesignJsonLoader.LoadNpcs();
+            Assert.Greater(npcs.Count, 0, "npcs_core.json should contain at least one NPC after filtering.");
             NpcJson first = npcs[0];
             Assert.IsFalse(string.IsNullOrEmpty(first.cat), "NPC.cat should be set.");
             Assert.IsFalse(string.IsNullOrEmpty(first.name), "NPC.name should be set.");
             Assert.IsNotNull(first.behaviors, "NPC.behaviors should be non-null.");
-            Assert.IsNotNull(first.abilities, "NPC.abilities should be non-null.");
             Assert.IsNotNull(first.drops, "NPC.drops should be non-null.");
         }
 

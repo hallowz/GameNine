@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: wood_door
   displayName: Wood Door
-  description: "building \u2014 door"
+  description: "building \u2014 door (hinged, openable)"
   kind: 3
   source: 0
   categories:
@@ -22,9 +22,10 @@ MonoBehaviour:
   itemType: 5
   isBuildBlock: 1
   isDeco: 0
-  buildColor: build
+  buildColor: wood
   maxStackSize: 64
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 000000000e000000

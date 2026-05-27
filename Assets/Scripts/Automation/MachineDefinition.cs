@@ -77,5 +77,14 @@ namespace Voidborne.Automation
         // ----- Category -----
         [Header("Category")]
         public MachineCategory category = MachineCategory.Other;
+
+        // ----- V3 schema additions (Volume 2.7) -----
+        [Header("Process Type (V2.7)")]
+        [Tooltip("Drives the forgiving/picky/hybrid matching logic in CraftingMatchEngine (Volume 6.1). Defaults to Picky_Specialty when the source JSON does not declare a processType (legacy items.json case).")]
+        public MachineProcessType processType = MachineProcessType.Picky_Specialty;
+
+        [TextArea(2, 6)]
+        [Tooltip("Prose description shown in the Machine UI tooltip (Volume 4.4). Copied verbatim from items_core.json 'howItWorks'.")]
+        public string howItWorks;
     }
 }

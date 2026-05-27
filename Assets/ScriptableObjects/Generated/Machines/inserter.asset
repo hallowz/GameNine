@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843bfa95536488b4a8d348912cbb9e51, type: 3}
+  m_Name: inserter
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
+  itemId: inserter
+  displayName: Inserter
+  tier: 2
+  gridWidth: 3
+  gridHeight: 3
+  needsPower: 0
+  powerDrawWatts: 0
+  isAutomatable: 0
+  category: 7
+  processType: 10
+  howItWorks: "Small swinging arm. Configurable direction (chest -> machine or machine
+    -> chest). One swing per second when powered. The piece that makes synergy visible
+    \u2014 wire it up, watch the contraption run."

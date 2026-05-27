@@ -15,10 +15,13 @@ MonoBehaviour:
   outputItemId: campfire
   outputQty: 1
   ingredients:
-  - itemId: wood
-    qty: 3
   - itemId: stone
     qty: 4
+  - itemId: wood
+    qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

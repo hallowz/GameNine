@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: drying_rack
   displayName: Drying Rack
-  tier: 2
+  tier: 1
   gridWidth: 3
   gridHeight: 3
   needsPower: 0
   powerDrawWatts: 0
   isAutomatable: 0
   category: 7
+  processType: 3
+  howItWorks: "Removes moisture from organic matter or aqueous-containing items.
+    Wet meat -> jerky. Raw wood -> charcoal-grade. Milk -> milk solids (a Cheese
+    Press input \u2014 see Discovery Log). Slow, no power required."

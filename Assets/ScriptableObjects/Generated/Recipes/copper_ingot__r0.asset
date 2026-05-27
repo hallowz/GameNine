@@ -17,8 +17,9 @@ MonoBehaviour:
   ingredients:
   - itemId: copper_ore
     qty: 1
-  - itemId: coal
-    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: furnace
   notes: 
   isBootstrap: 0

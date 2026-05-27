@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: cart_chassis
   displayName: Cart Chassis
-  description: "vehicle frame \u2014 2\xD73 ground (light)"
-  kind: 3
+  description: "vehicle part \u2014 frame"
+  kind: 2
   source: 0
   categories:
   - vehicle
@@ -28,3 +28,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0b0000000e000000

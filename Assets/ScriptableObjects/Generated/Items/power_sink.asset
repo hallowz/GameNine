@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: power_sink
   displayName: Power Sink
-  description: "power \u2014 burns excess to prevent surge"
-  kind: 3
+  description: absorbs surplus watts to protect network
+  kind: 2
   source: 0
   categories:
   - automation
@@ -28,3 +28,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0f000000

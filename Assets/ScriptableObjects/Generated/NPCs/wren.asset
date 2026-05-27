@@ -14,25 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcDefinition
   id: wren
   displayName: Wren
-  description: "The first Kin you rescue. Quiet for most of Act 1; becomes a central
-    figure in the story. Holds the seventh Heart Fragment inside her \u2014 the discovery
-    of which is the moral hinge of Act 3."
+  description: 'The first Kin you rescue (M6 / Act 1). Quiet for most of Act 1; the
+    moral hinge of Act 3 in later milestones. For M6 acceptance: she follows the
+    player home from the M6 stronghold encounter, lives at the base, and comments
+    on the player''s discoveries via the Spirit Gateway link.'
   section: Kin Survivors
   behaviors:
-  - Follows the player back to base in Act 1.
-  - Speaks only at the end of Act 1, reveals the Council's plan.
-  - Stays at the base throughout Act 2, opening up gradually.
-  - Acts as quest-giver for several side missions.
-  - "At end of Act 3, the player discovers her secret \u2014 and must choose."
+  - Follows the player back to base after rescue.
+  - Speaks short hand-authored lines at scripted moments.
+  - Stays at the base.
+  - Reads the Discovery Log and comments on weird synergies.
   abilities:
-  - Provides recipes for early Kin tools.
-  - Unlocks the first Spirit Gateway recipe when trust is high.
-  - Offers food and rest at the base.
-  - 'Personality: gentle, observant, traumatized.'
+  - Provides hand-authored dialog at base.
+  - Gates the Spirit Gateway unlock (M6 final step).
   dropOrTradeItems:
   - Cannot be killed by player.
-  - 'On her own death (Act 3 choice): Heart Fragment + permanent Spirit Anchor that
-    always speaks first when the Gateway is opened.'
   isKillable: 0
   isQuestGiver: 1
   prefab: {fileID: 0}

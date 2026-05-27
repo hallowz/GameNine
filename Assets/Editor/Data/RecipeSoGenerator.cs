@@ -214,6 +214,42 @@ namespace Voidborne.Editor.Data
                 }
                 asset.ingredients = ingredients;
             }
+
+            // V2.8 — property-based inputs + modifiers
+            asset.inputProperties = ResolveInputProperties(outputId, r.inputProperties);
+            // Float values: defaults of 1.0f are baked into the JSON schema. Newtonsoft
+            // initialises missing values to the C# default for the field, which is also
+            // 1.0f (RecipeJson.efficiency / outputModifier have default initialisers).
+            asset.efficiency = r.efficiency > 0f ? r.efficiency : 1.0f;
+            asset.outputModifier = r.outputModifier > 0f ? r.outputModifier : 1.0f;
+        }
+
+        // -------------------------------------------------------------------
+        // V2.8 — InputProperty resolution
+        // -------------------------------------------------------------------
+
+        private static InputProperty[] ResolveInputProperties(string outputId, InputPropertyJson[] raw)
+        {
+            if (raw == null || raw.Length == 0) return Array.Empty<InputProperty>();
+
+            var result = new List<InputProperty>(raw.Length);
+            for (int i = 0; i < raw.Length; i++)
+            {
+                var entry = raw[i];
+                if (entry == null || string.IsNullOrEmpty(entry.property)) continue;
+
+                if (!Enum.TryParse<Voidborne.Data.MaterialProperties>(
+                        entry.property, ignoreCase: false, out var parsed))
+                {
+                    Debug.LogWarning(
+                        $"[RecipeSoGenerator] Unknown MaterialProperties tag '{entry.property}' on recipe for '{outputId}' — skipped.");
+                    continue;
+                }
+
+                float eff = entry.efficiency > 0f ? entry.efficiency : 1.0f;
+                result.Add(new InputProperty(parsed, entry.qty, eff));
+            }
+            return result.ToArray();
         }
 
         // -------------------------------------------------------------------

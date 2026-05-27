@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: plant_fiber
   displayName: Plant Fiber
-  description: foraged
-  kind: 2
-  source: 0
+  description: stripped from tall grasses
+  kind: 0
+  source: 2
   categories: []
   itemType: 0
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 16
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0e0000000700000000000000

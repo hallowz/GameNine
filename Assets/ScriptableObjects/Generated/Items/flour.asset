@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: flour
   displayName: Flour
-  description: ground
+  description: milled grain
   kind: 2
   source: 0
   categories:
@@ -28,3 +28,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0a0000000d000000

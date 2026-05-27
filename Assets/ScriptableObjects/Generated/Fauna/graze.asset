@@ -14,18 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaDefinition
   id: graze
   displayName: Graze
-  description: Peaceful herd animal. Roams the Lowlands. The basic source of meat
-    and hide.
+  description: M3 passive wildlife. Peaceful herd animal. Drops raw_meat - feeds
+    the combat sandbox AND the synergy sandbox (Combustible_Wet in a boiler reduces
+    efficiency; can be smoked/dried into jerky at the Drying Rack).
   behaviors:
   - Travels in herds of 4-8.
   - Flees if attacked or approached aggressively.
-  - Can be tamed with Calming Pheromone or fed grain.
-  - Plodder Cannon mount when fully bonded.
+  - Tameable in later milestones (M2 acceptance only needs the kill-and-drop loop).
   habitat: Lowlands Fauna
   dropItemIds:
-  - Raw Meat x2-3
+  - raw_meat x2-3
   - Hide x1-2
-  - Bone x1
   isTameable: 1
   isPassive: 1
   isAggressive: 1

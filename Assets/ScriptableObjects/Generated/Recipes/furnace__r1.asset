@@ -15,11 +15,15 @@ MonoBehaviour:
   outputItemId: furnace
   outputQty: 1
   ingredients:
-  - itemId: stone_block
-    qty: 3
-  - itemId: iron_ingot
-    qty: 3
-  viaMachineId: workbench
-  notes: "Stone-heavy build \u2014 no clay needed."
-  isBootstrap: 0
+  - itemId: stone
+    qty: 8
+  - itemId: clay
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: campfire
+  notes: "BOOTSTRAP \u2014 crude assembly at the campfire if no workbench available;
+    lower-quality furnace"
+  isBootstrap: 1
   isSynergy: 0

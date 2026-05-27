@@ -142,7 +142,36 @@ namespace Voidborne.Editor.Data
             // Legacy compatibility classification — derived, not stored in JSON.
             asset.itemType = DeriveLegacyItemType(asset.kind, asset.source, asset.categories, asset.isBuildBlock, asset.isDeco);
 
+            // V2.6 material properties — resolve string vocabulary to MaterialProperties enum.
+            asset.properties = ResolveProperties(id, json.properties);
+
             // Visuals intentionally NOT touched — Volume 3 owns icon / modelPrefab / placedPrefab.
+        }
+
+        // ---------------------------------------------------------------------
+        // V2.6 — Material property tag resolution
+        // ---------------------------------------------------------------------
+
+        private static MaterialProperties[] ResolveProperties(string itemId, string[] raw)
+        {
+            if (raw == null || raw.Length == 0) return Array.Empty<MaterialProperties>();
+
+            var result = new List<MaterialProperties>(raw.Length);
+            for (int i = 0; i < raw.Length; i++)
+            {
+                string tag = raw[i];
+                if (string.IsNullOrEmpty(tag)) continue;
+                if (Enum.TryParse<MaterialProperties>(tag, ignoreCase: false, out var parsed))
+                {
+                    result.Add(parsed);
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[ItemSoGenerator] Unknown MaterialProperties tag '{tag}' on item '{itemId}' — skipped.");
+                }
+            }
+            return result.ToArray();
         }
 
         // ---------------------------------------------------------------------

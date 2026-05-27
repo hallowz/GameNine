@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using Voidborne.Data.Schema;
 
@@ -54,20 +55,51 @@ namespace Voidborne.Data
             _summary = null;
         }
 
-        /// <summary>Loads items.json. Top-level shape is a dictionary keyed by item ID.</summary>
+        /// <summary>
+        /// Loads <c>items_core.json</c> (the Phase-1 Core 60 roster, V2.9). Top-level shape
+        /// is a dictionary keyed by item ID. Underscore-prefixed metadata keys
+        /// (<c>_schema_version</c>, <c>_schema_notes</c>) are filtered out — these are
+        /// human-readable annotations whose values are not ItemJson shapes (the schema
+        /// version is an int, schema_notes is an array of strings) so they must be
+        /// dropped BEFORE Newtonsoft tries to coerce them into <see cref="ItemJson"/>.
+        /// </summary>
         public static Dictionary<string, ItemJson> LoadItems()
         {
             if (_items != null) return _items;
-            _items = ReadJson<Dictionary<string, ItemJson>>("items.json");
+            _items = LoadFilteredItemDict("items_core.json");
             return _items;
         }
 
-        /// <summary>Loads npcs.json. Top-level shape is a flat array.</summary>
+        /// <summary>
+        /// Opt-in loader for <c>items_backlog.json</c> (the 1031-item content reserve, V2.9).
+        /// NOT called by default generators — backlog expansion is M7 Expansion 7.
+        /// </summary>
+        public static Dictionary<string, ItemJson> LoadItemsBacklog()
+        {
+            return LoadFilteredItemDict("items_backlog.json");
+        }
+
+        /// <summary>
+        /// Loads <c>npcs_core.json</c> (the Phase-1 7-NPC roster, V2.9). Top-level shape
+        /// is a flat array. Array entries lacking a <c>name</c> field (i.e. the leading
+        /// <c>_schema_notes</c> placeholder object) are filtered out.
+        /// </summary>
         public static List<NpcJson> LoadNpcs()
         {
             if (_npcs != null) return _npcs;
-            _npcs = ReadJson<List<NpcJson>>("npcs.json");
+            var raw = ReadJson<List<NpcJson>>("npcs_core.json");
+            _npcs = FilterUnnamedNpcs(raw);
             return _npcs;
+        }
+
+        /// <summary>
+        /// Opt-in loader for <c>npcs_backlog.json</c> (the 70-NPC content reserve, V2.9).
+        /// NOT called by default generators — backlog expansion is M7.
+        /// </summary>
+        public static List<NpcJson> LoadNpcsBacklog()
+        {
+            var raw = ReadJson<List<NpcJson>>("npcs_backlog.json");
+            return FilterUnnamedNpcs(raw);
         }
 
         /// <summary>Loads categories.json as a category → item-id-list dictionary.</summary>
@@ -125,6 +157,77 @@ namespace Voidborne.Data
         }
 
         // ---- Internals ----
+
+        /// <summary>
+        /// Reads an items JSON file at <see cref="DataDirAbsolutePath"/>, drops any
+        /// underscore-prefixed top-level keys (metadata), then materialises the rest as
+        /// <see cref="ItemJson"/>. Must use the JObject path rather than direct
+        /// dictionary deserialisation because the metadata values (e.g.
+        /// <c>_schema_version: 3</c>) are not ItemJson-shaped and would crash the
+        /// dictionary-typed convertor.
+        /// </summary>
+        private static Dictionary<string, ItemJson> LoadFilteredItemDict(string fileName)
+        {
+            string fullPath = Path.Combine(DataDirAbsolutePath, fileName);
+            if (!File.Exists(fullPath))
+            {
+                throw new FileNotFoundException(
+                    $"GameDesignJsonLoader: JSON data file not found at '{fullPath}'. " +
+                    $"Ensure the design data has been extracted to '{DataDirRelativePath}'.",
+                    fullPath);
+            }
+
+            string text = File.ReadAllText(fullPath);
+            JObject root;
+            try
+            {
+                root = JObject.Parse(text);
+            }
+            catch (JsonException ex)
+            {
+                throw new System.Exception(
+                    $"GameDesignJsonLoader: failed to parse '{fileName}' as JObject: {ex.Message}", ex);
+            }
+
+            var result = new Dictionary<string, ItemJson>(root.Count);
+            foreach (var prop in root.Properties())
+            {
+                if (string.IsNullOrEmpty(prop.Name)) continue;
+                if (prop.Name.StartsWith("_", System.StringComparison.Ordinal)) continue;
+                if (prop.Value == null || prop.Value.Type != JTokenType.Object) continue;
+
+                try
+                {
+                    var item = prop.Value.ToObject<ItemJson>();
+                    if (item != null) result[prop.Name] = item;
+                }
+                catch (JsonException ex)
+                {
+                    throw new System.Exception(
+                        $"GameDesignJsonLoader: failed to parse '{fileName}' entry '{prop.Name}' as ItemJson: {ex.Message}", ex);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Filters out NPC array entries lacking a <c>name</c> field. npcs_core.json's
+        /// first entry is a <c>_schema_notes</c> placeholder object with no name; npcs_backlog.json
+        /// may also accumulate such placeholders over time.
+        /// </summary>
+        private static List<NpcJson> FilterUnnamedNpcs(List<NpcJson> raw)
+        {
+            if (raw == null) return new List<NpcJson>();
+            var filtered = new List<NpcJson>(raw.Count);
+            foreach (var npc in raw)
+            {
+                if (npc == null) continue;
+                if (string.IsNullOrWhiteSpace(npc.name)) continue;
+                filtered.Add(npc);
+            }
+            return filtered;
+        }
 
         private static T ReadJson<T>(string fileName)
         {

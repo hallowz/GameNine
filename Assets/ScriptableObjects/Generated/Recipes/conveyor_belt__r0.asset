@@ -15,12 +15,15 @@ MonoBehaviour:
   outputItemId: conveyor_belt
   outputQty: 1
   ingredients:
-  - itemId: iron_plate
+  - itemId: iron_ingot
     qty: 2
-  - itemId: rubber
+  - itemId: wire
     qty: 1
-  - itemId: electric_motor
+  - itemId: wood
     qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

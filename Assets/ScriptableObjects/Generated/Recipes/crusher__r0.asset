@@ -15,19 +15,16 @@ MonoBehaviour:
   outputItemId: crusher
   outputQty: 1
   ingredients:
-  - itemId: iron_plate_bundle
-    qty: 1
-  - itemId: gear_set
-    qty: 1
-  - itemId: electric_motor
-    qty: 1
-  - itemId: spring
-    qty: 1
-  - itemId: iron_plate
-    qty: 1
-  - itemId: gear
-    qty: 1
-  viaMachineId: forge
+  - itemId: iron_ingot
+    qty: 4
+  - itemId: stone
+    qty: 4
+  - itemId: wood
+    qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
   notes: 
   isBootstrap: 0
   isSynergy: 0

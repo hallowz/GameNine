@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: campfire
   displayName: Campfire
-  tier: 2
+  tier: 1
   gridWidth: 1
   gridHeight: 1
   needsPower: 0
   powerDrawWatts: 0
   isAutomatable: 0
   category: 7
+  processType: 0
+  howItWorks: "Open flame. Burns any dry combustible to cook or transform target
+    items by heat. Inefficient \u2014 most heat escapes. Bootstrap thermal \u2014
+    paves the way to Furnace."

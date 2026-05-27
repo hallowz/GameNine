@@ -15,12 +15,13 @@ MonoBehaviour:
   outputItemId: power_sink
   outputQty: 1
   ingredients:
-  - itemId: iron_plate
-    qty: 3
-  - itemId: thermal_rock
-    qty: 1
-  - itemId: copper_wire
-    qty: 3
+  - itemId: iron_ingot
+    qty: 2
+  - itemId: wire
+    qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

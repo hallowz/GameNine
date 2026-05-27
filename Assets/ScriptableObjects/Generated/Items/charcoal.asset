@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: charcoal
   displayName: Charcoal
-  description: baked
+  description: dried/baked wood; hotter than raw wood
   kind: 2
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 00000000

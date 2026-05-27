@@ -15,9 +15,13 @@ MonoBehaviour:
   outputItemId: flour
   outputQty: 1
   ingredients:
-  - itemId: wheat_grain
-    qty: 3
-  viaMachineId: mortar
-  notes: 
+  - itemId: wheat
+    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: crusher
+  notes: "Forgiving \u2014 Crusher will accept any Organic_Sweet + Solid_Fiber input
+    as flour at reduced efficiency."
   isBootstrap: 0
   isSynergy: 0

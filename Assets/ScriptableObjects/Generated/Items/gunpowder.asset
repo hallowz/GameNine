@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: gunpowder
   displayName: Gunpowder
-  description: ammo charge
-  kind: 3
+  description: explosive powder
+  kind: 2
   source: 0
   categories: []
   itemType: 0
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 030000000d000000

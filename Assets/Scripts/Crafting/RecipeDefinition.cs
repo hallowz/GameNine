@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Voidborne.Data;
 
 namespace Voidborne.Crafting
 {
@@ -40,6 +41,21 @@ namespace Voidborne.Crafting
 
         [Header("Inputs")]
         public Ingredient[] ingredients;
+
+        // ---------------------------------------------------------------
+        // V3 schema additions (Volume 2.8)
+        // ---------------------------------------------------------------
+
+        [Header("Inputs (V2.8 property-based)")]
+        [Tooltip("Property-based input requirements. Forgiving / hybrid machines use these as fallback; picky machines ignore. Empty array == no property fallback.")]
+        public InputProperty[] inputProperties;
+
+        [Header("Modifiers (V2.8)")]
+        [Tooltip("Recipe-wide efficiency multiplier (scales crafting time on forgiving machines). Default 1.0.")]
+        public float efficiency = 1.0f;
+
+        [Tooltip("Recipe-wide output multiplier. Hybrid machines cap this at 0.7x when matching via the property-fallback path.")]
+        public float outputModifier = 1.0f;
 
         // ---------------------------------------------------------------
         // Scope
@@ -91,6 +107,32 @@ namespace Voidborne.Crafting
         {
             this.itemId = itemId;
             this.qty = qty;
+        }
+    }
+
+    /// <summary>
+    /// V3 property-based input requirement (Volume 2.8). The enum-typed twin of
+    /// <see cref="Voidborne.Data.Schema.InputPropertyJson"/>. Forgiving and hybrid
+    /// machines consult these as a fallback after specific <see cref="Ingredient"/>
+    /// matches fail; picky machines refuse them entirely.
+    /// </summary>
+    [Serializable]
+    public struct InputProperty
+    {
+        [Tooltip("Material property tag required to satisfy this input slot.")]
+        public MaterialProperties property;
+
+        [Tooltip("Quantity required (sum of item counts whose properties[] contains this tag).")]
+        public int qty;
+
+        [Tooltip("Per-entry efficiency multiplier. Default 1.0.")]
+        public float efficiency;
+
+        public InputProperty(MaterialProperties property, int qty, float efficiency = 1.0f)
+        {
+            this.property = property;
+            this.qty = qty;
+            this.efficiency = efficiency;
         }
     }
 }

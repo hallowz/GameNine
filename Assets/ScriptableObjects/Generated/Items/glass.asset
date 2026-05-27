@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: glass
   displayName: Glass
-  description: smelted
+  description: fused sand
   kind: 2
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 0c00000010000000

@@ -21,7 +21,10 @@ MonoBehaviour:
     qty: 2
   - itemId: plant_fiber
     qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: 
-  notes: Built by hand. Player's first crafting station.
+  notes: "BOOTSTRAP \u2014 built from the personal 2x2 grid"
   isBootstrap: 1
   isSynergy: 0

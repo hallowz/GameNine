@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: campfire
   displayName: Campfire
-  description: "T2 \u2014 primitive heat / crude smelt"
+  description: "T1 \u2014 open flame"
   kind: 1
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 

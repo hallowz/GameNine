@@ -15,13 +15,14 @@ MonoBehaviour:
   outputItemId: furnace
   outputQty: 1
   ingredients:
-  - itemId: stone_block
-    qty: 2
-  - itemId: clay_brick
+  - itemId: stone
+    qty: 8
+  - itemId: clay
     qty: 4
-  - itemId: iron_ingot
-    qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
-  notes: Needs crude iron from a Campfire first.
+  notes: 
   isBootstrap: 0
   isSynergy: 0

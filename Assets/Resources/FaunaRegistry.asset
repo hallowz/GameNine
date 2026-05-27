@@ -13,21 +13,6 @@ MonoBehaviour:
   m_Name: FaunaRegistry
   m_EditorClassIdentifier: Voidborne::Voidborne.Fauna.FaunaRegistry
   allFauna:
-  - {fileID: 11400000, guid: 8624cd66e4c7db240a4b3f613be7b78e, type: 2}
-  - {fileID: 11400000, guid: 391c846351898e7438552515a9ef5019, type: 2}
-  - {fileID: 11400000, guid: b8a4fd34d0ee0f0419b2a26fc20975dd, type: 2}
-  - {fileID: 11400000, guid: 528d0d6b5b4f115428a2611358674f90, type: 2}
-  - {fileID: 11400000, guid: 91ee9d73bd9905846969f2e43e1424ea, type: 2}
   - {fileID: 11400000, guid: d88b6b999af5792409adb70ca05bf1ed, type: 2}
-  - {fileID: 11400000, guid: 1dfb375e182f4ca4586001c5e2984a57, type: 2}
-  - {fileID: 11400000, guid: a1ce494a5c4b5b242a896342d2fe0a83, type: 2}
-  - {fileID: 11400000, guid: e0443ec379da5a5409e8692fccad2d5e, type: 2}
   - {fileID: 11400000, guid: 7e77da136e11f374ea839b6495c4742e, type: 2}
-  - {fileID: 11400000, guid: 94704a5f1e72dac498287266d8061ba2, type: 2}
-  - {fileID: 11400000, guid: f03c349005c2f9b42871ea2692f4feca, type: 2}
-  - {fileID: 11400000, guid: e36998632fc9aa84699d52f7f470d189, type: 2}
-  - {fileID: 11400000, guid: 2cd8ce5d98a484446985e0f223cbd4f2, type: 2}
-  - {fileID: 11400000, guid: a8d6f8cb3c8509241a0c6b7561501d43, type: 2}
-  - {fileID: 11400000, guid: 1487cb720f8902c4f81bc237be0e7692, type: 2}
-  - {fileID: 11400000, guid: 32943dd9cec549b48ba7055b04805862, type: 2}
   - {fileID: 11400000, guid: b0b14f411eb25ef4c9c8d49eafed3ba7, type: 2}

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: furnace
   displayName: Furnace
-  description: "T3 \u2014 proper smelting"
+  description: "T2 \u2014 contained smelting"
   kind: 1
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 

@@ -16,8 +16,11 @@ MonoBehaviour:
   outputQty: 1
   ingredients:
   - itemId: stone
-    qty: 1
-  viaMachineId: carpenter_bench
-  notes: "Full 1\xD71\xD71 building cube."
+    qty: 4
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: 
   isBootstrap: 0
   isSynergy: 0

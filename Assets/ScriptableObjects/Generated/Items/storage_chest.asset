@@ -14,17 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: storage_chest
   displayName: Storage Chest
-  description: "automation \u2014 basic 27 slots"
-  kind: 3
+  description: "T1 \u2014 passive storage"
+  kind: 1
   source: 0
   categories:
   - automation
-  itemType: 0
+  itemType: 6
   isBuildBlock: 0
   isDeco: 0
   buildColor: 
-  maxStackSize: 64
+  maxStackSize: 1
   weight: 1
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 

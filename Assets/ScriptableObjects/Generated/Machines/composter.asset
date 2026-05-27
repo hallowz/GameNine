@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
   itemId: composter
   displayName: Composter
-  tier: 4
+  tier: 2
   gridWidth: 3
   gridHeight: 3
-  needsPower: 1
-  powerDrawWatts: 200
+  needsPower: 0
+  powerDrawWatts: 0
   isAutomatable: 0
   category: 7
+  processType: 2
+  howItWorks: 'Slow biological decay. Accepts ANY Organic_* input. Output depends
+    on subtype: Organic_Fresh -> compost; Organic_Sweet -> fermented mash; mixed
+    -> decayed slurry.'

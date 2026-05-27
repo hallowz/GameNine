@@ -15,8 +15,11 @@ MonoBehaviour:
   outputItemId: glass
   outputQty: 1
   ingredients:
-  - itemId: silica_sand
+  - itemId: sand
     qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: furnace
   notes: 
   isBootstrap: 0

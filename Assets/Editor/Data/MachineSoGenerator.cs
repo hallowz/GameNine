@@ -148,6 +148,29 @@ namespace Voidborne.Editor.Data
 
             // Category.
             asset.category = ResolveCategory(id);
+
+            // V2.7 — process type + howItWorks prose.
+            asset.processType = ResolveProcessType(id, json.processType);
+            asset.howItWorks = json.howItWorks ?? string.Empty;
+        }
+
+        // -------------------------------------------------------------------
+        // V2.7 — process type resolution
+        // -------------------------------------------------------------------
+
+        private static MachineProcessType ResolveProcessType(string itemId, string raw)
+        {
+            // Missing or empty: default to Picky_Specialty (the legacy items_backlog path).
+            if (string.IsNullOrEmpty(raw)) return MachineProcessType.Picky_Specialty;
+
+            if (Enum.TryParse<MachineProcessType>(raw, ignoreCase: false, out var parsed))
+            {
+                return parsed;
+            }
+
+            Debug.LogWarning(
+                $"[MachineSoGenerator] Unknown processType '{raw}' on machine '{itemId}' — defaulting to Picky_Specialty.");
+            return MachineProcessType.Picky_Specialty;
         }
 
         private static int ComputePowerDraw(int tier)

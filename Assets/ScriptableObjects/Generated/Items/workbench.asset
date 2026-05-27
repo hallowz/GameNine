@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::ItemDefinition
   itemId: workbench
   displayName: Workbench
-  description: "T1 \u2014 3\xD73 crafting (BOOTSTRAP)"
+  description: "T1 \u2014 3x3 crafting (BOOTSTRAP)"
   kind: 1
   source: 0
   categories: []
@@ -27,3 +27,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   modelPrefab: {fileID: 0}
   placedPrefab: {fileID: 0}
+  properties: 

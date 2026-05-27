@@ -15,9 +15,12 @@ MonoBehaviour:
   outputItemId: wood_slab
   outputQty: 1
   ingredients:
-  - itemId: wood_planks
-    qty: 1
-  viaMachineId: carpenter_bench
-  notes: Half-height. Yields 2 slabs per recipe.
+  - itemId: plank
+    qty: 2
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: workbench
+  notes: 
   isBootstrap: 0
   isSynergy: 0

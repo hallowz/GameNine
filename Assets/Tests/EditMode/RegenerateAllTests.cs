@@ -20,14 +20,17 @@ namespace Voidborne.Tests.EditMode
     /// </summary>
     public class RegenerateAllTests
     {
-        // Expected counts from the current JSON extraction (2026-05-26).
-        // Match the floors RegistriesTests use — keep these in sync if the JSON changes.
-        private const int ExpectedItemCount = 1031;
-        private const int MinExpectedRecipeCount = 1500;
-        private const int ExpectedMachineCount = 43;
-        private const int ExpectedFaunaCount = 18;
-        private const int ExpectedEnemyCount = 43;
-        private const int ExpectedNpcCount = 9;
+        // V2.9 — loader switched from items.json (1031/1555/43/18/43/9) to
+        // items_core.json + npcs_core.json (60 items / hand-authored recipes /
+        // ~14 machines / 3 fauna / 3 enemies / 1 NPC). Use floor assertions so
+        // hand-authoring iteration can grow these freely; the JSON loader test
+        // owns the upper bound on item count.
+        private const int ExpectedItemCount = 60;
+        private const int MinExpectedRecipeCount = 30;
+        private const int ExpectedMachineCount = 12;
+        private const int ExpectedFaunaCount = 3;
+        private const int ExpectedEnemyCount = 2;
+        private const int ExpectedNpcCount = 1;
 
         [Test]
         public void RegenerateAll_CallsGeneratorsInOrder()

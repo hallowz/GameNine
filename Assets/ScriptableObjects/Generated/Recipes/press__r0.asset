@@ -15,16 +15,15 @@ MonoBehaviour:
   outputItemId: press
   outputQty: 1
   ingredients:
-  - itemId: iron_plate_bundle
-    qty: 1
-  - itemId: copper_plate
-    qty: 1
-  - itemId: gear
+  - itemId: iron_ingot
+    qty: 6
+  - itemId: copper_ingot
     qty: 2
-  - itemId: spring
+  - itemId: wire
     qty: 1
-  - itemId: iron_plate
-    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
   viaMachineId: workbench
   notes: 
   isBootstrap: 0

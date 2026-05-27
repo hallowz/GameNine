@@ -16,8 +16,11 @@ MonoBehaviour:
   outputQty: 1
   ingredients:
   - itemId: wood
-    qty: 2
-  viaMachineId: campfire
-  notes: Slow campfire bake.
+    qty: 1
+  inputProperties: []
+  efficiency: 1
+  outputModifier: 1
+  viaMachineId: furnace
+  notes: "alt path \u2014 slow bake at the furnace"
   isBootstrap: 0
   isSynergy: 0

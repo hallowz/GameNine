@@ -14,22 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
   id: vord_drone
   displayName: Vord Drone
-  description: The most common corrupted Kin. Rank-and-file of every Vord stronghold.
-    Was once a Kin laborer or farmer.
+  description: M3 fodder - the single enemy used to validate the combat-feels-good
+    acceptance test. Must take a clean hit, react with flinch + ragdoll on death,
+    react to crouch-aimed headshots. No NavMesh - uses the existing lidar-based AI
+    on marching-cubes terrain.
   tier: 0
   family: 5
   behaviors:
   - Slow approach, swings clumsily.
   - Easily killed individually; dangerous in groups.
-  - No ranged ability.
+  - Reacts to hit with flinch + ragdolls on death.
   - Tends to clump near the boss for support.
   abilities:
-  - "Clumsy Swing \u2014 basic melee"
-  - "Lunge Bite \u2014 short-range attack"
-  - "Death Spasm \u2014 releases small spore puff on death"
+  - Clumsy Swing - basic melee
+  - Lunge Bite - short-range attack
   dropItemIds:
   - Vord Scrap x1-2
-  - Memory Echo (rare)
   - Small amount of corruption material
   boss_section: Vord Fodder
   isBoss: 0

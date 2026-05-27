@@ -15,13 +15,16 @@ What it extracts:
   - All *_IDS sets   — category memberships (FOOD/POWER/WEAPON/ARMOR/...)
 
 Output files:
-  data/items.json      — full D dict (after building blocks + deco blocks generated and synergy alts applied)
+  data/items_backlog.json — full D dict (after building blocks + deco blocks generated and synergy alts applied).
+                            This is the unfiltered content reserve. The runtime Unity generators
+                            DO NOT consume it directly; they consume the hand-curated items_core.json
+                            instead (see master_prompt.md "Design Philosophy" — "Start small").
   data/build_materials.json
   data/form_templates.json
   data/deco_blocks.json
   data/synergy_alts.json
   data/categories.json — { "food": [...], "power": [...], "weapon": [...], ... }
-  data/npcs.json
+  data/npcs_backlog.json — content reserve; npcs_core.json (hand-curated) is the runtime input.
   data/summary.json    — counts + sanity-check fields
 """
 
@@ -379,13 +382,13 @@ def main() -> None:
         print(f"  wrote {path.relative_to(DATA.parent.parent)} ({len(json.dumps(payload))} bytes)")
 
     print("\nWriting JSON outputs ...")
-    write("items.json", d)
+    write("items_backlog.json", d)
     write("build_materials.json", build_materials)
     write("form_templates.json", form_templates)
     write("deco_blocks.json", deco_blocks)
     write("synergy_alts.json", synergy_alts)
     write("categories.json", id_sets)
-    write("npcs.json", npc_data)
+    write("npcs_backlog.json", npc_data)
 
     # Summary / sanity check
     by_kind = {}

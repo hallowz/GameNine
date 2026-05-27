@@ -13,7 +13,10 @@ namespace Voidborne.Tests.EditMode
     /// </summary>
     public class ItemDatabaseTests
     {
-        private const int MinimumExpectedItemCount = 1000;
+        // V2.9 — loader switched to items_core.json (Core 60). Allow a small tolerance for
+        // hand-authoring iteration during M2.
+        private const int MinimumExpectedItemCount = 60;
+        private const int MaximumExpectedItemCount = 80;
 
         [Test]
         public void ItemDatabase_LoadsViaResources()
@@ -38,13 +41,18 @@ namespace Voidborne.Tests.EditMode
         }
 
         [Test]
-        public void AllItems_CountAtLeast1000()
+        public void AllItems_CountIsCore60Roster()
         {
+            // V2.9 — Core 60 roster (with small tolerance for hand-authoring iteration).
+            // If this fails because db has stale legacy assets, run
+            // Voidborne/Generate/⟳ Regenerate All Generated SOs to rebuild.
             var db = Resources.Load<ItemDatabase>("ItemDatabase");
             Assert.IsNotNull(db, "ItemDatabase not present.");
 
             Assert.GreaterOrEqual(db.items.Count, MinimumExpectedItemCount,
                 $"Expected at least {MinimumExpectedItemCount} items in ItemDatabase, found {db.items.Count}.");
+            Assert.LessOrEqual(db.items.Count, MaximumExpectedItemCount,
+                $"Expected at most {MaximumExpectedItemCount} items in ItemDatabase (Core 60 + iteration headroom), found {db.items.Count}. Did you forget to archive legacy SOs after switching to items_core.json?");
         }
 
         [Test]
@@ -68,12 +76,12 @@ namespace Voidborne.Tests.EditMode
             var db = Resources.Load<ItemDatabase>("ItemDatabase");
             Assert.IsNotNull(db, "ItemDatabase not present.");
 
-            // 'graze' is a kind=source, src=fauna entry at the top of items.json.
-            var graze = db.GetItem("graze");
-            Assert.IsNotNull(graze, "ItemDatabase.GetItem(\"graze\") returned null.");
-            Assert.AreEqual(ItemKind.Source, graze.kind);
-            Assert.AreEqual(ItemSource.Fauna, graze.source);
-            Assert.AreEqual(16, graze.maxStackSize, "Source items should default to maxStackSize 16.");
+            // raw_meat is kind=source, src=fauna in items_core.json (V2.9).
+            var meat = db.GetItem("raw_meat");
+            Assert.IsNotNull(meat, "ItemDatabase.GetItem(\"raw_meat\") returned null.");
+            Assert.AreEqual(ItemKind.Source, meat.kind);
+            Assert.AreEqual(ItemSource.Fauna, meat.source);
+            Assert.AreEqual(16, meat.maxStackSize, "Source items should default to maxStackSize 16.");
         }
 
         [Test]

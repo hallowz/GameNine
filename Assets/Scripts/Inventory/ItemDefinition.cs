@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Voidborne.Data;
 
 // -----------------------------------------------------------------------------
 // V2.2 ItemDefinition
@@ -114,6 +116,11 @@ public class ItemDefinition : ScriptableObject
     [Tooltip("Placed prefab (for blocks/machines) — used by the building/automation systems. Assigned by Volume 3.")]
     public GameObject placedPrefab;
 
+    // ----- V3 schema additions (Volume 2.6) -----
+    [Header("Material Properties (V2.6)")]
+    [Tooltip("Material property tags driving the forgiving/picky crafting match engine (Volume 6.1). Machines typically have an empty array; their behaviour is governed by MachineDefinition.processType instead.")]
+    public MaterialProperties[] properties;
+
     // -------------------------------------------------------------------------
     // Compatibility shims — read-only aliases used by callers written against
     // the V2.2 spec field names. Underlying serialized fields keep the legacy
@@ -132,5 +139,23 @@ public class ItemDefinition : ScriptableObject
     {
         if (categories == null || string.IsNullOrEmpty(cat)) return false;
         return Array.IndexOf(categories, cat) >= 0;
+    }
+
+    /// <summary>
+    /// Read-only view over the item's material-property tags (V2.6). Never null;
+    /// returns an empty list when no properties are assigned.
+    /// </summary>
+    public IReadOnlyList<MaterialProperties> Properties
+        => properties != null ? (IReadOnlyList<MaterialProperties>)properties : Array.Empty<MaterialProperties>();
+
+    /// <summary>Returns true if <see cref="properties"/> contains the given tag.</summary>
+    public bool HasProperty(MaterialProperties p)
+    {
+        if (properties == null) return false;
+        for (int i = 0; i < properties.Length; i++)
+        {
+            if (properties[i] == p) return true;
+        }
+        return false;
     }
 }

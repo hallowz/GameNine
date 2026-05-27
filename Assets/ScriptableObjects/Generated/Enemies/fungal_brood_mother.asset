@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Enemies.V2.EnemyDefinition
   id: fungal_brood_mother
   displayName: Fungal Brood Mother
-  description: "The first major boss. Lurks in a ruined Kin village basement in the
-    Lowlands. Tier 1 \u2014 designed to teach players the boss-fighting loop."
+  description: 'Act 1 boss for M6. Lurks in the hand-placed stronghold. Tier 1 -
+    designed to validate the multi-path boss framework at the smallest scale: a frontal
+    weak point, a glowing back weak point, vulnerability to poison bait. Players
+    who explored the synergy sandbox in M2 should find multiple paths to victory.'
   tier: 1
   family: 0
   behaviors:
@@ -23,16 +25,18 @@ MonoBehaviour:
   - Spawns 'Spore Mites' (small fast adds) every ~15 seconds.
   - Telegraphs sac-burst attacks 2 seconds before triggering.
   - Becomes more aggressive below 30% HP, releases panic spore-cloud.
+  - Glowing back weak point exposed during sac-burst windup.
+  - Vulnerable to poison bait (a 'weird path' kill validated in M6).
   abilities:
-  - "Spore-Sac Burst \u2014 AOE poison cloud, leaves lingering damage zone"
-  - "Fungal Spawn \u2014 summons 3-5 Spore Mites"
-  - "Tendril Lash \u2014 short-range pull toward her"
-  - "Death Bloom \u2014 final ability, releases all stored spores"
+  - Spore-Sac Burst - AOE poison cloud, leaves lingering damage zone
+  - Fungal Spawn - summons 3-5 Spore Mites
+  - Tendril Lash - short-range pull toward her
+  - Death Bloom - final ability, releases all stored spores
   dropItemIds:
-  - "Cartographer's Lens (guaranteed \u2014 required for first Atlas)"
+  - Spirit Anchor (her Kin memory) - required to insert at the Spirit Gateway in
+    M6
   - Spore Cluster x3-5
-  - Glandular Sac (chem set bootstrap component)
-  - Spirit Anchor (her Kin memory)
+  - Glandular Sac (future Cheese Press / chem set ingredient)
   boss_section: Brood Family
   isBoss: 1
   isFinale: 0

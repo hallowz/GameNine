@@ -19,13 +19,10 @@ namespace Voidborne.Tests.EditMode
     /// </summary>
     public class RecipeRegistryTests
     {
-        // Sanity bound. The V2.3 spec targeted >=2000 recipes, but the current
-        // items.json extraction carries ~1555 recipe entries across 969 items
-        // (verified 2026-05-26). Setting the floor to 1500 keeps the test
-        // sensitive to severe regressions (e.g. half the recipes missing) while
-        // remaining tolerant of the actual content size. When the HTML expands
-        // and the JSON is re-extracted, raise this floor accordingly.
-        private const int MinimumExpectedRecipeCount = 1500;
+        // V2.9 — items_core.json carries ~50-80 hand-authored recipes (was ~1555
+        // in items_backlog.json). Floor at 30 to detect severe regressions but
+        // accept iteration headroom.
+        private const int MinimumExpectedRecipeCount = 30;
 
         // ---------------------------------------------------------------
         // Test 1 — Registry resource loads.
