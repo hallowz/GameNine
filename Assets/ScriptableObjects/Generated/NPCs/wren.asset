@@ -31,4 +31,4 @@ MonoBehaviour:
   - Cannot be killed by player.
   isKillable: 0
   isQuestGiver: 1
-  prefab: {fileID: 0}
+  prefab: {fileID: 3489618258458326178, guid: 5f13c6ff1cf2894469859088cf2aeb9e, type: 3}

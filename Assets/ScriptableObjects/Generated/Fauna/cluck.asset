@@ -33,4 +33,4 @@ MonoBehaviour:
   isAggressive: 0
   baseHealth: 50
   baseSpeed: 3
-  prefab: {fileID: 0}
+  prefab: {fileID: 3589745296222718940, guid: d5739b2ae9208af4fb4f84537293207b, type: 3}

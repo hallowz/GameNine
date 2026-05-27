@@ -42,4 +42,4 @@ MonoBehaviour:
   isFinale: 0
   baseHealth: 30
   baseSpeed: 4
-  prefab: {fileID: 0}
+  prefab: {fileID: 3799476569098899351, guid: d93ca830637075c48af634f1f73a3ec1, type: 3}

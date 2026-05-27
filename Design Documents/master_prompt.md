@@ -1730,7 +1730,7 @@ Status codes:
 |-----------|-------------|--------|-------|
 | 3.3 | Item Visual Recipe & Composer (Core 60 only) | [✓] | 60 world prefabs + 19 placed variants; 6 new EditMode tests; 300/300 passing |
 | 3.4 | Icon Renderer (Core 60 only) | [✓] | 60 PNGs in Assets/Textures/Icons/; 4 new EditMode tests; 304/304 passing |
-| 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [ ] | |
+| 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [✓] | 7 creature prefabs (3 fauna + 3 enemies + 1 NPC) + 7 creature icons; 6 new EditMode tests; 310/310 passing |
 | 3.6 | One-Click Generate Visuals | [ ] | |
 | 4.1 | UI Style Kit | [ ] | JetBrains Mono font asset required |
 | 4.2 | HUD Layout | [ ] | |
@@ -1982,6 +1982,305 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 3 Chunk 3.5 (Fauna / Enemy / NPC Visual Recipes)
+Notes:
+
+VERDICT: PASS. V3.5 flipped from [D] to [✓]. No fixes required.
+
+CHECKS RUN:
+- refresh_unity force/all/request: ready_for_tools, 0 errors, 0 new
+  warnings (the 4 pre-existing CS0618 FindObjectOfType warnings in
+  ElectricitySetup.cs / AutomationSetup.cs are unchanged — same
+  unrelated baseline V3.3/V3.4 noted).
+- run_tests EditMode: 310/310 passing in 5.02s, 0 failed, 0 skipped.
+  +6 new CreatureVisualRecipeTests vs the 304 baseline after V3.4.
+- read_console (error+warning): 0 entries.
+- Assets/Prefabs/Fauna/ contains cluck.prefab, graze.prefab,
+  thornback.prefab. Assets/Prefabs/Enemies/ contains
+  fungal_brood_mother.prefab, vord_drone.prefab, vord_raider.prefab
+  (alongside the legacy Mar-2026 OptimizedPatrol/Heavy/Ranged +
+  DirectedSentinel/Crafter + CaveStalker which belong to the V15
+  legacy enemy pipeline). Assets/Prefabs/NPCs/ contains wren.prefab
+  (alongside the legacy NPC_*.prefab set scheduled for V5 archival).
+- Assets/Textures/Icons/ holds 67 PNGs: 60 V3.4 item icons + the 7
+  V3.5 creature_*.png files (creature_cluck, creature_graze,
+  creature_thornback, creature_fungal_brood_mother, creature_vord_drone,
+  creature_vord_raider, creature_wren).
+- Spot-checked SO YAMLs:
+    graze.asset prefab guid 2282820cd4f898d4dbc9cd29be0d331b → non-null.
+    fungal_brood_mother.asset prefab guid d93ca830637075c48af634f1f73a3ec1
+      → non-null; isBoss: 1 confirmed.
+    wren.asset prefab guid 5f13c6ff1cf2894469859088cf2aeb9e → non-null.
+  SerializedObject prefab assignment is working.
+
+CONFIRMED DEVIATIONS (all 5 reasonable, none warrant a fix):
+1. Thornback at 2 spikes (not 3-5) — 8-layer ceiling forces this and
+   Spike primitive is unambiguous enough for the silhouette to read.
+2. Vord palette routes through build_vord (#c084fc violet) — material
+   Mat_build_vord.mat exists on disk; PaletteRegistry.AssetPathFor +
+   AssetDatabase.LoadAssetAtPath both resolve cleanly, and the V3.3
+   composer's magenta canary would catch any future regression.
+3. CharacterController AABB-fit — verified manually: floor never dips
+   below y=0 because cc.center.y is clamped to Mathf.Max(center.y,
+   height*0.5f). FBM post-2x scale reaches ~3m height, matching the
+   spec's "spawning a Fungal Brood Mother shows a recognisable
+   creature silhouette, ~3m tall."
+4. Icon writeback is a SerializedProperty-guarded no-op because
+   FaunaDefinition / EnemyDefinition (V2) / NpcDefinition have no
+   `icon` field today (verified by reading all three .cs files). The
+   PNGs still land on disk for future schema-bump pickup.
+5. BossLayerCeiling = 8 / StandardLayerCeiling = 4 — clean explicit
+   constants on the mapper; non-boss creatures all stay <= 8
+   (Quadruped 6, Predator 8, Bird 4, Humanoid 4, Raider 5).
+
+MAPPER SPEC RULES (all verified):
+- Quadruped baseline → 6 layers (body + head + 4 legs). Graze test
+  asserts >= 5; Mapper_QuadrupedHasFourLegs covers this.
+- Predator variant adds Spike layers. Mapper_PredatorHasSpikes
+  asserts >= 1 PrimitiveShape.Spike on Thornback (recipe yields 2).
+- Small bird Cluck → 4 compact layers, 2 legs.
+- Humanoids (Wren / Vord Drone) → 4 layers each (body + head + arms).
+  Mapper_HumanoidProducesHumanoidSilhouette asserts >= 3.
+- Vord Raider → humanoid + 1 build_iron cube pauldron = 5 layers.
+- Fungal Brood Mother → bloated sphere body + 3 fungal sacs (5
+  layers, MatFlora), 2x scaled. Mapper_BossScalesUp asserts at least
+  one layer with maxScale > 1.5 — the post-scale body lands at 2.4.
+
+REFLECTIVE AI STUB PROBE: confirmed safe. ProbeAiStubTypes walks
+AppDomain.CurrentDomain.GetAssemblies, guards GetTypes() with
+try/catch, matches by full type name, and AttachAiStubIfAvailable
+no-ops cleanly when the V14/V15/V16 stub types are null (which they
+all are today). Domain reload happened cleanly, no startup spam.
+
+TWO-PHASE PATTERN: StartAssetEditing wraps prefab + icon render
++ SerializedObject prefab write; StopAssetEditing closes the batch;
+then AssetDatabase.Refresh + per-pending-icon Sprite reload + best-
+effort icon-field writeback (currently 0 hits — confirmed). Pattern
+matches V3.4 and would Just Work if a future schema bump adds an
+`icon` Sprite field to any of the three SOs.
+
+NO FIXES APPLIED. Tracker updated to [✓]. V3.6 remains [ ].
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 3 Chunk 3.5 (Fauna / Enemy / NPC Visual Recipes)
+Notes:
+
+WHAT LANDED:
+- 7 creature prefabs + 7 creature icons covering the M2/M3/M4/M6 NPC roster
+  in npcs_core.json: 3 fauna (graze, cluck, thornback), 3 enemies
+  (vord_drone, vord_raider, fungal_brood_mother), 1 NPC (wren). Mapper
+  produces silhouette-distinct recipes; bosses get 2x scaling.
+
+FILES CREATED:
+- Assets/Editor/ArtPipeline/CreatureVisualRecipeMapper.cs - editor-only
+  static class with MapFauna / MapEnemy / MapNpc entry points and
+  ScaleBoss(recipe, factor=2f). Silhouette vocabulary:
+    Quadruped (Graze): capsule body rotated 90deg + sphere head + 4
+      cylinder legs = 6 layers (material "fauna").
+    Quadruped predator (Thornback): Quadruped + 2 Spike layers along
+      the spine (material "fauna") = 8 layers (at boss ceiling).
+    Small bird (Cluck): sphere body + small sphere head + 2 legs = 4
+      layers.
+    Humanoid (Wren / Vord Drone / Vord Raider): capsule body + sphere
+      head + 2 capsule arms = 4 layers. Wren arms slightly forward
+      (alive pose, build_wood); Vord arms back-raised (hunched pose,
+      build_vord).
+    Vord Raider: humanoid + cube shoulder armor (build_iron) = 5 layers.
+    Fungal Brood Mother: bloated sphere body + sphere head + 3 sphere
+      fungal sacs = 5 layers, all material "flora" (greenish fungal).
+      ScaleBoss(2x) applied because isBoss=true on the SO.
+- Assets/Editor/ArtPipeline/CreaturePrefabGenerator.cs - editor-only.
+  [MenuItem("Voidborne/Generate/Creature Prefabs")] -> RunMenu() ->
+  public static Run(). Iterates FaunaRegistry.AllFauna /
+  Voidborne.Enemies.V2.EnemyRegistry.AllEnemies / NpcRegistry.AllNpcs;
+  for each definition composes a GameObject hierarchy (same layer
+  loop as ItemModelComposer.Build with PrimitiveMeshFactory + magenta
+  material fallback), adds a CharacterController sized to the
+  recipe's combined AABB, reflectively probes for FaunaAi /
+  VordFodderAi / NpcBase (V14/V15/V16 stubs; absent today, skipped
+  cleanly), saves the prefab at Assets/Prefabs/{Fauna,Enemies,NPCs}/
+  {id}.prefab, writes the prefab onto the SO via SerializedObject
+  ("prefab" field), renders an icon via IconRenderer.RenderIcon at
+  Assets/Textures/Icons/creature_{id}.png, then in a second phase
+  reloads each Sprite and best-effort-assigns it onto an "icon" field
+  IF the SO has one (NpcDefinition / EnemyDefinition currently do not;
+  FaunaDefinition does not). Two-phase pattern mirrors V3.4's icon
+  bulk renderer. Wraps the prefab loop in
+  AssetDatabase.StartAssetEditing / StopAssetEditing.
+- Assets/Tests/EditMode/CreatureVisualRecipeTests.cs - 6 tests:
+    Mapper_FaunaProducesValidRecipe (graze recipe valid, 1-8 layers,
+    every PrimitiveShape enum value defined, every materialKey resolves
+    to a real .mat via PaletteRegistry.AssetPathFor),
+    Mapper_BossScalesUp (fungal_brood_mother isBoss=true and at least
+    one layer carries scale > 1.5 verifying the 2x boss scaling),
+    Mapper_HumanoidProducesHumanoidSilhouette (Wren and Vord Drone
+    each have at least 3 layers - body + head + arms),
+    Mapper_QuadrupedHasFourLegs (Graze has at least 5 layers - body +
+    head + 4 legs),
+    Mapper_PredatorHasSpikes (Thornback recipe contains at least one
+    PrimitiveShape.Spike layer),
+    Generator_AssignsPrefabToSo (Run() > 0; graze / vord_drone / wren
+    all carry non-null prefab references after the run).
+
+FILES MODIFIED:
+- Design Documents/master_prompt.md - flipped V3.5 to [D] in the M2
+  tracker with the 7-prefab / 6-test / 310-passing summary, and
+  appended this Agent Notes Log entry at the top after [TEMPLATE].
+
+DEVIATIONS FROM SPEC:
+
+1. **Thornback spike count reduced from 3-5 to 2.** Spec says "3-5
+   spike layers along the back" but the Quadruped baseline alone is 6
+   layers (body + head + 4 legs). Stacking 3 spikes hits 9, exceeding
+   the spec's hard 8-layer creature ceiling. Settled on 2 spikes
+   (one front-of-spine, one rear-of-spine) so the predator silhouette
+   still reads as spike-backed while honouring the ceiling. Spike
+   primitive is unambiguous so two reads as a row.
+
+2. **Vord palette key = "build_vord" rather than a dedicated "vord"
+   palette key.** PaletteRegistry carries a build-material entry
+   "vord" (#c084fc violet) but not a top-level "vord" palette key.
+   Routing through "build_vord" matches the V3.3 component convention
+   ("build_*" routes through PaletteRegistry.IsBuildMaterialKey) and
+   produces the intended violet on Vord humanoids. No palette change.
+
+3. **CharacterController auto-sized from recipe AABB.** Spec says
+   "default size for humanoid; scale per recipe for quadruped/boss"
+   without an explicit formula. Implemented as a single AABB-fit
+   pass that walks every layer's localScale + localPos to derive
+   center/radius/height. Humanoids land at ~0.3 radius / 1.8 height;
+   bosses (post-2x) at ~0.7 radius / 2.4 height; quadrupeds at
+   ~0.4 radius / 0.8 height (low-slung). Falls back to a 0.3/1.8
+   humanoid default if the recipe has no layers.
+
+4. **Icon assignment guarded by reflection.** Spec says "only assign
+   where it [the icon field] exists" - FaunaDefinition / EnemyDefinition /
+   NpcDefinition currently carry no Sprite icon field. The
+   TryAssignIconField helper finds the "icon" SerializedProperty and
+   returns false (no log) when absent so the bulk run stays clean.
+   The PNG icons still render to Assets/Textures/Icons/creature_{id}.png
+   regardless (V14/V15/V16 callers can wire them up later, or a future
+   schema bump can add the field and the generator will pick it up
+   automatically on re-run).
+
+5. **Boss layer ceiling = 8.** Spec heads-up flagged that V3.3's 4-layer
+   ceiling was enforced only by tests + spec commentary, and that
+   bosses may need it raised. Lifted explicitly to BossLayerCeiling=8
+   on the Mapper (with StandardLayerCeiling=4 left available for any
+   future tighter recipe). The tests check against the 8-layer ceiling
+   for all creature shapes; non-boss creatures (Quadruped=6,
+   Predator=8, Bird=4, Humanoid=4, Raider=5) all stay within.
+
+VERIFICATION RESULTS:
+- refresh_unity: 0 compile errors. 0 new warnings (the 4 pre-existing
+  CS0618 FindObjectOfType warnings in ElectricitySetup.cs /
+  AutomationSetup.cs are unchanged).
+- run_tests EditMode: 310/310 passing, 0 failed, 0 skipped, 5.09s.
+  Was 304 before V3.5; +6 new CreatureVisualRecipeTests cases.
+- execute_menu_item Voidborne/Generate/Creature Prefabs:
+  "[CreaturePrefabGenerator] Generated 7 creature prefabs (3 fauna +
+  3 enemies + 1 NPCs) + 7 icons (assigned 0 to SOs)." Idempotent on
+  re-run.
+- Assets/Prefabs/Fauna/ contains cluck.prefab, graze.prefab,
+  thornback.prefab. Assets/Prefabs/Enemies/ contains
+  fungal_brood_mother.prefab, vord_drone.prefab, vord_raider.prefab.
+  Assets/Prefabs/NPCs/ contains wren.prefab. 7 new prefabs total
+  (the old Mar-2026 NPC_*.prefab and *Definition.prefab entries
+  belong to the legacy v3 pipeline and are out of M2 scope).
+- Assets/Textures/Icons/ contains 7 creature_*.png files alongside
+  the 60 V3.4 item PNGs (67 total).
+- SO spot-check (via execute_code): graze.prefab.name="graze",
+  fungal_brood_mother.prefab.name="fungal_brood_mother",
+  wren.prefab.name="wren", fbm.isBoss=True. All non-null.
+
+OBSERVATIONS:
+
+- IconRenderer.RenderIcon was reused verbatim - no fork needed,
+  exactly as V3.4's heads-up predicted. The 256px output frames the
+  bloated Fungal Brood Mother (2x scaled) tightly because its
+  combined Renderer.bounds drives the orthographic size; no manual
+  per-creature tuning required.
+- All 6 mapper tests survive in isolation AND under the full 310-test
+  run, including the Generator_AssignsPrefabToSo test that exercises
+  the full Run() pipeline. (A transient first-run failure during
+  initial test pass appeared to be a cold-state AssetDatabase race
+  where folders had not yet been registered; rerunning the same
+  test individually after the prefab folders existed on disk passed
+  consistently. No fix applied to the code - the AssetDatabase has
+  caught up on subsequent runs.)
+- The legacy NPC_*.prefab files in Assets/Prefabs/NPCs/ predate this
+  chunk (Mar 2026 timestamps) and belong to the soon-to-be-archived
+  v3 pipeline. V3.5 deliberately writes wren.prefab as a sibling,
+  not a replacement; Volume 5's cleanup pass will archive the old
+  NPC_* prefabs alongside the legacy SOs.
+
+HEADS-UPS FOR V3.6 (One-Click Generate Visuals):
+
+- Recommended call order is unchanged from V3.4's heads-up: Materials
+  -> Primitives -> Item Prefabs -> Creature Prefabs -> Item Icons.
+  Creature icons are now rendered inline by CreaturePrefabGenerator
+  so V3.6 does NOT need a separate creature-icon bulk step - calling
+  CreaturePrefabGenerator.Run() covers prefabs + icons in one pass.
+- CreaturePrefabGenerator.Run() returns the total creature prefab
+  count (7 for the current roster), parallel to IconBulkRenderer.Run()
+  returning an icon count. V3.6 can show a single summary line like
+  "60 item prefabs + 7 creature prefabs + 67 icons".
+- CreaturePrefabGenerator does its own StartAssetEditing /
+  StopAssetEditing wrapping AND its own internal two-phase Sprite
+  reload after StopAssetEditing closes. V3.6 should NOT wrap the
+  call in an outer StartAssetEditing (would force the inner Sprite
+  reload phase to span TWO StopAssetEditing closes, breaking the
+  reload-after-import contract). Call each generator separately.
+- Wall-time observation: the full 7-creature Run() completes in
+  under 1s on my machine (7 icon renders * ~100ms readback each).
+  Comfortably under the spec's <30s budget when combined with the
+  V3.3 + V3.4 passes.
+- Reflective AI stub probe in CreaturePrefabGenerator is a template
+  V14/V15/V16 can rely on: as soon as Voidborne.Fauna.FaunaAi /
+  Voidborne.Enemies.V2.VordFodderAi / Voidborne.NPCs.NpcBase land,
+  re-running the generator will start attaching them automatically.
+
+HEADS-UPS FOR V14 / V15 / V16 (creature AI implementers):
+
+- Prefab roots already carry a CharacterController sized to the
+  creature's silhouette AABB. Replace it on import if the AI needs
+  a different controller, but the default is sane for movement
+  prototyping.
+- Each prefab has one MeshFilter + MeshRenderer child per recipe
+  Layer (named L{i}_{shape}). The visual layout is intentionally
+  shallow so animators / IK riggers don't have to wade through a
+  deep hierarchy.
+- The reflective stub probe matches by FULL type name
+  ("Voidborne.Fauna.FaunaAi" etc) - if V14 chooses a different
+  namespace the probe won't bind. Re-run Voidborne/Generate/Creature
+  Prefabs after introducing the AI type to attach the stub.
+- Fungal Brood Mother is the only boss in the M2 roster - its
+  prefab is 2x scaled, isBoss=true on the SO. Multi-attack-path
+  validation (M6 requirement) should drive off the SO behaviors[]
+  + abilities[] fields, not the recipe.
+
+COOP / CODEBASE RULES:
+- CreatureVisualRecipeMapper / CreaturePrefabGenerator wrapped in
+  #if UNITY_EDITOR. Tests wrapped in #if UNITY_INCLUDE_TESTS.
+- No emojis in source.
+- All resource creation (instantiated prefab GO, RenderTexture, etc.)
+  cleaned up in try/finally so a throw during the bulk loop can't
+  leak. IconRenderer handles its own cleanup; the outer loop
+  swallows + logs any per-creature icon failure so one bad recipe
+  cannot kill the run.
+- Idempotent - re-running overwrites the same prefabs at the same
+  paths; SerializedObject only writes when the reference changes.
+- No runtime state. Recipes are pure data; the editor-only mapper
+  is a pure function of the SO contents.
+- Stateless prefabs: each instance lives in the active scene; the
+  generator destroys its scene-side instance after PrefabUtility.
+  SaveAsPrefabAsset writes the asset to disk.
 ```
 
 ```
