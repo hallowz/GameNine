@@ -37,7 +37,13 @@ namespace Voidborne.Editor.ArtPipeline
         private const string PropAlphaClip = "_AlphaClip";
 
         [MenuItem("Voidborne/Generate/Materials")]
-        public static void Generate()
+        public static void Generate() => Run();
+
+        /// <summary>
+        /// Test-callable / orchestrator-callable entry point. Returns the total
+        /// number of materials generated (created + updated). 0 on shader miss.
+        /// </summary>
+        public static int Run()
         {
             var shader = Shader.Find(UrpLitShaderName);
             if (shader == null)
@@ -45,7 +51,7 @@ namespace Voidborne.Editor.ArtPipeline
                 Debug.LogError(
                     $"[MaterialGenerator] Could not find shader '{UrpLitShaderName}'. " +
                     "Make sure URP is installed (it should be on this project).");
-                return;
+                return 0;
             }
 
             EnsureFolder(GeneratedFolder);
@@ -92,6 +98,7 @@ namespace Voidborne.Editor.ArtPipeline
 
             int total = created + updated;
             Debug.Log($"[MaterialGenerator] Generated {total} materials ({created} new, {updated} updated) under {GeneratedFolder}/.");
+            return total;
         }
 
         // -------------------------------------------------------------------

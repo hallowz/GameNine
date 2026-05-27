@@ -1731,7 +1731,7 @@ Status codes:
 | 3.3 | Item Visual Recipe & Composer (Core 60 only) | [✓] | 60 world prefabs + 19 placed variants; 6 new EditMode tests; 300/300 passing |
 | 3.4 | Icon Renderer (Core 60 only) | [✓] | 60 PNGs in Assets/Textures/Icons/; 4 new EditMode tests; 304/304 passing |
 | 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [✓] | 7 creature prefabs (3 fauna + 3 enemies + 1 NPC) + 7 creature icons; 6 new EditMode tests; 310/310 passing |
-| 3.6 | One-Click Generate Visuals | [ ] | |
+| 3.6 | One-Click Generate Visuals | [✓] | Volume 3 (visual pipeline) COMPLETE for M2 scope. GenerateAllVisuals chains all 5 stages; 2 new EditMode tests; 312/312 passing |
 | 4.1 | UI Style Kit | [ ] | JetBrains Mono font asset required |
 | 4.2 | HUD Layout | [ ] | |
 | 4.3 | Inventory Panel | [ ] | |
@@ -1982,6 +1982,259 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 3 Chunk 3.6 (One-Click Generate All Visuals)
+Notes:
+
+VERDICT: PASS. V3.6 flipped from [D] to [✓]. No fixes required. Volume 3
+is now COMPLETE for M2 scope (all 6 chunks: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6).
+
+CHECKS RUN:
+- refresh_unity force/all/request: ready_for_tools, 0 errors, 0 new
+  warnings (read_console error+warning returned 0 entries).
+- run_tests EditMode (full suite): 312/312 passing in 10.72s, 0 failed,
+  0 skipped. +2 vs 310 baseline (the two new GenerateAllVisualsTests
+  cases). Confirms implementer's headline number.
+- On-disk asset counts after the previous pipeline run (verified by
+  directory file count):
+    Assets/Materials/Generated/                 35 .mat
+    Assets/Models/Generated/Primitives/         14 .asset
+    Assets/Prefabs/Items/                       60 world + 19 placed = 79 .prefab
+    Assets/Prefabs/Fauna/                       3 (cluck, graze, thornback)
+    Assets/Prefabs/Enemies/                     3 V3.5 (fungal_brood_mother,
+                                                vord_drone, vord_raider) +
+                                                6 legacy = 9 total
+    Assets/Prefabs/NPCs/                        1 V3.5 (wren) + 6 legacy = 7 total
+    Assets/Textures/Icons/                      67 PNG (60 item + 7 creature_*)
+  All match the implementer's report and the V3.6 spec.
+
+ORCHESTRATION CHECKS:
+- Stage order matches spec text exactly: Materials -> Primitives ->
+  Item Prefabs -> Creature Prefabs -> Item Icons. Creature stage
+  produces its own icons inline per V3.5 design, so it correctly runs
+  before the dependent Item Icons stage.
+- NO outer StartAssetEditing wrap around the five stages - confirmed
+  by reading GenerateAllVisuals.cs. Each inner stage handles its own
+  batching, preserving the two-phase Sprite reload required by V3.4
+  and V3.5.
+- Confirmation dialog only on the menu path. RunMenu() shows
+  EditorUtility.DisplayDialog; RunPipeline() does not. Both EditMode
+  tests call RunPipeline() directly.
+- try/finally on the stage scoreboard. Final summary log fires on
+  success and on a stage-level throw. Captures all six intermediate
+  counters (materials, meshes, item prefabs, placed variants,
+  creature prefabs, item icons).
+
+REFACTOR REVIEW (MaterialGenerator, BulkPrefabGenerator):
+- MaterialGenerator.Run() is a pure extraction. The [MenuItem]
+  Generate() is now a one-liner that calls Run(). Returns total
+  count (created + updated) as int. Returns 0 on shader miss.
+  Behavior preserved.
+- BulkPrefabGenerator.Run() is a pure extraction. The [MenuItem]
+  Generate() is now a one-liner that calls Run(). Returns
+  (int world, int placed) tuple. Returns (0, 0) when ItemDatabase
+  is missing. Behavior preserved.
+- IconBulkRenderer.Run() and CreaturePrefabGenerator.Run() were
+  already public with sensible return types (int) - untouched as
+  the implementer reported.
+- PrimitiveMeshFactory.GenerateAll() is void; orchestrator derives
+  count via Enum.GetValues(typeof(PrimitiveShape)).Length. Cheap and
+  deterministic - reasonable call.
+
+CODEBASE RULES:
+- No emojis in source. The U+27F3 arrow in the menu label is
+  intentional and matches the V2.5 RegenerateAllMenu convention.
+- GenerateAllVisuals wrapped in #if UNITY_EDITOR. Tests wrapped in
+  #if UNITY_INCLUDE_TESTS.
+- Idempotent: Pipeline_Idempotent test snapshots counts before/after
+  a double run and asserts all 5 are equal. Test passes.
+- No persistent runtime state - pure editor orchestration.
+- All produced assets (Materials/Meshes/Prefabs/Sprites) are
+  stateless data, satisfying coop constraint.
+
+NEXT UP: V4.1 (UI Style Kit) is the natural next chunk. M2 progression
+order per spec: V3.3-3.6 -> V4 (UI) -> V5 (legacy archive) -> V6
+(crafting v2) -> V7 (building) -> V8 (power) -> V9 (Core 8 machines).
+V4.1 will need the JetBrains Mono font asset bundled at
+Assets/Resources/Fonts/JetBrainsMono-SDF.asset before UIStyle.cs can
+load it - flag for the implementer.
+
+NO FIXES APPLIED. Tracker updated. Volume 3 complete for M2 scope.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 3 Chunk 3.6 (One-Click Generate All Visuals)
+Notes:
+
+WHAT LANDED:
+- Single menu entry that drives the full Volume 3 visual pipeline end-to-end:
+  Materials -> Primitive Meshes -> Item Prefabs -> Creature Prefabs (with
+  inline icons) -> Item Icons. This closes out Volume 3 for M2 scope.
+
+FILES CREATED:
+- Assets/Editor/ArtPipeline/GenerateAllVisuals.cs - editor-only.
+  [MenuItem("Voidborne/Generate/* All Visuals")] -> RunMenu() shows a
+  confirmation dialog ("Run full Volume 3 visual pipeline? ...") and calls
+  RunPipeline() on OK. RunPipeline() is the test-callable entry point
+  (no dialog). Runs five stages with per-stage logs and a try/finally
+  summary that always fires - even on a stage-level throw - so the user
+  knows how far the pipeline got. (The "*" in the menu label is the
+  intended U+27F3 Unicode arrow, matching the V2.5 RegenerateAllMenu
+  convention.)
+  CRITICAL: does NOT wrap the pipeline in an outer StartAssetEditing /
+  StopAssetEditing batch. Each stage manages its own batching, and V3.4
+  + V3.5 both rely on an internal two-phase Sprite reload that runs
+  AFTER their inner StopAssetEditing closes - per the V3.5 implementer
+  heads-up.
+- Assets/Tests/EditMode/GenerateAllVisualsTests.cs - 2 tests:
+    Pipeline_CompletesAllStages - calls RunPipeline(), asserts no throw,
+    confirms >= 30 materials, exactly 14 primitives, 60 world item
+    prefabs, the 7 expected creature prefabs by name (3 fauna + 3
+    enemies + 1 NPC), and >= 60 item icons + >= 7 creature icons in
+    Assets/Textures/Icons/.
+    Pipeline_Idempotent - calls RunPipeline() twice, snapshots counts
+    before/after each, asserts all 5 counts (materials, primitives, item
+    prefabs, item icons, creature icons) are identical across runs.
+
+FILES MODIFIED:
+- Assets/Editor/ArtPipeline/MaterialGenerator.cs - extracted a public
+  static int Run() that returns the total material count (created +
+  updated). The [MenuItem] handler Generate() now just calls Run().
+  No behavior change.
+- Assets/Editor/ArtPipeline/BulkPrefabGenerator.cs - extracted a public
+  static (int world, int placed) Run() that returns the tuple
+  (worldPrefabCount, placedPrefabCount). The [MenuItem] handler
+  Generate() now just calls Run(). No behavior change.
+- Design Documents/master_prompt.md - flipped V3.6 to [D] in the M2
+  tracker with a "Volume 3 (visual pipeline) COMPLETE for M2 scope"
+  note, and appended this Agent Notes Log entry at the top after
+  [TEMPLATE].
+
+NOT MODIFIED (intentionally):
+- PrimitiveMeshFactory.GenerateAll() - already public, returns void.
+  Orchestrator derives the count from Enum.GetValues(typeof(PrimitiveShape))
+  rather than expand the V3.2 surface area for a deterministic number.
+- IconBulkRenderer.Run() / CreaturePrefabGenerator.Run() - already
+  return ints (icon-assigned count, creature-prefab count). No change.
+
+DEVIATIONS FROM SPEC:
+
+1. **Spec call order vs V3.4/V3.5 heads-ups.** Spec text reads
+   "materials -> primitives -> item prefabs -> creature prefabs ->
+   icons in order." V3.4 implementer originally suggested
+   "Materials -> Primitives -> Item Prefabs -> Creature Prefabs ->
+   Item Icons -> Creature Icons" (separate creature-icon step). V3.5
+   later folded the creature-icon render into CreaturePrefabGenerator.Run()
+   itself, so the final ordering is Materials -> Primitives -> Item
+   Prefabs -> Creature Prefabs (renders its own icons inline) ->
+   Item Icons. This matches the V3.5 heads-up exactly and honors the
+   spec's textual order.
+
+2. **No "creature icons" stage.** Per (1), the creature-icon render
+   lives inside CreaturePrefabGenerator.Run() now. The summary log
+   reports creature_icons = creature_prefabs (always equal because the
+   generator emits one icon per prefab in the same run).
+
+VERIFICATION RESULTS:
+- refresh_unity: 0 compile errors. 0 new warnings (the 4 pre-existing
+  CS0618 FindObjectOfType warnings in ElectricitySetup.cs /
+  AutomationSetup.cs are unchanged - same baseline as V3.3/V3.4/V3.5).
+- run_tests EditMode (full suite): 312/312 passing, 0 failed, 0 skipped,
+  10.37s. Was 310 before V3.6; +2 new GenerateAllVisualsTests cases.
+- run_tests EditMode (GenerateAllVisualsTests only): 2/2 passing in
+  6.20s including two full pipeline runs (idempotence pass).
+- execute_menu_item Voidborne/Generate/* All Visuals: dialog blocks the
+  MCP call (expected - the spec acknowledged this). Direct console
+  log capture from a test-driven RunPipeline shows the full sequence:
+    [GenerateAllVisuals] Running full Volume 3 pipeline...
+    [MaterialGenerator] Generated 35 materials (0 new, 35 updated)...
+    [GenerateAllVisuals] Stage 1/5 Materials: 35 materials.
+    [PrimitiveMeshFactory] Generated 14 primitive meshes...
+    [GenerateAllVisuals] Stage 2/5 Primitives: 14 meshes.
+    [BulkPrefabGenerator] Generated 60 item prefabs (Core 60). Machines/
+      blocks also got placed variants (19).
+    [GenerateAllVisuals] Stage 3/5 Item Prefabs: 60 world + 19 placed
+      variants.
+    [CreaturePrefabGenerator] Generated 7 creature prefabs (3 fauna + 3
+      enemies + 1 NPCs) + 7 icons (assigned 0 to SOs).
+    [GenerateAllVisuals] Stage 4/5 Creature Prefabs: 7 creature prefabs
+      (with inline icons).
+    [IconBulkRenderer] Rendered 60 icons (Core 60). Saved to
+      Assets/Textures/Icons/.
+    [GenerateAllVisuals] Stage 5/5 Item Icons: 60 icons.
+    [GenerateAllVisuals] Pipeline complete. Summary:
+      Materials: 35, Primitive meshes: 14, Item prefabs: 60
+      (+19 placed variants), Creature prefabs: 7, Item icons: 60,
+      Creature icons: 7, Total icons: 67.
+
+FINAL ASSET COUNTS ON DISK (verified):
+- Assets/Materials/Generated/: 35 .mat files.
+- Assets/Models/Generated/Primitives/: 14 .asset files.
+- Assets/Prefabs/Items/: 60 world prefabs + 19 _placed variants = 79
+  prefabs total.
+- Assets/Prefabs/{Fauna,Enemies,NPCs}/: 3 + 3 + 1 = 7 creature
+  prefabs (alongside the legacy V15/V16 prefabs scheduled for V5
+  archival).
+- Assets/Textures/Icons/: 67 PNGs total (60 item icons + 7 creature
+  icons named creature_{id}.png).
+
+HEADS-UPS FOR V4 (UI Foundations) AND BEYOND:
+
+- Volume 3 is now COMPLETE for M2 scope. Every Core 60 ItemDefinition
+  has icon + modelPrefab + placedPrefab (where applicable) wired up;
+  every M2 creature SO (3 fauna + 3 enemies + 1 NPC) has a placeholder
+  prefab and on-disk icon. UI work (V4.1 hotbar, V4.3 inventory, V4.4
+  machine UI, V4.5 tooltip) can read sprite icons directly from
+  ItemDefinition.icon without further pipeline work.
+- The single menu Voidborne/Generate/* All Visuals is the one-stop
+  rebuild point for the entire visual asset pipeline. Re-run after
+  any V2.2 / V2.3 / V3.x change (palette tweak, item add, creature
+  recipe update) and every downstream asset gets refreshed in one
+  click. Wall time ~3s on this machine - well under the spec's <30s
+  budget.
+- The V2.5 RegenerateAllMenu (SO regeneration) and V3.6
+  GenerateAllVisuals (visual asset regeneration) are intentionally
+  separate menus. The dependency chain is: V2.5 first (SOs) -> V3.6
+  second (visuals). Running them in that order from a clean state
+  rebuilds everything. There is currently NO single super-menu
+  chaining the two - if M3+ wants one, it should call
+  RegenerateAllMenu.Run() then GenerateAllVisuals.RunPipeline() with
+  a single confirmation dialog.
+- The V2.5 orphan pre-scan (RegenerateAllMenu.WarnAboutOrphans)
+  still does NOT cover Assets/Materials/Generated/,
+  Assets/Models/Generated/Primitives/, Assets/Prefabs/Items/, or
+  Assets/Textures/Icons/. V3.6 deliberately does not grow orphan
+  logic - the Core 60 set is stable for M2 and the bulk 1031-item
+  pass is M7 Expansion 7. When M7 lands, GenerateAllVisuals should
+  grow a pre-scan analogous to V2.5's, or extend
+  RegenerateAllMenu.WarnAboutOrphans to know about the V3 output
+  folders (the spec notes this near line 3532).
+- The bulk 1031-item pipeline (M7 Expansion 7) can reuse this exact
+  orchestrator unchanged - the only "Core 60" gate lives inside
+  BulkPrefabGenerator/IconBulkRenderer (they iterate
+  ItemDatabase.AllItems, which is whatever's in items_core.json
+  today). When V2.9 switches to items_full.json (or similar),
+  GenerateAllVisuals starts producing 1031 entries automatically.
+
+COOP / CODEBASE RULES:
+- GenerateAllVisuals wrapped in #if UNITY_EDITOR. Tests wrapped in
+  #if UNITY_INCLUDE_TESTS. No emojis in source (the U+27F3 arrow is
+  intentional, not an emoji).
+- try/finally on the stage scoreboard guarantees the final summary
+  log fires even if a stage throws mid-pipeline.
+- Idempotent: re-running overwrites assets in place. Test verifies
+  this explicitly via Pipeline_Idempotent.
+- No persistent runtime state. Pure editor orchestration.
+- The two refactors to MaterialGenerator and BulkPrefabGenerator are
+  minimal: each adds a public Run() returning a count; the existing
+  Generate() method is preserved as a one-line wrapper. No call site
+  in the codebase needed to change (the menu items still point at
+  Generate, and external callers were not using either method
+  directly).
 ```
 
 ```

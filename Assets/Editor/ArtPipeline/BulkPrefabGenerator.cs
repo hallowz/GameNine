@@ -19,7 +19,14 @@ namespace Voidborne.Editor.ArtPipeline
     public static class BulkPrefabGenerator
     {
         [MenuItem("Voidborne/Generate/Item Prefabs")]
-        public static void Generate()
+        public static void Generate() => Run();
+
+        /// <summary>
+        /// Test-callable / orchestrator-callable entry point. Returns
+        /// (worldPrefabCount, placedPrefabCount). Returns (0,0) when the
+        /// ItemDatabase is missing from Resources.
+        /// </summary>
+        public static (int world, int placed) Run()
         {
             var db = Resources.Load<ItemDatabase>("ItemDatabase");
             if (db == null)
@@ -27,7 +34,7 @@ namespace Voidborne.Editor.ArtPipeline
                 Debug.LogError(
                     "[BulkPrefabGenerator] No ItemDatabase found in Resources. " +
                     "Run Voidborne/Generate/Items first.");
-                return;
+                return (0, 0);
             }
 
             int worldCount = 0;
@@ -72,6 +79,8 @@ namespace Voidborne.Editor.ArtPipeline
                 $"[BulkPrefabGenerator] Generated {worldCount} item prefabs (Core 60). " +
                 $"Machines/blocks also got placed variants ({placedCount}). " +
                 (skippedCount > 0 ? $"Skipped {skippedCount} malformed entries." : string.Empty));
+
+            return (worldCount, placedCount);
         }
 
         /// <summary>
