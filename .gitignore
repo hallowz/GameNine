@@ -56,6 +56,9 @@ crashlytics-build.properties
 
 # Screenshots at root
 *.png
+# But: keep the procedurally-rendered item icons (V3.4) — they're tiny and
+# part of the project's content surface, not large captures.
+!Assets/Textures/Icons/*.png
 
 # Claude Code agent worktrees
 .claude/worktrees/
