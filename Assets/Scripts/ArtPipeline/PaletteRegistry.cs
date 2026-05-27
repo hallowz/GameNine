@@ -113,6 +113,22 @@ namespace Voidborne.ArtPipeline
         }
 
         /// <summary>
+        /// Canonical material asset path for a palette key. Mirrors the
+        /// convention used by the V3.1 MaterialGenerator
+        /// (<c>Assets/Materials/Generated/Mat_{key}.mat</c>). V3.3's
+        /// ItemModelComposer resolves materials through this helper so the
+        /// editor + runtime never disagree on where a material lives.
+        ///
+        /// Note: this returns the canonical path even if the underlying asset
+        /// doesn't yet exist on disk — call AssetDatabase.LoadAssetAtPath to
+        /// verify presence.
+        /// </summary>
+        public static string AssetPathFor(string key)
+        {
+            return $"Assets/Materials/Generated/Mat_{key}.mat";
+        }
+
+        /// <summary>
         /// All palette entries (category palette + build-material variants),
         /// each keyed by the canonical asset key used by the generator.
         /// Build-material keys are emitted with the <c>build_</c> prefix so

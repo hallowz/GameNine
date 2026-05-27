@@ -1728,7 +1728,7 @@ Status codes:
 ### Milestone 2 — The Synergy Sandbox
 | Vol.Chunk | Description | Status | Notes |
 |-----------|-------------|--------|-------|
-| 3.3 | Item Visual Recipe & Composer (Core 60 only) | [ ] | Scope reduced from 1031 → 60 |
+| 3.3 | Item Visual Recipe & Composer (Core 60 only) | [✓] | 60 world prefabs + 19 placed variants; 6 new EditMode tests; 300/300 passing |
 | 3.4 | Icon Renderer (Core 60 only) | [ ] | Runtime <30s vs ~5min for 1031 |
 | 3.5 | Fauna/Enemy/NPC Visual Recipes (7 NPCs only) | [ ] | |
 | 3.6 | One-Click Generate Visuals | [ ] | |
@@ -1982,6 +1982,307 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 3 Chunk 3.3 (Item Visual Recipe & Composer)
+Notes:
+
+WHAT LANDED:
+- Core 60 visual pipeline. Every ItemDefinition now has a placeholder prefab
+  (and machines/blocks have a placed variant). Mapper -> Composer ->
+  BulkPrefabGenerator chain is idempotent and re-runs cleanly.
+
+FILES CREATED:
+- Assets/Scripts/ArtPipeline/ItemVisualRecipe.cs - runtime-visible (no editor
+  guard) data class. ItemVisualRecipe { Layer[] layers } + Layer struct
+  { PrimitiveShape shape; Vector3 localScale; Vector3 localPos; Quaternion
+  localRot; string materialKey; }. Two Layer.Make() helpers keep authoring
+  ergonomic (defaults to Vector3.one scale + Quaternion.identity rotation).
+- Assets/Editor/ArtPipeline/ItemVisualRecipeMapper.cs - static MapItem rules
+  per the V3.3 spec priority chain. Source (Ore/Flora/Fauna/Soil/None) -> by
+  ItemSource. Machine -> by id substring (furnace/campfire/boiler/chest/
+  conveyor/press/crusher/composter/drying_rack/workbench/generator/turret/
+  inserter, default fallback cube). Component -> by category (weapon/armor/
+  ammo) then id substring (cable/wire/ingot/powder/plank/wheel/chassis/nail/
+  glass/battery/junction/sink/bow/arrow). Product -> isBuildBlock (id suffix
+  -> shape: _cube/_slab/_panel/_door) or isDeco. Fallback: small cube +
+  build_neutral.
+- Assets/Editor/ArtPipeline/ItemModelComposer.cs - Build / SaveAsPrefab /
+  BuildAndSaveAll (returns (worldPrefab, placedPrefab)). Loads materials via
+  PaletteRegistry.AssetPathFor with a magenta-fallback warning so missing
+  palette assets surface loudly. Placed variants attach a BoxCollider plus
+  (reflectively-discovered) MachineRuntime / PlacedBlock components when
+  those types exist - they don't in the current codebase so the components
+  are simply skipped (prefab still lands).
+- Assets/Editor/ArtPipeline/BulkPrefabGenerator.cs - [MenuItem("Voidborne/
+  Generate/Item Prefabs")]. Iterates ItemDatabase.AllItems, calls
+  ItemModelComposer.BuildAndSaveAll, writes modelPrefab + placedPrefab onto
+  the ItemDefinition via SerializedObject.FindProperty(...).objectReferenceValue
+  so the private serialized fields actually persist. Wrapped in
+  StartAssetEditing / StopAssetEditing.
+- Assets/Tests/EditMode/ItemVisualRecipeTests.cs - 6 tests:
+    Mapper_AllCore60Items_ProduceValidRecipe (1-4 layers, every shape valid
+    enum, every materialKey resolves to a real .mat),
+    Mapper_OreItem_ReturnsSinglePrimitive (iron_ore -> single Sphere/ore),
+    Mapper_Flora_ReturnsStemPlusFoliage (wood -> Cylinder + Sphere),
+    Mapper_Furnace_HasMultipleLayers (>=2),
+    Mapper_BuildBlock_MatchesForm (stone_cube -> Cube; wood_slab -> Slab;
+    wood_door -> Door),
+    Composer_BuildProducesNonNullPrefab (workbench: GO non-null, layer
+    children carry MeshFilter + MeshRenderer).
+
+FILES MODIFIED:
+- Assets/Scripts/ArtPipeline/PaletteRegistry.cs - added the helper flagged
+  by V3.1's review:
+    public static string AssetPathFor(string key)
+        => $"Assets/Materials/Generated/Mat_{key}.mat";
+  ItemModelComposer + the test suite resolve materials through it so the
+  runtime + editor never disagree on the path convention.
+
+DEVIATIONS FROM SPEC:
+
+1. **MachineRuntime / PlacedBlock are not attached.** Neither type exists in
+   the current codebase (no MachineRuntime.cs, no PlacedBlock.cs). Per the
+   spec ("only attach those components if the type exists in the current
+   codebase; otherwise skip the component but still produce the prefab"),
+   ItemModelComposer probes the loaded assemblies via reflection for
+   MonoBehaviours named MachineRuntime / PlacedBlock and attaches them when
+   present. Today's run attaches neither. Placed variants still ship with a
+   BoxCollider so the prefab is physically present at placement time.
+
+2. **water / oil_seep get id-keyed disc treatment.** The spec says
+   "kind==Source && source==None (water, oil_seep) -> flat disc". In the
+   live items_core.json data, water.src = soil and oil_seep.src = ore - the
+   ItemSource.None branch never fires for either. Added an early id-keyed
+   override (item.itemId == "water" -> blue-ish disc using the flora key as
+   a fallback because no water palette key exists; item.itemId == "oil_seep"
+   -> ore-tinted disc) so the spec's silhouette intent still lands.
+
+3. **Weapon-shaped ids without the "weapon" category still route to the
+   weapon recipe.** items_core.json doesn't set categories=["weapon"] on
+   iron_sword / wooden_spear / pistol / bolt_rifle / gunpowder_bullet. The
+   spec's MapComponent weapon branch checks "categories contains 'weapon'"
+   first; I extended it to ALSO accept weapon-shaped ids (sword/spear/axe/
+   knife/pistol/rifle) so those items get the Wedge/Capsule weapon
+   silhouette instead of a generic small cube. This is a heads-up for V3.4
+   (icon renderer) too - if the design wants iron_sword to actually carry
+   the "weapon" category in JSON, that change belongs in items_core.json,
+   not in the visual mapper.
+
+4. **No dedicated water palette key.** PaletteRegistry has no "water" entry,
+   so water uses MatFlora (lime green) as a placeholder disc colour until
+   either a "water" palette key is added or the spec resolves this. Flagged
+   for designer attention. Adding a "water" key to PaletteRegistry +
+   regenerating materials would close this in <5 lines of code in V3.1
+   territory; deliberately left out of this V3.3 pass to avoid sliding
+   scope.
+
+5. **Layer ceiling enforcement.** drying_rack has 4 posts in the spec
+   sketch; with the base slab that would be 5 layers (over the 4-layer
+   recipe ceiling). Dropped to base + 3 posts so the silhouette still reads
+   as a quad-post rack while staying within bounds. workbench similarly:
+   top + 3 legs = 4 layers.
+
+VERIFICATION RESULTS:
+- refresh_unity: 0 compile errors. Zero new warnings introduced.
+- run_tests EditMode: 300/300 passing (was 294 before V3.3; +6 new
+  ItemVisualRecipeTests cases). Wall time 2.9-3.1s.
+- Voidborne/Generate/Item Prefabs (via menu_item AND via execute_code):
+  "[BulkPrefabGenerator] Generated 60 item prefabs (Core 60). Machines/
+  blocks also got placed variants (19)." Idempotent on re-run.
+- Assets/Prefabs/Items/ now holds 60 *.prefab + 19 *_placed.prefab = 79
+  prefab assets.
+- ItemDatabase sample check: workbench / furnace / milk / iron_ore /
+  wood_door / wood_slab / stone_cube all have non-null modelPrefab; the
+  block / machine entries also have non-null placedPrefab.
+
+ITEMS WHOSE MAPPING NEEDS DESIGNER ATTENTION:
+
+- **gunpowder / charcoal / bread / flour** route to the generic component
+  fallback (Cube + build_neutral). They carry no id substring the mapper
+  recognises and the category-based branch (food etc.) only kicks in when
+  the category is in our small "known" set. flour does pick up the food
+  palette (it has cats=[food]); the others have no categories.
+- **wooden_spear** has no "weapon" category in JSON. Picked up by the
+  spear-id heuristic (deviation 3), so it gets Wedge(weapon). OK with the
+  heuristic; would be nicer with the category set.
+- **iron_sword / pistol / bolt_rifle / gunpowder_bullet** same picture -
+  rescued by the id heuristic.
+- **clay / sand / stone / water (soil sources)** all collapse to identical
+  Cube(build_neutral) silhouettes since none of them carry buildColor.
+  Visually indistinguishable in inspector. Cheap fix: extend
+  ItemSoGenerator to derive buildColor from the item id for known soil
+  sources (stone -> stone, clay -> clay-brown, sand -> sand-yellow). That
+  belongs in Volume 2.2 territory, not V3.3.
+- **storage_chest** uses build_wood (chest id branch). OK.
+- **conveyor_belt / steam_boiler / steam_generator / press / crusher /
+  inserter / composter / hand_crank_generator / auto_turret** all hit
+  their dedicated id branches with multi-layer silhouettes. Spot-checked
+  visually.
+
+HEADS-UPS FOR V3.4 (Icon Renderer):
+
+- IconRenderer can simply instantiate item.modelPrefab into a hidden scene,
+  point a RenderTexture camera at it, and snapshot. The prefabs are already
+  parented at origin so framing is straightforward (use prefab's
+  Renderer.bounds for tight-fit).
+- The four-layer drying_rack / workbench prefabs span ~1m wide; tall
+  silhouettes like wood_door span 2m. Set the icon-renderer camera
+  orthographic-size to fit the largest bounds among recipe layers.
+- A handful of items will look near-identical in icons (clay vs sand vs
+  stone, all grey cubes). That's a data problem, not an icon-rendering
+  problem - flag in V3.4's notes too.
+- Material magenta fallback is a useful canary; if any icon renders pink,
+  the underlying material asset is missing.
+
+HEADS-UPS FOR V3.5 (Fauna / Enemy / NPC Visual Recipes):
+
+- The MapSource Fauna branch (capsule body + sphere head) is a reasonable
+  starting point but V3.5 will want a CreatureVisualRecipeMapper that
+  consumes FaunaDefinition.appearance + EnemyDefinition.appearance with
+  per-creature elaborations (legs/wings/tendrils). Keep the Layer struct +
+  4-layer ceiling; if a creature needs >4 layers, V3.5 should bump that
+  ceiling in ItemVisualRecipe.cs (current cap is enforced only by the test
+  suite + spec comment, not by code).
+- Bosses (2x scale per spec) and the Fungal Brood Mother specifically
+  (multi-attack-path validation per M6) should also share this composer
+  pipeline - no need to fork. Add an asPlacedPrefab / asCreaturePrefab flag
+  to ItemModelComposer.BuildAndSaveAll if creature prefabs need different
+  gameplay component attachment.
+- Reflective MachineRuntime / PlacedBlock probe in ItemModelComposer is a
+  good template for the AI-stub MonoBehaviour attachment V3.5 will need.
+
+COOP / CODEBASE RULES:
+- ItemVisualRecipe / Layer are pure data; no MonoBehaviour state.
+- Editor code (mapper, composer, bulk generator) wrapped in #if UNITY_EDITOR
+  and lives in Assets/Editor/ArtPipeline/.
+- No emojis in source.
+- Generator is idempotent (re-running produces the same prefabs and writes
+  identical SerializedObject references with no spurious changes).
+- modelPrefab / placedPrefab written via SerializedObject.FindProperty so
+  the private serialized fields persist correctly (per the task spec's
+  reminder about ItemDefinition.modelPrefab vs the read-only worldDropPrefab
+  alias).
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 3 Chunk 3.3 (Item Visual Recipe & Composer)
+
+VERDICT: PASS. V3.3 flipped from [D] to [✓]. No fixes required.
+
+SPOT-CHECKS PERFORMED:
+
+Data class (ItemVisualRecipe.cs):
+- ItemVisualRecipe is [Serializable] class with Layer[] layers; constructor
+  guards null. Layer is [Serializable] STRUCT (not class) carrying
+  PrimitiveShape + scale/pos/rot + materialKey - matches spec.
+- Two Layer.Make helpers default to Vector3.one scale + Quaternion.identity
+  rotation. No editor-only references; lives in Voidborne.ArtPipeline.
+
+Mapper priority chain (ItemVisualRecipeMapper.cs):
+- Source -> ItemSource switch (Ore: sphere/ore; Flora: cylinder+sphere/flora;
+  Fauna: capsule+sphere/fauna; Soil: cube w/ buildColor fallback; None: disc).
+- Machine id substring chain checks boiler BEFORE furnace (correct - steam_
+  boiler doesn't contain "furnace"). Covers furnace/campfire/chest/conveyor/
+  press/crusher/composter/drying_rack/workbench/generator/turret/inserter.
+- Component branch: weapon/armor/ammo categories + id-substring rescue for
+  sword/spear/knife/axe/pistol/rifle (deviation 3 - sensible since
+  items_core.json doesn't set "weapon" category on iron_sword etc.). iron_
+  sword routes to Wedge + weapon material (confirmed).
+- Product: isBuildBlock with _cube/_slab/_panel/_door suffix -> shape; uses
+  "build_" + buildColor with PaletteRegistry.IsBuildMaterialKey fallback.
+
+Edge cases:
+- items_core.json confirms water.src=soil and oil_seep.src=ore (verified at
+  lines 72-117). Mapper short-circuits both by id BEFORE the Source switch
+  -> flat disc, as the spec's silhouette intent requires. Sound deviation.
+- drying_rack = 4 layers (base + 3 posts); workbench = 4 layers (top + 3
+  legs). Both at the spec ceiling; never exceed.
+- All 60 recipes produce 1-4 layers (enforced by
+  Mapper_AllCore60Items_ProduceValidRecipe test).
+
+Material + mesh lookup:
+- PaletteRegistry.AssetPathFor(key) added per V3.1/V3.2 reviewer requests;
+  documented as canonical path helper.
+- Composer uses PrimitiveMeshFactory.GetOrCreate(shape) - V3.2 canonical
+  API. No mesh duplication.
+- LoadMaterialOrFallback uses AssetPathFor; magenta-fallback warning fires
+  on miss.
+
+SerializedObject persistence (BulkPrefabGenerator.cs):
+- AssignPrefabField uses SerializedObject + FindProperty(fieldName) +
+  objectReferenceValue + ApplyModifiedPropertiesWithoutUndo. Skips write
+  when value unchanged (idempotent). StartAssetEditing/StopAssetEditing
+  wrapper present.
+
+Reflective stub probe (ItemModelComposer.AttachGameplayStubIfAvailable):
+- Caches Type lookups via AppDomain scan once (_stubTypesProbed flag).
+  Wrapped in try/catch around asm.GetTypes() so a misbehaving assembly
+  can't break the probe. With no MachineRuntime/PlacedBlock in the
+  codebase today, the method no-ops cleanly. Confirmed.
+
+Generated prefabs on disk:
+- Assets/Prefabs/Items/ contains 79 *.prefab files: 60 world + 19 placed
+  (correct count). Placed variants: auto_turret, campfire, composter,
+  conveyor_belt, crusher, drying_rack, furnace, hand_crank_generator,
+  inserter, press, steam_boiler, steam_generator, storage_chest, workbench
+  (14 machines) + iron_panel, stone_cube, wood_cube, wood_door, wood_slab
+  (5 build blocks) = 19. Matches needsPlaced = (Machine || (Product &&
+  isBuildBlock)) logic.
+
+ItemDatabase / ItemDefinition assignment:
+- Sampled 7 items: iron_ore / furnace / workbench / wood_door / water /
+  oil_seep / iron_sword / milk all carry guid'd modelPrefab references
+  (type: 3 -> prefab). furnace + workbench + wood_door additionally carry
+  guid'd placedPrefab; water/oil_seep/iron_sword/milk leave placedPrefab
+  at fileID 0 as expected (not Machine, not BuildBlock).
+- PrefabUtility.SaveAsPrefabAsset overwrites by path - re-run is idempotent
+  (verified by implementer; SerializedObject early-return on
+  unchanged value enforces).
+
+Tests:
+- run_tests EditMode (Unity 6, fresh run): 300/300 passed, 0 failed,
+  0 skipped, 2.78s. New tests: ItemVisualRecipeTests x6.
+- Pre-V3.3 baseline 294; +6 new -> 300, matches.
+
+Tracker / log:
+- Milestone 2 tracker: V3.3 flipped from [D] to [✓]. Other M2 chunks
+  remain [ ].
+- Agent Notes Log carries the implementer's V3.3 entry directly after
+  [TEMPLATE] with 5 documented deviations + V3.4/V3.5 heads-ups.
+
+Coop / codebase rules:
+- ItemVisualRecipe / Layer are pure data; no MonoBehaviour state.
+- Editor code wrapped in #if UNITY_EDITOR; lives in Assets/Editor/
+  ArtPipeline/ via Voidborne.Editor.ArtPipeline asmdef.
+- No emojis in source.
+- Magenta material fallback surfaces missing palette assets loudly without
+  crashing the generator.
+
+HEADS-UPS FOR V3.4 (Icon Renderer):
+- Composer prefabs are clean GameObjects (no extra components on the world
+  variant) parented at origin - IconRenderer can use Renderer.bounds for
+  tight framing without subtracting collider AABBs.
+- Drying_rack / workbench span ~1m wide; wood_door spans 2m tall. Camera
+  orthographic size needs to handle the tall case.
+- A handful of items collapse to identical silhouettes (clay/sand/stone all
+  Cube + build_neutral, gunpowder/charcoal/bread/flour all small cube +
+  build_neutral). Not an icon-renderer bug; flag as a data heads-up in
+  V3.4's review. Suggested fix lives in V2.2 territory (ItemSoGenerator
+  could derive buildColor for soil sources).
+- Material magenta fallback is the canary if an icon comes back pink.
+
+HEADS-UPS FOR V3.5 (Fauna / Enemy / NPC Recipes):
+- The Layer struct + 4-layer ceiling is enforced by ItemVisualRecipeTests
+  but NOT by code. If V3.5 needs >4 layers per creature, bump the test
+  upper bound alongside the spec comment.
+- Reflective MachineRuntime/PlacedBlock probe is a good template for
+  attaching AI-stub MonoBehaviours when those types land in V14/V15.
+
+NO CONCERNS / NO FIXES REQUIRED.
 ```
 
 ```

@@ -25,6 +25,6 @@ MonoBehaviour:
   maxStackSize: 64
   weight: 1
   icon: {fileID: 0}
-  modelPrefab: {fileID: 0}
+  modelPrefab: {fileID: 3093624945870707362, guid: c1ed0d0315c567e438d91fe922f95b0c, type: 3}
   placedPrefab: {fileID: 0}
   properties: 0f000000
