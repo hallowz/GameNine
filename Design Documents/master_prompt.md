@@ -1741,7 +1741,7 @@ Status codes:
 | 5.1 | Archive (not delete) legacy SOs to _Archived/ | [✓] | V1: 999 (M1 2.9); V5.1: 0 surplus generated, +178 pre-Core-60 from old folders (Items/Recipes/Ores/Guns/Melee/etc) + 2 prefabs |
 | 5.2 | Scene Reference Fixup | [✓] | Game.unity clean; SampleScene/AutomatedTestScene refs follow GUID moves into _Archived/Legacy/ (M2 ARCHIVE intent); 4 pre-existing missing-script warnings in SampleScene documented |
 | 5.3 | Code Cleanup | [✓] | 6 editor utilities moved to Scripts/_Legacy/Editor/; 3 runtime classes (BackpackItem/SmeltingRecipe/OreRegistry) left in place w/ V5.3 DEPRECATION headers (active consumers) |
-| 6.1 | Crafting Match Engine v2 (with property matching) | [ ] | Forgiving/picky split lands here |
+| 6.1 | Crafting Match Engine v2 (with property matching) | [✓] | DefaultCraftingMatchEngine implemented; specific-first then forgiving/hybrid property fallback w/ 0.7x hybrid cap; 10 EditMode tests incl. milk-in-boiler; 359/359 passing. M2's load-bearing mechanic. |
 | 6.2 | Personal Crafting Grid | [ ] | |
 | 6.3 | Machine Crafting Stations | [ ] | |
 | 6.4 | Bootstrap Path Validator (Core 60) | [ ] | |
@@ -1982,6 +1982,278 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 6 Chunk 6.1 (Crafting Match Engine v2)
+Notes:
+
+VERDICT: PASS. V6.1 flipped from [D] to [✓]. This is M2's load-bearing
+mechanic — the forgiving/picky/hybrid match engine is the mechanical
+foundation of the entire M2 acceptance criterion. EditMode 359/359 in
+11.48s (matches implementer's 359 claim). 0 compile errors, 0 NEW
+console warnings post-refresh.
+
+ALGORITHM CORRECTNESS VERIFIED:
+- Picky branch: IsForgiving() switch hard-lists all 7 Forgiving_*
+  values; all Picky_* + default fall through to refuse with a reason
+  containing "Picky". Property fallback unreachable for picky machines.
+  Confirmed by Picky_RefusesPropertyFallback + Picky_StillMatchesExactInputs.
+- Forgiving branch: TrySpecificMatch first, then TryPropertyMatch.
+  effectiveEfficiency = recipe.efficiency * efficiencyProduct.
+  outputModifier passed through unmodified. Confirmed by
+  Forgiving_MatchesSpecificFirst + Forgiving_FallsThroughToPropertyMatch.
+- Hybrid branch: specific path returns recipe.outputModifier verbatim
+  (Hybrid_MatchesSpecificWithFullOutput); property-fallback path clamps
+  via min(recipe.outputModifier, 0.7) at line 195-199
+  (Hybrid_PropertyFallbackCappedAt07). Cap only applies on the
+  property-fallback path, as designed.
+
+PURE-FUNCTION GUARANTEE VERIFIED:
+- TryPropertyMatch copies `available` into a local `remaining`
+  Dictionary at line 298-302 before any mutation. Caller's map never
+  touched. Engine_PureFunction_NoMutation asserts dictionary count +
+  values unchanged across a successful match.
+- No static state, no caching, no random, no time. Stateless +
+  deterministic — server + client crafting will agree without RPCs.
+
+CANONICAL MILK-IN-BOILER TEST VERIFIED:
+- MilkInBoiler_MatchesAtReducedEfficiency (CraftingMatchEngineTests.cs:272)
+  builds synthetic water + milk + coal ItemDefinitions in-memory
+  (NOT touching items_core.json), builds a synthetic recipe with
+  inputs[water, coal] AND inputProperties[Liquid_Aqueous@0.4 +
+  Combustible_Dry@1.0], passes MachineProcessType.Forgiving_Thermal_Boil,
+  and asserts result.efficiency == 0.4f exactly (1.0 * 0.4 * 1.0).
+  Also asserts inputBindings["Liquid_Aqueous"] == "milk" — the design
+  signature substitution. The M2 mechanical foundation is proven.
+
+EDGE CASES VERIFIED:
+- Null recipe -> graceful no-match w/ "No recipe supplied." reason
+  (CraftingMatchEngine_NullRecipe_ReturnsNoMatchWithReason). The old
+  stub's NotImplementedException is gone.
+- Null availableItems -> coerced to EmptyAvailable static empty dict
+  (line 128).
+- InputProperty.qty == 0 -> defaults to 1 (line 307).
+- InputProperty.efficiency == 0 -> defaults to 1.0 (line 321).
+- Ingredient.qty == 0 -> defaults to 1 (line 256).
+- Forgiving_PropertyMatch_RespectsRequiredQuantity confirms qty=3
+  requirement vs. qty=1 available is refused.
+- Same item can't double-bill: line 318 decrements remaining[resolved]
+  by needQty after each requirement satisfied.
+
+REASON FIELD VERIFIED:
+- Non-empty in both success + failure paths (Engine_ReturnsHumanReadableReason).
+- BuildSubstitutionSummary (line 366) emits "Substituted milk ->
+  Liquid_Aqueous, wood -> Combustible_Dry (efficiency x0.4)." structured
+  for direct display in MachineUI tooltip (V4.4 frame, per V6.3 heads-up).
+
+PUBLIC SURFACE:
+- RecipeMatchResult: recipe, efficiency, outputModifier, inputBindings,
+  reason + Matched accessor. Matches spec.
+- HybridPropertyOutputCap public const = 0.7f documented at line 107.
+- TrySpecificMatch + TryPropertyMatch exposed as public methods on
+  DefaultCraftingMatchEngine. Both pure (no mutable state outside their
+  own out-params + a locally-copied `remaining` dict). Safe for V6.2/V6.3
+  recipe-list panels to invoke standalone.
+
+SCOPE ADHERENCE VERIFIED:
+- V6.2 (Personal Crafting Grid) NOT implemented — correct.
+- V6.3 (Machine Crafting Stations) NOT implemented — correct.
+- V6.4 (Bootstrap Path Validator) NOT implemented — correct.
+- items_core.json NOT modified — `git status --short` confirms only:
+  CraftingMatchEngine.cs (M), RecipeSchemaV3Tests.cs (M),
+  CraftingMatchEngineTests.cs (new), master_prompt.md (M, this log).
+- MachineRuntime.cs NOT touched — confirmed by grep on engine file.
+- No #if UNITY_EDITOR around engine code — runtime-visible. Test file
+  correctly gated by #if UNITY_EDITOR.
+- No emojis in either file.
+
+MINOR OBSERVATIONS (not blockers):
+- FindItemSatisfying (line 328) iterates itemDb linearly per property
+  requirement; with the Core 60 + small property lists this is fine,
+  but a property-tag inverted index would scale better for the M7
+  expansion to ~200+ items. Out of scope for V6.1.
+- BuildSubstitutionSummary handles the "?? -> propName" case for a
+  missing binding entry. Defensive; can't actually fire given the
+  bindings are built in TryPropertyMatch alongside efficiency. No-op
+  in practice.
+
+V6.1 IS COMPLETE AND FORMS THE MECHANICAL FOUNDATION OF M2'S
+FORGIVING/PICKY/HYBRID DESIGN PHILOSOPHY. Ready for V6.2 (Personal
+Crafting Grid) and V6.3 (Machine Crafting Stations) to consume it.
+
+NEXT UP: V6.2 (Personal Crafting Grid 2x2).
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 6 Chunk 6.1 (Crafting Match Engine v2)
+Notes:
+
+V6.1 flipped from [ ] to [D]. DefaultCraftingMatchEngine: stub replaced
+with the full forgiving/picky/hybrid match logic per the master prompt
+Design Philosophy (Principle 2). EditMode 359/359 in 11.89s (was 349;
++10 new: 9 in CraftingMatchEngineTests + the existing
+CraftingMatchEngine_StubThrowsNotImplemented test was repurposed as
+CraftingMatchEngine_NullRecipe_ReturnsNoMatchWithReason since the stub
+no longer throws). 0 compile errors, 0 NEW console warnings (5 warnings
+present pre-existing in PlayMode test base + ElectricitySetup +
+AutomationSetup — unrelated to V6.1).
+
+ALGORITHM (single pass through TryMatch, pure function):
+
+1. SPECIFIC FIRST. TrySpecificMatch tests every Ingredient in
+   recipe.ingredients[] against availableItems as a bag-of-items
+   (position-independent, qty-aware). On success: returns the recipe's
+   declared efficiency + outputModifier verbatim, inputBindings maps
+   each ingredient id to itself. (This is the picky/default path.)
+
+2. PROCESS-TYPE GATE. If specific failed, check the machineType:
+   - Picky_* (or anything not Forgiving_*/Hybrid_): refuse. Returns
+     recipe=null, reason = "Picky machine refuses property fallback. <missReason>".
+   - Forgiving_* (7 enum values: Thermal_DryBurn, Thermal_Boil,
+     Organic_Decay, Organic_Dry, Mechanical_Crush, Mechanical_Separate,
+     Pressure): proceed to property fallback.
+   - Hybrid_Crafting (Workbench, Carpenter's Bench): proceed to
+     property fallback w/ 0.7x output cap.
+
+3. PROPERTY FALLBACK. TryPropertyMatch greedy-resolves each
+   InputProperty requirement:
+   - For each requirement, scan itemDb for the FIRST item whose
+     properties[] contains the required tag AND whose available count
+     satisfies the qty. (Items consumed once across requirements via a
+     locally-copied remaining map — same item id can't double-bill.)
+   - efficiency = recipe.efficiency * product(perInputEfficiency).
+   - On Hybrid_Crafting: outputModifier = min(recipe.outputModifier, 0.7).
+   - On Forgiving_*: outputModifier = recipe.outputModifier (no cap).
+   - Returns inputBindings keyed by MaterialProperties.ToString() ->
+     resolved item id (so UI can render "milk -> Liquid_Aqueous").
+
+EDGE CASES HANDLED:
+- Null recipe -> graceful no-match w/ reason (replaces old NotImplementedException).
+- Null/empty availableItems -> treated as empty map.
+- Null itemDb -> property fallback fails cleanly with reason.
+- Recipe with no inputProperties[] on a forgiving machine -> refuses
+  property fallback w/ reason "Specific inputs missing and recipe
+  declares no inputProperties[] fallback."
+- InputProperty.efficiency = 0 -> treated as 1.0 (defensive default).
+- Ingredient.qty = 0 -> treated as 1 (defensive default).
+- Hybrid specific match -> outputModifier honoured as declared (cap
+  only applies on the property-fallback path; covered by test
+  Hybrid_MatchesSpecificWithFullOutput).
+- Coop safety: TryPropertyMatch copies `available` into a local
+  `remaining` Dictionary before mutating; the caller's input map is
+  NEVER touched. Verified by Engine_PureFunction_NoMutation test
+  (asserts dictionary count + values unchanged across a successful
+  match).
+
+PUBLIC SURFACE EXTENSIONS:
+- RecipeMatchResult gained two fields: `float outputModifier` and
+  `string reason`. The pre-existing `recipe`/`efficiency`/
+  `inputBindings` fields retained their names (no breaking rename).
+- New convenience accessor: `RecipeMatchResult.Matched` (true when
+  recipe != null).
+- DefaultCraftingMatchEngine.HybridPropertyOutputCap public const
+  (0.7f) so tests + consumers can reference the canonical cap.
+- Two helper methods exposed on DefaultCraftingMatchEngine (public,
+  not on the interface): TrySpecificMatch + TryPropertyMatch. Useful
+  for V6.2/V6.3 recipe-list panels that want to render "you're 1
+  short of crafting X" or "you could craft X via property fallback".
+
+TEST COVERAGE (10 new EditMode tests in
+Assets/Tests/EditMode/CraftingMatchEngineTests.cs):
+- Picky_RefusesPropertyFallback                 (anchor: Picky_Assembly + copper-for-iron refused)
+- Forgiving_MatchesSpecificFirst                (Furnace + iron_ore exact -> efficiency=1.0)
+- Forgiving_FallsThroughToPropertyMatch         (Steam Boiler + milk+wood -> 0.4 efficiency)
+- Hybrid_PropertyFallbackCappedAt07             (Workbench property fallback -> outputModifier=0.7)
+- Engine_PureFunction_NoMutation                (assert input dict unchanged after match)
+- Engine_ReturnsHumanReadableReason             (both success + failure paths have non-empty reason)
+- MilkInBoiler_MatchesAtReducedEfficiency       (*** the canonical M2 synergy proof ***
+                                                  steam_boiler + milk + coal -> matched at
+                                                  efficiency 0.4 via Liquid_Aqueous fallback)
+- Picky_StillMatchesExactInputs                 (Refinery + crude_oil exact -> match)
+- Forgiving_PropertyMatch_RespectsRequiredQuantity  (qty=3 Solid_Metal requirement vs. only
+                                                     qty=1 copper available -> refused)
+- Hybrid_MatchesSpecificWithFullOutput          (Hybrid specific path NOT capped — only
+                                                  the fallback path is)
+
+Plus the renamed RecipeSchemaV3Tests.CraftingMatchEngine_NullRecipe_ReturnsNoMatchWithReason
+which now asserts the new behaviour (graceful no-match) instead of NotImplementedException.
+
+DEVIATIONS FROM PROMPT:
+- The prompt also referenced "Modify CraftingGrid.cs" + "Modify
+  CraftingManager.cs" inside V6.1's spec at master_prompt.md:1013. Per
+  scope guard ("V6.2's job for Personal Crafting Grid; V6.3's job for
+  Machine Crafting Stations") and the explicit "Do NOT implement
+  Volume 6.2/6.3" instruction in the sub-agent brief, those modifications
+  were NOT performed in this chunk. The match engine itself is the
+  load-bearing piece for V6.1; CraftingGrid/CraftingManager become V6.2
+  and V6.3 work that CONSUMES the engine via the existing
+  ICraftingMatchEngine interface.
+- Did NOT touch the archived SmeltingRecipe .asset files at
+  _Archived/Legacy/SmeltingRecipes/. Those are source data for V6.2/V6.3
+  recipe porting, not for the engine itself. Engine is tested entirely
+  against in-memory synthetic fixtures.
+- Did NOT modify items_core.json (no synthetic recipes added to live
+  data). Tests build their own RecipeDefinition + ItemDefinition
+  instances via ScriptableObject.CreateInstance and tear them down in
+  TearDown — zero footprint on Assets/ScriptableObjects/Generated/.
+
+V6.2 HEADS-UPS (Personal Crafting Grid):
+- PersonalCraftingGrid.cs should call ICraftingMatchEngine.TryMatch
+  with machineType = Hybrid_Crafting? Or Picky_Specialty? The
+  recommendation: Hybrid_Crafting — the personal grid IS a hand-craft
+  station, and any "improvised" crafting (e.g. plant_fiber substituted
+  for rope) should follow the hybrid 0.7x cap rule. RecipeRegistry
+  already keys personal-grid recipes via PersonalGridKey ("").
+- The 2x2 grid spec (V6.2) caps recipes to ≤4 ingredients but the
+  match engine doesn't care about grid size — that's a filter
+  applied BEFORE invoking TryMatch. RecipeListPanel should pre-filter
+  recipes where ingredients.Length > 4 || ingredients.Sum(qty) > 4.
+- For the "what can I craft right now" sidebar, callers will iterate
+  RecipeRegistry.ByMachine("") and invoke TryMatch on each. The engine
+  is stateless + pure so this is safe to do every UI tick (though a
+  cache would be nicer; consider invalidation on inventory change).
+
+V6.3 HEADS-UPS (Machine Crafting Stations):
+- MachineRuntime (V9.1) will hold the current input slots as
+  Dictionary<string,int>. To invoke the engine, pass:
+    engine.TryMatch(
+      recipe: candidateRecipe,
+      machineType: machineDef.processType,
+      availableItems: currentInputSlots,
+      itemDb: ItemDatabase.Instance.AllItems
+    );
+  The engine returns the match; MachineRuntime then consumes the
+  bound items (recipe.ingredients[] for specific match, or
+  result.inputBindings.Values for property-fallback) and applies the
+  efficiency multiplier to the crafting timer.
+- Server-authoritative consumption pattern: server calls TryMatch ->
+  if Matched, consume from inputs deterministically (use bindings
+  values for property fallback). The engine is fully deterministic
+  given identical inputs, so server + client crafting tooltips will
+  agree without an RPC.
+- The "Substituted milk -> Liquid_Aqueous (efficiency x0.4)" reason
+  string is already structured for direct display in the Machine UI
+  tooltip frame (V4.4). MachineUI can show result.reason verbatim.
+
+V6.4 HEADS-UPS (Bootstrap Path Validator):
+- The validator walks recipe.ingredients[] backwards from Sources.
+  It does NOT need to consult inputProperties[]; those are runtime
+  substitutions, not progression paths. A bootstrap recipe with
+  ONLY inputProperties[] (no ingredients[]) would be unreachable
+  for the validator — but the design specifies inputs[] is always
+  populated (specific recipes are the canonical path; properties
+  are fallback). So the validator's existing "walk inputs[]" logic
+  is unchanged by V6.1.
+
+NO DELETES, NO DATA TOUCHES: zero modifications to ScriptableObjects/,
+Resources/, or items_core.json. Pure source-code chunk: engine impl +
+tests + tracker + log.
+
+NEXT UP: V6.2 (Personal Crafting Grid 2x2). The engine is ready to be
+called.
 ```
 
 ```

@@ -104,18 +104,21 @@ namespace Voidborne.Tests.EditMode
         }
 
         [Test]
-        public void CraftingMatchEngine_StubThrowsNotImplemented()
+        public void CraftingMatchEngine_NullRecipe_ReturnsNoMatchWithReason()
         {
-            // The interface is declared in Volume 2.8; full implementation lives in 6.1.
+            // V6.1: stub replaced. Passing a null recipe should now return a graceful
+            // no-match result (recipe == null, reason populated) instead of throwing.
             ICraftingMatchEngine engine = new DefaultCraftingMatchEngine();
-            Assert.Throws<NotImplementedException>(() =>
-            {
-                engine.TryMatch(
-                    recipe: null,
-                    machineType: MachineProcessType.Picky_Specialty,
-                    availableItems: new Dictionary<string, int>(),
-                    itemDb: Array.Empty<ItemDefinition>());
-            });
+            var result = engine.TryMatch(
+                recipe: null,
+                machineType: MachineProcessType.Picky_Specialty,
+                availableItems: new Dictionary<string, int>(),
+                itemDb: Array.Empty<ItemDefinition>());
+            Assert.IsNotNull(result, "Engine must always return a result, never null.");
+            Assert.IsNull(result.recipe);
+            Assert.IsFalse(result.Matched);
+            Assert.IsFalse(string.IsNullOrEmpty(result.reason),
+                "No-match result must include a human-readable reason.");
         }
 
         [Test]
@@ -126,10 +129,13 @@ namespace Voidborne.Tests.EditMode
             {
                 recipe = null,
                 efficiency = 1.0f,
+                outputModifier = 1.0f,
                 inputBindings = new Dictionary<string, string>(),
+                reason = "",
             };
             Assert.IsNull(result.recipe);
             Assert.AreEqual(1.0f, result.efficiency);
+            Assert.AreEqual(1.0f, result.outputModifier);
             Assert.IsNotNull(result.inputBindings);
         }
     }
