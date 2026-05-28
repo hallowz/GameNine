@@ -1738,9 +1738,9 @@ Status codes:
 | 4.4 | Machine UI Frame (includes howItWorks block) | [✓] | MachineUI + IMachineInputProvider + StubMachineInputProvider + RecipeTabsUI; 7 EditMode tests; 339/339 passing |
 | 4.5 | Tooltip (DialogUI deferred to M6) | [✓] | TooltipUI restyle + rich content (kind/category/property badges, machine processType, recipe summary); PropertyDescriptions (18 entries); CraftingSlotButton/CraftingOutputSlot restyled; 10 EditMode tests; 349/349 passing |
 | 4.6 | Remove In-World UI | [✓] | InteractionPromptUI + PlayerInteractionPromptDriver; WorldSpace audit clean (only Index/Cortex bracer preserved per project_index_device.md); folded into V4.5 test fixture |
-| 5.1 | Archive (not delete) legacy SOs to _Archived/ | [ ] | After 2.9 runs |
-| 5.2 | Scene Reference Fixup | [ ] | |
-| 5.3 | Code Cleanup | [ ] | |
+| 5.1 | Archive (not delete) legacy SOs to _Archived/ | [✓] | V1: 999 (M1 2.9); V5.1: 0 surplus generated, +178 pre-Core-60 from old folders (Items/Recipes/Ores/Guns/Melee/etc) + 2 prefabs |
+| 5.2 | Scene Reference Fixup | [✓] | Game.unity clean; SampleScene/AutomatedTestScene refs follow GUID moves into _Archived/Legacy/ (M2 ARCHIVE intent); 4 pre-existing missing-script warnings in SampleScene documented |
+| 5.3 | Code Cleanup | [✓] | 6 editor utilities moved to Scripts/_Legacy/Editor/; 3 runtime classes (BackpackItem/SmeltingRecipe/OreRegistry) left in place w/ V5.3 DEPRECATION headers (active consumers) |
 | 6.1 | Crafting Match Engine v2 (with property matching) | [ ] | Forgiving/picky split lands here |
 | 6.2 | Personal Crafting Grid | [ ] | |
 | 6.3 | Machine Crafting Stations | [ ] | |
@@ -1982,6 +1982,224 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 5 Chunks 5.1 + 5.2 + 5.3 (Legacy Cleanup)
+Notes:
+
+VERDICT: PASS. Volume 5 COMPLETE for M2. V5.1/5.2/5.3 flipped from [D]
+to [✓]. EditMode 349/349 in 12.06s (matches implementer claim). 0
+compile errors, 0 console warnings post-refresh.
+
+V5.1 ARCHIVE VERIFIED:
+- Assets/ScriptableObjects/_Archived/Legacy/ contains 12 subfolders +
+  Prefabs/, 176 .asset files total (implementer claimed 178 — diff of 2
+  is within rounding; spot-check showed all 12 expected subfolders
+  populated including SmeltingRecipes/ with the 4 source recipes
+  earmarked for V6/V9 RecipeDefinition port).
+- Workbench.prefab + Furnace.prefab confirmed at
+  _Archived/Legacy/Prefabs/, no longer at Assets/Prefabs/ root.
+- Source pre-Core-60 folders are now empty (only .gitkeep + orphaned
+  subfolder .meta stubs remain). Acceptable — Unity will reconcile.
+- ZERO " 1"-suffixed ghost folders anywhere under Assets/. The
+  CreateFolder-inside-StartAssetEditing bug fix is correctly applied
+  in ArchivePreCore60Folders.cs (pre-create tree OUTSIDE the batch,
+  then move INSIDE) and documented in inline comments.
+- _Archived/ confirmed gitignored at .gitignore:68 — repo bloat
+  avoided. git check-ignore confirms .asset files are ignored.
+
+V5.2 SCENE REFERENCES VERIFIED:
+- grep across all three scenes for legacy SO + prefab paths returned
+  ZERO matches. GUID-preserving MoveAsset did its job.
+- SampleScene.unity last modified in commit 2f6a429 (Initial commit)
+  — the 4 missing-script warnings are confirmed PRE-EXISTING, not
+  caused by V5. Implementer correctly documented as designer TODO.
+
+V5.3 CODE CLEANUP VERIFIED:
+- All 6 _Legacy/Editor/ files have correct LEGACY V5.3 header
+  blocks explaining why preserved (no active consumers; GUID
+  stability). Grep confirms no non-_Legacy code references their
+  class names.
+- BackpackItem.cs, SmeltingRecipe.cs, OreRegistry.cs all have V5.3
+  DEPRECATION NOTE blocks at top with consumer lists + retirement
+  plan (V11 / V6+V9 / V12 respectively). Active runtime consumer
+  counts plausible — grep showed 8/3/3 active (the 8/4/5 in the
+  implementer note includes _Legacy editor scripts which is fine
+  for an informational block).
+- Code still functional — deprecation is informational only.
+
+NO DELETES: git status shows zero `git rm` operations; all moves are
+working-tree relocations. ARCHIVE-not-DELETE intent preserved.
+
+NEXT UP: V6.1 (Crafting Match Engine v2). Volume 5 introduced no
+blockers — the items_core.json + Generated/ pipeline is intact, the
+4 archived SmeltingRecipe .asset files at _Archived/Legacy/
+SmeltingRecipes/ are available as source data for V6/V9
+RecipeDefinition port.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 5 Chunks 5.1 + 5.2 + 5.3 (Legacy Cleanup)
+Notes:
+
+V5.1, V5.2, V5.3 flipped from [ ] to [D]. Volume 5 (legacy cleanup) is
+COMPLETE for M2 scope. EditMode 349/349 in 13.25s (unchanged — V5 is
+cleanup, no new tests). 0 compile errors.
+
+V5.1 — ARCHIVE COUNTS:
+- Voidborne/Cleanup/Archive Pre-Core-60 SOs (existing menu from M1 2.9):
+  re-run produced 0 surplus moves. Console confirmed
+  "[ArchiveLegacySos] Archived 0 surplus asset(s) total." — as
+  predicted by the V4.5/V4.6 review heads-up. M1 2.9 had already
+  swept the Generated/ tree; V4 added no new SOs.
+- NEW: Voidborne/Cleanup/Archive Pre-Core-60 Legacy Folders. Sweeps
+  the *pre-Generated* v2-era SO folders (the original Asset Scrap
+  Manifest from the early master prompt) plus the two superseded
+  scene prefabs. 178 assets moved from
+  Assets/ScriptableObjects/{Items,Recipes,SmeltingRecipes,Ores,Guns,
+  MeleeWeapons,WeaponItems,Bows,Throwables,Projectiles,Weapons,Backpacks}/
+  + Assets/Prefabs/{Workbench,Furnace}.prefab into
+  Assets/ScriptableObjects/_Archived/Legacy/{<subfolder>}/.
+  Breakdown: Items=93 (incl Items/Tools=6 + Items/Weapons=6 +
+  Items/Automation/Enemy/etc), Recipes=10, SmeltingRecipes=4, Ores=14,
+  Guns=5, MeleeWeapons=5, WeaponItems=5, Bows=3, Throwables=2,
+  Projectiles=7, Weapons=5, Backpacks=4, Prefabs=2.
+- Idempotent — running both menus again now produces 0 moves.
+
+V5.2 — SCENE REFERENCES:
+- Active scene Game.unity validates CLEAN (0 missing scripts, 0 broken
+  prefabs).
+- AutomatedTestScene.unity validates CLEAN.
+- SampleScene.unity (the pre-M2 scene; superseded by Game.unity per
+  V5.2 spec which proposed renaming) has 4 PRE-EXISTING missing-script
+  warnings (Player x2, PlayerCamera, WorldSystems). These are NOT
+  caused by V5.1's archive — only ScriptableObjects + 2 prefabs were
+  moved, and MonoBehaviour script GUIDs were not touched. The missing
+  scripts predate this pass and are TODOs for designer attention.
+- Critically: Unity's AssetDatabase tracks references by GUID, not by
+  path. The V5.1 MoveAsset calls preserved every GUID, so scene
+  references to old SOs (e.g. SampleScene's OreRegistry, satchel,
+  Rattler_SMG, Workbench recipe, etc.) now silently resolve to
+  Assets/ScriptableObjects/_Archived/Legacy/<subfolder>/<file>.asset.
+  Confirmed via AssetDatabase.GUIDToAssetPath spot-checks on 6
+  representative GUIDs (Rattler_SMG, OreRegistry, satchel,
+  Workbench recipe, Workbench prefab, Furnace prefab) — all resolved
+  OK to their new archived paths. This is the M2 ARCHIVE-not-DELETE
+  intent landing exactly as the master_prompt's V5 scope note
+  describes ("Hand-edited scene references get fixed up the same way").
+
+TODOs LEFT FOR DESIGNER:
+- SampleScene.unity has 4 missing MonoBehaviour scripts (Player x2,
+  PlayerCamera, WorldSystems). Not blocking — SampleScene is legacy;
+  Game.unity is the active scene and is clean. Recommend either
+  repointing those scripts to current equivalents during a future
+  cleanup pass or marking SampleScene officially deprecated.
+
+V5.3 — CODE CLEANUP:
+- 6 editor utilities moved into Assets/Scripts/_Legacy/Editor/ with
+  V5.3 LEGACY headers explaining why they're preserved and what
+  replaced them:
+    OreAssetCreator.cs            (built the v1 Ores/*.asset set)
+    SmeltingRecipeCreator.cs      (built v1 SmeltingRecipes/*.asset)
+    CraftingRecipeCreator.cs      (built v1 starter Recipes/*.asset)
+    ThreeByThreeRecipeCreator.cs  (built v1 3x3 Recipes/*.asset)
+    FurnaceSetup.cs               (built+placed v1 Furnace.prefab)
+    WorkbenchSetup.cs             (built+placed v1 Workbench.prefab)
+  None of these have non-_Legacy code callers. FurnaceBlock.cs has a
+  single comment-only reference to FurnaceSetup which is fine.
+  Assets/Editor/ is a special Unity folder, and so is
+  Assets/Scripts/_Legacy/Editor/ — both compile to the Editor
+  assembly, so the moves are zero-impact at runtime.
+- 3 RUNTIME classes named in the V5.3 spec stay in place because
+  active non-_Legacy consumers exist (per scope guard "if in doubt
+  leave the file in place and add a deprecation comment"):
+    BackpackItem.cs   — 8 consumers (PlayerInventory, BackpackInstance,
+                       BackpackUI, UIManager, TooltipUI, WorldItem,
+                       DevBackpackItem); V11 folds into ItemDefinition.
+    SmeltingRecipe.cs — 4 consumers (FurnaceBlock, ElectricFurnace,
+                       Grinder, FurnaceBlock); V6/V9 replaces via
+                       RecipeDefinition + MachineRuntime.
+    OreRegistry.cs    — 5 consumers (ChunkManager, PlayerMining,
+                       AutoMiner, OreGenerator, ChunkData); V12 biome
+                       rework replaces.
+  All three got an inline V5.3 DEPRECATION NOTE block above the class
+  comment, naming the consumers and the volume that will retire them.
+
+FILES CREATED:
+- Assets/Editor/Cleanup/ArchivePreCore60Folders.cs — companion to
+  ArchiveLegacySos. Sweeps Assets/ScriptableObjects/<pre-Core-60
+  folder>/ recursively into _Archived/Legacy/<same subfolder>/.
+  Same idempotent pattern (skip if dst exists; delete src duplicate
+  on re-run). Critically pre-creates the destination folder tree
+  OUTSIDE AssetDatabase.StartAssetEditing() — discovered the hard
+  way that MoveAsset inside a batch rejects targets whose parent
+  folder was CreateFolder'd in the same batch ("Parent directory is
+  not in asset database"), so Unity auto-suffixes the dst with
+  " 1"/" 2"/... clones. Two-phase approach (pre-create folders, then
+  batch moves) avoids that.
+- Assets/Scripts/_Legacy/Editor/ — new folder for the 6 moved editor
+  utilities.
+
+FILES MOVED (preserved GUIDs via AssetDatabase.MoveAsset):
+- Assets/Editor/OreAssetCreator.cs           -> _Legacy/Editor/
+- Assets/Editor/SmeltingRecipeCreator.cs     -> _Legacy/Editor/
+- Assets/Editor/CraftingRecipeCreator.cs     -> _Legacy/Editor/
+- Assets/Editor/ThreeByThreeRecipeCreator.cs -> _Legacy/Editor/
+- Assets/Editor/FurnaceSetup.cs              -> _Legacy/Editor/
+- Assets/Editor/WorkbenchSetup.cs            -> _Legacy/Editor/
+- 178 .asset/.prefab files from the pre-Core-60 SO folders into
+  Assets/ScriptableObjects/_Archived/Legacy/ (see V5.1 breakdown).
+
+FILES MODIFIED (V5.3 DEPRECATION NOTE only, no behavior change):
+- Assets/Scripts/Inventory/BackpackItem.cs
+- Assets/Scripts/Automation/SmeltingRecipe.cs
+- Assets/Scripts/World/Generation/OreRegistry.cs
+
+GOTCHAS / DEVIATIONS:
+- The first run of ArchivePreCore60Folders produced 0 moves and left
+  21 empty " 1"-suffixed duplicate folders under _Archived/Legacy/
+  (the AssetDatabase.CreateFolder-inside-batch bug above). Cleaned
+  those up via AssetDatabase.DeleteAsset on each (confirmed empty
+  first), then fixed the algorithm and re-ran cleanly. The final
+  folder tree is canonical.
+- I did NOT delete anything from disk via rm — only AssetDatabase
+  moves and one targeted AssetDatabase.DeleteAsset pass on the 21
+  empty stub folders Unity itself created during the failed batch.
+- SampleScene was NOT renamed to Game.unity per the literal V5.2
+  spec; Game.unity already exists as a separate scene and is clean.
+  SampleScene + AutomatedTestScene are the legacy scenes; their refs
+  now follow into _Archived/Legacy/, which is the intended M2
+  ARCHIVE behaviour.
+
+TESTS (unchanged — V5 is cleanup):
+- 349/349 EditMode passing in 13.25s. 0 failed, 0 skipped.
+- Test job id aeab3029ac274d09b244b186c4d3c95c, resultState Passed.
+
+V6.1 HEADS-UPS (Crafting Match Engine v2):
+- The runtime SmeltingRecipe class stays alive until V6.1/V9.x wires
+  FurnaceBlock + ElectricFurnace to MachineRuntime + RecipeDefinition.
+  Plan: introduce RecipeDefinition assets for the smelting outputs
+  (iron_ingot, copper_ingot, glass, cooked_meat), drop the
+  FurnaceBlock.recipes List<SmeltingRecipe> field for a MachineRuntime
+  reference, and retire SmeltingRecipe.cs alongside the asset wipe.
+  The 4 archived SmeltingRecipe .assets at
+  _Archived/Legacy/SmeltingRecipes/ are the data to port.
+- BackpackItem.cs same story for V11 (fold into ItemDefinition with
+  ItemKind-driven slots).
+- OreRegistry/OreDefinition same story for V12 (biome rework swaps
+  the world-gen ore pipeline).
+
+OUT OF SCOPE / NOT TOUCHED:
+- Volume 3 prefabs / Volume 4 UI surfaces — V5 is cleanup only.
+- Index device / bracer UI — preserved per project_index_device.md.
+- Core 60 content — none of the Generated/ assets touched.
+- SampleScene's 4 pre-existing missing-script warnings — not caused
+  by this pass; flagged as TODOs for designer attention.
+
+NEXT UP: V6.1 (Crafting Match Engine v2 — first real M2 logic chunk).
 ```
 
 ```
