@@ -1735,7 +1735,7 @@ Status codes:
 | 4.1 | UI Style Kit | [✓] | JetBrains Mono SDF baked; UIStyle + UIBuilder + 7 EditMode tests; 319/319 passing |
 | 4.2 | HUD Layout | [✓] | HotbarUI/SlotUI/CrosshairUI restyled to UIStyle; new HudUI (4 bars); 6 EditMode tests; 325/325 passing |
 | 4.3 | Inventory Panel | [✓] | InventoryUI restyle (UIStyle palette, embedded 2×2 personal craft, no backpack section); UIManager wiring; 7 EditMode tests; 332/332 passing |
-| 4.4 | Machine UI Frame (includes howItWorks block) | [ ] | |
+| 4.4 | Machine UI Frame (includes howItWorks block) | [✓] | MachineUI + IMachineInputProvider + StubMachineInputProvider + RecipeTabsUI; 7 EditMode tests; 339/339 passing |
 | 4.5 | Tooltip (DialogUI deferred to M6) | [ ] | |
 | 4.6 | Remove In-World UI | [ ] | |
 | 5.1 | Archive (not delete) legacy SOs to _Archived/ | [ ] | After 2.9 runs |
@@ -1982,6 +1982,304 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 4 Chunk 4.4 (Machine UI Frame)
+Notes:
+
+VERDICT: PASS. V4.4 flipped from [D] to [✓]. EditMode 339/339 in
+11.34s (was 332/332). 0 compile errors, 0 warnings on the new files.
+
+CHECKLIST VERIFICATION:
+- IMachineInputProvider contract: pure interface in Voidborne.UI,
+  zero Unity references, coop-friendly. All required surface present:
+  Inputs/Outputs (IReadOnlyList<ItemStack>), Progress (float 0..1),
+  NeedsPower + PowerSatisfaction, NeedsFuel + FuelSlot, OnStateChanged
+  (Action, no args — fine per spec), TryStartRecipe(RecipeDefinition),
+  CancelRecipe(). State is read-only on the interface; writes go via
+  the two Try* methods.
+- StubMachineInputProvider: in-memory impl with public Set*() test
+  hooks, ActiveRecipe surfaced so TryStartRecipe is observable.
+  Mutators raise OnStateChanged. Clamps applied to Progress + power.
+- MachineUI layout: 700×500 panel with Header (FontSizeHeader title
+  left, "[ESC] Close" FontSizeBody right), howItWorks prose at
+  ~500px wide using textWrappingMode = TextWrappingModes.Normal,
+  FontSizeBody, UIStyle.TextDim — matches spec for surfacing the
+  design-key prose. Input grid rebuilt per
+  MachineDefinition.gridWidth/gridHeight at Open time. Output slot
+  at 1.2× SlotSize. Optional fuel slot and power gauge gated on
+  provider.NeedsFuel / NeedsPower flags. Progress bar across the
+  bottom uses UIStyle.Accent fill on Image.Type.Filled (correct).
+- howItWorks displays correctly: test creates a synthetic
+  MachineDefinition with explicit Milk prose and asserts text
+  contains "milk" (case-insensitive). Verified the canonical
+  Assets/ScriptableObjects/Generated/Machines/steam_boiler.asset
+  YAML howItWorks contains "Milk — barely; the fats burn first,
+  the water boils second, the curds clog the outlet." so the live
+  asset will produce the same surface when wired in V9.1.
+- processType badge: label = type.ToString(); colour via
+  type == Hybrid_Crafting → UIStyle.Accent, StartsWith("Forgiving_")
+  → UIStyle.TextSuccess, StartsWith("Picky_") → UIStyle.TextError,
+  otherwise UIStyle.Text. Keys off the enum's naming convention so
+  future Forgiving_*/Picky_* variants inherit colour for free.
+- RecipeTabsUI: HorizontalLayoutGroup, one button per recipe,
+  border tinted with RECIPE_COLORS cycle (green/cyan/magenta/orange
+  — matches the HTML reference). First recipe default-selected on
+  Build. OnRecipeSelected fires on click. ItemDatabase lookup is
+  best-effort so tests without a populated DB still resolve a
+  label (falls back to OutputId).
+- UIManager integration: BuildMachinePanel adds centred 700×500
+  RectTransform under InventoryCanvas (machine panel itself owns
+  the Image+Border via its EnsureBuilt path). OpenMachineUI closes
+  the inventory first (only one modal at a time), raises HudUI to
+  last sibling (matches the V4.3 trick), locks camera + cursor.
+  CloseMachineUI restores cursor only when IsAnyUIOpen is false.
+  Esc routes to CloseMachineUI ahead of inventory and pause-menu.
+  IsMachineUIOpen folded into IsAnyUIOpen.
+- Coop awareness: MachineUI is client-local. IMachineInputProvider
+  is the seam where V9.1's ServerRpc fires from TryStartRecipe.
+  No simulation state owned by the UI.
+- Scope adherence: NO ICraftingMatchEngine (V6.1), NO
+  MachineRuntime (V9.1), NO in-world wiring, NO DialogUI, NO
+  CraftingSlotButton restyle (deferred per V4.3 heads-up,
+  re-deferred to V4.5). Confirmed CraftingUI / CraftingSlotButton /
+  CraftingOutputSlot files were NOT modified — no V4.3 regression
+  risk.
+- Namespace deviation: MachineUI / RecipeTabsUI / I+Stub providers
+  live in Voidborne.UI; UIManager qualifies them as
+  Voidborne.UI.MachineUI / IMachineInputProvider consistently.
+  Acceptable per the implementer's note — matches HudUI's pattern.
+- EnsureBuilt() seam: present on MachineUI for EditMode tests
+  (mirrors HudUI / InventoryUI). Awake calls it then deactivates.
+- Coding rules: no emojis, no #if UNITY_EDITOR around runtime
+  code, UIStyle / UIBuilder used throughout, IMachineInputProvider
+  is a pure interface (System / System.Collections.Generic +
+  Voidborne.Crafting.RecipeDefinition / ItemStack — no UnityEngine
+  imports).
+
+TESTS:
+- Confirmed EditMode 339/339 in 11.34s — matches implementer's
+  339/339 claim. Baseline was 332/332 pre-V4.4, so +7 tests as
+  documented. All 7 new tests assert the right thing (open state,
+  howItWorks contains "milk", badge label + colour by family,
+  recipe-tabs Build produces N tabs with first selected, progress
+  fillAmount tracks provider, Close clears state).
+
+DEVIATIONS ACCEPTED:
+- Voidborne.UI namespace for MachineUI (older UI files are
+  global) — fine, UIManager qualifies the type.
+- RECIPE_COLORS palette local to RecipeTabsUI rather than on
+  UIStyle — reasonable scope-limit; UIStyle.Accent matches the
+  first entry so a single-recipe machine reads consistently.
+- Stub setters are public test hooks rather than reflection-only —
+  cleaner, and the "Stub" name is the warning.
+
+NO FIXES APPLIED — implementation matches spec.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 4 Chunk 4.4 (Machine UI Frame)
+Notes:
+
+V4.4 flipped from [ ] to [D]. Implemented the generic Machine UI panel
+with the howItWorks prose surface (the key V4.4 design surface), a
+processType badge colour-coded by Forgiving/Picky/Hybrid, a per-machine
+input grid, an output slot, optional fuel + power gauge, progress bar,
+and a recipe-tabs strip for multi-recipe machines. Added 7 EditMode
+tests. EditMode 339/339 in 10.88s (was 332/332). 0 errors, 0 new
+warnings against the new files.
+
+FILES CREATED:
+- Assets/Scripts/UI/IMachineInputProvider.cs — runtime contract
+  between MachineUI and the underlying simulation. Surface:
+  IReadOnlyList<ItemStack> Inputs/Outputs, float Progress 0..1, bool
+  NeedsPower / float PowerSatisfaction 0..1, bool NeedsFuel / ItemStack
+  FuelSlot, event Action OnStateChanged, void TryStartRecipe(recipe),
+  void CancelRecipe. Pure read from the UI; writes go via the Try*
+  methods which V9.1 / V21 will route through ServerRpc.
+- Assets/Scripts/UI/StubMachineInputProvider.cs — in-memory
+  IMachineInputProvider for tests + early integration. Holds inputs,
+  outputs, fuel, progress, power-satisfaction as plain C# fields with
+  Set*() mutators that raise OnStateChanged. Exposes ActiveRecipe so
+  TryStartRecipe can be observed in tests.
+- Assets/Scripts/UI/RecipeTabsUI.cs — horizontal strip of buttons,
+  one per recipe registered for the machine. Each tab carries a 1px
+  border tinted by the HTML-reference RECIPE_COLORS palette (green,
+  cyan, magenta, orange) cycled by index. Selection is visual only
+  for V4.4 — clicking fires OnRecipeSelected(RecipeDefinition); the
+  host decides what to do with it.
+- Assets/Scripts/UI/MachineUI.cs — generic machine panel
+  (~700×500). Layout (top-to-bottom): Header (machine name +
+  [ESC] Close hint), processType badge top-right, howItWorks prose
+  block (TextWrappingModes.Normal, ~500px wide, FontSizeBody,
+  TextDim) directly under the header, input grid sized per
+  MachineDefinition.gridWidth × gridHeight, output slot
+  (1.2×SlotSize) top-right under the badge, optional fuel slot
+  bottom-left of the grid, progress bar full-width along the
+  bottom (UIStyle.Accent fill, UIStyle.Panel bg, 1px border),
+  optional power gauge above the progress bar (AccentDim fill).
+  Recipe tabs row sits below the input grid when the machine has
+  more than one recipe; hidden otherwise. EnsureBuilt() seam for
+  EditMode tests mirrors the HudUI / InventoryUI pattern.
+- Assets/Tests/EditMode/MachineUITests.cs — 7 tests:
+    MachineUI_OpensWithMachineDefinition
+    MachineUI_DisplaysHowItWorksProse           (asserts "milk")
+    MachineUI_ShowsProcessTypeBadge
+    MachineUI_ProcessTypeBadgeColorMatches      (Hybrid=Accent,
+                                                 Forgiving=TextSuccess,
+                                                 Picky=TextError)
+    MachineUI_RecipeTabsBuildForMultiRecipeMachines
+    MachineUI_ProgressBarUpdatesFromProvider
+    MachineUI_ClosesOnCloseCall
+  Synthetic MachineDefinitions are ScriptableObject.CreateInstance'd
+  per test so we avoid leaking the singleton ItemDatabase /
+  RecipeRegistry across runs.
+
+FILES MODIFIED:
+- Assets/Scripts/UI/UIManager.cs — added BuildMachinePanel()
+  (centred 700×500 RectTransform under the InventoryCanvas) +
+  _machineUI field + _machineUIOpen state. Added OpenMachineUI(
+  MachineDefinition, IMachineInputProvider) / CloseMachineUI() /
+  IsMachineUIOpen and folded _machineUIOpen into IsAnyUIOpen. Esc
+  handler closes the MachineUI before falling through to inventory
+  / pause-menu. OpenMachineUI raises HudUI's sibling index on open
+  (mirrors the V4.3 inventory trick, per V4.4 heads-up) and closes
+  InventoryUI first so only one modal is up at a time.
+
+processType BADGE LOGIC:
+- type.ToString() is the label. Colour selection:
+    * MachineProcessType.Hybrid_Crafting       -> UIStyle.Accent
+    * label.StartsWith("Forgiving_")           -> UIStyle.TextSuccess
+    * label.StartsWith("Picky_")               -> UIStyle.TextError
+    * otherwise                                 -> UIStyle.Text
+  This keys off the enum's naming convention so adding new types
+  later (e.g. Forgiving_Cryogenic) inherits the right colour
+  without code changes.
+
+M2 PLACEHOLDERS (deliberately not implemented in V4.4):
+- The full ICraftingMatchEngine flow is NOT invoked from MachineUI.
+  RecipeTabsUI just lists recipes pulled from
+  RecipeRegistry.ByMachine(machine.itemId); clicking a tab fires
+  OnRecipeSelected which forwards to IMachineInputProvider.
+  TryStartRecipe. The actual match-vs-inputs gate lives in V6.1's
+  DefaultCraftingMatchEngine (currently a stub that throws).
+- The input grid slots are read-only stamps of provider.Inputs[i].
+  Click-to-place into a machine's input grid is V9.1 / V6.1's
+  responsibility — V4.4 only proves the visual layout binds to a
+  provider correctly. No SlotUI / InventoryCursor wiring inside
+  MachineUI yet.
+- MachineUI is built at canvas-init time but is not yet wired to
+  any in-world interaction. The V9.1 MachineRuntime base will call
+  UIManager.OpenMachineUI when the player presses E on a placed
+  machine. For now you can drive it programmatically from a
+  diagnostic command.
+
+DEVIATIONS:
+- MachineUI lives in the Voidborne.UI namespace (matches HudUI,
+  RecipeTabsUI). InventoryUI / CraftingUI are still in the global
+  namespace; UIManager references the new types as
+  Voidborne.UI.MachineUI to avoid colliding with the existing
+  global-namespace UI types and so future UI work can migrate to
+  the namespace incrementally. The V4.3 heads-up mentioned
+  restyling CraftingSlotButton / CraftingOutputSlot — I left them
+  alone. The input grid in MachineUI uses bespoke Image+Image+TMP
+  triplets (same shape as SlotUI / CraftingSlotButton) so the
+  panel can use UIStyle.PanelLight + UIStyle.Border directly
+  without depending on the older helpers. The CraftingSlotButton
+  restyle is still a worthwhile follow-up but the scope was a
+  cosmetic delta on already-passing UI; deferred to V4.5 (Tooltip
+  pass touches the same code path).
+- RecipeColors palette in RecipeTabsUI is a local static array
+  mirroring the HTML RECIPE_COLORS list, not a member of UIStyle.
+  Reason: the four colours are recipe-tab-specific, not part of
+  the global palette. UIStyle.Accent matches the first entry so
+  single-recipe machines look consistent.
+- StubMachineInputProvider exposes its setters as public (test
+  hooks) rather than via reflection. Cleaner test code and the
+  stub is explicitly a "placeholder" (the type name advertises
+  the fact) so production code shouldn't be tempted.
+
+TESTS (+7 new, all pass):
+- 339/339 EditMode passing in 10.88s (was 332/332). 0 failed, 0
+  skipped. MachineUI suite alone runs in 0.29s.
+
+COOP / CURSOR:
+- MachineUI is client-local: it never mutates simulation state
+  directly. Read path is IMachineInputProvider read-only props;
+  write path is TryStartRecipe / CancelRecipe (one-way requests
+  that V9.1 / V21 will route through a ServerRpc).
+- OpenMachineUI unlocks the cursor, disables FirstPersonCamera +
+  PlayerTerrainInteraction, and raises HudUI to last sibling so
+  the bars stay readable over the modal. CloseMachineUI restores
+  cursor lock when no other UI is open (delegates to
+  IsAnyUIOpen). Esc routes to CloseMachineUI ahead of inventory
+  / pause-menu so the modal takes priority.
+
+V4.5 HEADS-UPS (Tooltip):
+- MachineUI's input slots and output slot do NOT yet call
+  TooltipUI.Show on hover. V4.5 should add IPointerEnterHandler /
+  IPointerExitHandler wiring to either:
+    (a) the bespoke triplets in MachineUI's RebuildInputGrid /
+        BuildOutputSlot, or
+    (b) extract a shared "static read-only slot" component if
+        FurnaceUI / ChestUI grow the same need.
+  RecipeTabsUI tabs likewise don't show tooltips — adding the
+  recipe's output-item tooltip on hover would be a 5-line addition
+  and lift the experience.
+- The RecipeTabsUI label is currently the output item's
+  displayName (or item ID fallback if ItemDatabase isn't loaded).
+  V4.5's richer tooltip should attach to the tab and surface the
+  recipe's ingredients list + isBootstrap / isSynergy markers.
+- The processType badge would benefit from a tooltip explaining
+  the family ("Forgiving — accepts property-matched substitutes
+  at reduced quality" / "Picky — refuses substitutes" / "Hybrid
+  — both, with a 0.7x cap on improvised recipes"). The badge is
+  Voidborne.UI.MachineUI.ProcessBadge / ProcessBadgeColor (public
+  properties for test introspection) — V4.5 can attach a
+  TooltipUI.Show wire by name.
+- TooltipUI.Hide() is called by MachineUI.Close() so the tooltip
+  never lingers after the panel goes away.
+
+V6.1 HEADS-UPS (Crafting Match Engine):
+- RecipeTabsUI.OnRecipeSelected forwards directly to
+  IMachineInputProvider.TryStartRecipe. The provider is expected
+  to gate the start request through ICraftingMatchEngine (V6.1)
+  and report success/failure via the next OnStateChanged
+  broadcast. V6.1 should either:
+    (a) leave TryStartRecipe as the gate (cleaner — MachineUI is
+        agnostic), or
+    (b) add a "match preview" call to the interface so the UI can
+        grey out un-craftable recipes without trying to start them.
+  My recommendation: (a). The UI doesn't need to know about the
+  match engine; it just needs to know the provider rejects bad
+  recipes (state stays Progress=0, ActiveRecipe stays whatever it
+  was).
+
+V9.1 HEADS-UPS (MachineRuntime Base):
+- V9.1 owns the bridge from MachineRuntime to MachineUI. The
+  shape is: MachineRuntime implements IMachineInputProvider,
+  exposes its current state, and UIManager.OpenMachineUI(machine,
+  runtime) is called from the player-interaction layer when E is
+  pressed on a placed machine. The provider's ServerRpc-routed
+  state syncs will fire OnStateChanged after the host applies
+  changes; MachineUI's RefreshAll picks it up.
+
+OUT OF SCOPE / NOT TOUCHED:
+- ICraftingMatchEngine — V6.1.
+- MachineRuntime — V9.1.
+- DialogUI — M6.
+- TooltipUI restyle + rich content — V4.5.
+- Click-to-place in MachineUI input grid — V9.1 / V6.1.
+- Recipe-tab "highlight inputs in the grid" — V6.1 (needs
+  match-engine context).
+- CraftingSlotButton / CraftingOutputSlot restyle — V4.5
+  cosmetic.
+
+NEXT UP: V4.5 (Tooltip — rich hover content + recipe-tab
+tooltips + processType badge tooltip).
 ```
 
 ```

@@ -46,6 +46,7 @@ public class UIManager : MonoBehaviour
     private bool _questLogOpen;
     private bool _dialogueOpen;
     private bool _pauseMenuOpen;
+    private bool _machineUIOpen;
 
     // ---------------------------------------------------------------
     //  UI Components
@@ -69,6 +70,7 @@ public class UIManager : MonoBehaviour
     private DialogueUI     _dialogueUI;
     private DialogueRunner _dialogueRunner;
     private GameObject     _pauseMenuPanel;
+    private Voidborne.UI.MachineUI _machineUI;
 
     // Floating cursor-item image
     private Image         _cursorImage;
@@ -114,6 +116,7 @@ public class UIManager : MonoBehaviour
         BuildAmmoUI();
         BuildInventoryPanel();
         BuildCraftingPanel();
+        BuildMachinePanel();
         BuildFurnacePanel();
         BuildChestPanel();
         BuildBackpackPanel();
@@ -186,6 +189,8 @@ public class UIManager : MonoBehaviour
         {
             if (_pauseMenuOpen)
                 ClosePauseMenu();
+            else if (_machineUIOpen)
+                CloseMachineUI();
             else if (_inventoryOpen)
                 ToggleInventory();
             else if (_questLogOpen)
@@ -328,7 +333,58 @@ public class UIManager : MonoBehaviour
     public bool IsInventoryOpen => _inventoryOpen;
 
     /// <summary>True when any UI panel (inventory or crafting station) is blocking gameplay input.</summary>
-    public bool IsAnyUIOpen => _inventoryOpen || _craftingStationOpen || _furnaceOpen || _chestOpen || _assemblerOpen || _terminalOpen || _vehicleWorkbenchOpen || _vehicleCargoOpen || _questLogOpen || _dialogueOpen || _pauseMenuOpen;
+    public bool IsAnyUIOpen => _inventoryOpen || _craftingStationOpen || _furnaceOpen || _chestOpen || _assemblerOpen || _terminalOpen || _vehicleWorkbenchOpen || _vehicleCargoOpen || _questLogOpen || _dialogueOpen || _pauseMenuOpen || _machineUIOpen;
+
+    // ---------------------------------------------------------------
+    //  Machine UI (Volume 4.4)
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Open the generic Machine UI for the given machine definition. Only one
+    /// modal at a time — closes the inventory panel if it's open so the
+    /// machine panel takes centre stage. Raises the HUD's sibling index so
+    /// it stays visible above the modal (mirrors the inventory open trick).
+    ///
+    /// V9.1 will provide the real <see cref="IMachineInputProvider"/>; until
+    /// then early callers can pass a <see cref="StubMachineInputProvider"/>.
+    /// </summary>
+    public void OpenMachineUI(MachineDefinition machine, IMachineInputProvider provider)
+    {
+        if (_machineUI == null || machine == null) return;
+
+        // Only one modal at a time — close the inventory panel if open.
+        if (_inventoryOpen) ToggleInventory();
+
+        _machineUIOpen = true;
+        _machineUI.Open(machine, provider);
+
+        if (_hudUI != null)
+            _hudUI.transform.SetAsLastSibling();
+
+        SetCursorLocked(false);
+        if (_fpsCamera != null)         _fpsCamera.enabled         = false;
+        if (_terrainInteraction != null) _terrainInteraction.enabled = false;
+    }
+
+    public void CloseMachineUI()
+    {
+        if (!_machineUIOpen) return;
+        _machineUIOpen = false;
+
+        if (Cursor.IsHolding)
+            Cursor.CancelAndReturn();
+
+        if (_machineUI != null) _machineUI.Close();
+
+        if (!IsAnyUIOpen)
+        {
+            SetCursorLocked(true);
+            if (_fpsCamera != null)         _fpsCamera.enabled         = true;
+            if (_terrainInteraction != null) _terrainInteraction.enabled = true;
+        }
+    }
+
+    public bool IsMachineUIOpen => _machineUIOpen;
 
     // ---------------------------------------------------------------
     //  Crafting Station
@@ -1060,6 +1116,23 @@ public class UIManager : MonoBehaviour
         rt.anchoredPosition = new Vector2(262f, 0f);   // just right of the inventory panel
 
         _craftingUI = craftGO.AddComponent<CraftingUI>();
+    }
+
+    private void BuildMachinePanel()
+    {
+        // V4.4 — generic Machine UI panel. Centred modal sized 700×500.
+        // Opened by UIManager.OpenMachineUI; V9.1 wires the actual machine
+        // interaction once MachineRuntime lands.
+        GameObject machineGO = new GameObject("MachinePanel", typeof(RectTransform));
+        machineGO.transform.SetParent(_canvas.transform, false);
+
+        RectTransform rt = machineGO.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot     = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+
+        _machineUI = machineGO.AddComponent<Voidborne.UI.MachineUI>();
     }
 
     private void BuildFurnacePanel()
