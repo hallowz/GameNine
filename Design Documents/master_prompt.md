@@ -1750,9 +1750,9 @@ Status codes:
 | 7.3 | Terrain Leveling Tool | [✓] | TerrainLevelTool wraps TerrainDeformer.DeformSphere; F10 dev-key trigger (terrain_leveler item deferred to M7) |
 | 7.4 | Blueprint Capture & Place | [~] | DEFERRED to M5/M6 |
 | 7.5 | Block Breaking | [✓] | BlockBreaker centralizes damage->drop->unregister sequence; PlayerMining routes PlacedBlock hits through it (any tool, constant rate for M2) |
-| 8.1 | Power Network Graph | [ ] | |
-| 8.2 | Generators — 2 only (steam + hand crank) | [ ] | Full 54-zoo deferred to M7 |
-| 8.3 | Storage (battery_basic) + Sink only | [ ] | |
+| 8.1 | Power Network Graph | [✓] | PowerNetwork singleton (BFS solver, 10Hz tick) + PowerNode auto-register + CableSegment + CablePlacer + T1 cable burnout; 6 EditMode tests |
+| 8.2 | Generators — 2 only (steam + hand crank) | [✓] | SteamGenerator (boiler-adjacency gate, 100W) + HandCrankGenerator (IsBeingCranked gate, 30W); 3 EditMode tests. Full 54-zoo deferred to M7 |
+| 8.3 | Storage (battery_basic) + Sink only | [✓] | Battery (10kWs default) + PowerSink (cable protection, 500W) + JunctionBox + PowerConsumerNode; MachineCraftingStation.PowerSatisfaction scales AdvanceTick; 4 EditMode tests; 396/396 passing |
 | 8.4 | Worn Battery Pack | [~] | DEFERRED to M7 |
 | 9.1 | MachineRuntime Base | [ ] | |
 | 9.2 | Core 8 Machines (workbench/furnace/boiler/gen/composter/drying/storage/crusher) | [ ] | T2-T5+ machines deferred |
@@ -1982,6 +1982,330 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 8 Chunks 8.1 + 8.2 + 8.3 (Power & Wiring)
+Notes:
+
+V8.1 / V8.2 / V8.3 flipped from [D] to [✓]. V8.4 (Worn Battery Pack)
+remains [~] per the M2 deferral. Volume 8 is COMPLETE for M2.
+
+Verification:
+- refresh_unity force + compile: success, console clean (zero errors,
+  zero new warnings on Scripts/Power/* and on the modified
+  MachineCraftingStation / BlockPlacer files).
+- run_tests EditMode: 396/396 passing in 10.41s. Pre-V8 baseline 383
+  + 13 new PowerNetworkTests = 396. Matches the implementer's delta
+  exactly.
+
+Spot checks against the V8 contract:
+- PowerNetwork.TickOnce: BFS components, generator-sum (calls each
+  generator's GetTickOutputWatts() so subclass gates apply), priority-
+  sorted distribution (machines=0 first, gadgets=1, sinks peeled into
+  their own bucket), surplus -> batteries, deficit -> battery
+  discharge + re-distribute, final surplus -> sinks, then per-cable
+  burnout check. 10Hz FixedUpdate accumulation + the public
+  TickOnce(dt) seam are both present (PowerNetwork.cs L140-148 + L231).
+- PowerNode auto-registers in Awake AND OnEnable; ForceRegister()
+  seam present for the EditMode AddComponent path (PowerNode.cs
+  L204-208). Subclasses (SteamGenerator, HandCrankGenerator, Battery,
+  PowerSink, JunctionBox, PowerConsumerNode) all override
+  InitializeRole() correctly.
+- SteamGenerator: 100W via GameConstants.Power.SteamGeneratorOutputWatts;
+  BlockRegistry.GetAt scan for adjacent steam_boiler with
+  MachineCraftingStation.IsRunning; BoilerOverride test seam present.
+- HandCrankGenerator: 30W gate on IsBeingCranked; settable as a test
+  seam; PlayMode wires Keyboard.current.eKey + 2m radius.
+- Battery: 10000Ws default capacity; ChargeWatts / DischargeWatts
+  convert watts*dt to Ws; CurrentWatts positive when charging,
+  negative when discharging (PowerNetwork sets the sign).
+- PowerSink: peeled out of sortedConsumers into a dedicated bucket
+  (PowerNetwork.cs L280-287), so it absorbs ONLY the final surplus
+  after real consumers + batteries. 500W default ceiling.
+- JunctionBox: all three role flags false; BFS bridges through it.
+- MachineCraftingStation: no public API change. NeedsPower returns
+  _powerConsumer != null; PowerSatisfaction returns live
+  _powerConsumer.PowerSatisfaction (clamped 0..1) or the legacy
+  _powerSatisfaction fallback. Init(def) auto-attaches
+  PowerConsumerNode + Configure(powerDrawWatts) when def.needsPower
+  is true. AdvanceTick(dt) scales dt by PowerSatisfaction; at 0
+  satisfaction the recipe stalls (zero advance). The V6.3
+  MachineStation_NeedsPowerReflectsMachineDef test still passes.
+- Cable burnout: per-cable flow = max(|EndpointA.CurrentWatts|,
+  |EndpointB.CurrentWatts|); flow > tier.MaxWatts() removes the cable
+  + Destroys the GO + logs a warning. T1=200W, T2=1000W, T3=5000W
+  per GameConstants.Power.
+- BlockPlacer.AttachMachineStation auto-attaches a PowerConsumerNode
+  for any machine with needsPower=true (BlockPlacer.cs L299-304).
+  AttachPowerNodeIfPowerItem routes steam_generator /
+  hand_crank_generator items through their concrete subclass on
+  placement (BlockPlacer.cs L322-348).
+- MachineStation_ScalesProgressByPowerSatisfaction (the M2 acceptance
+  proof for power scaling): two crusher stations advanced by
+  AdvanceTick(0.5f); half-power station's progress is half the full-
+  power station's (ratio asserted in [0.4, 0.6]). The canonical
+  underpowered-machines-run-slower proof. PASSING.
+
+Scope adherence:
+- V8.4 Worn Battery Pack NOT implemented (correct, M7 deferral).
+- Powered weapons V10.4 NOT touched (correct, M7 deferral).
+- OverclockModule / VoltageRegulator NOT implemented (correct).
+- Only 2 generators implemented, not the 54-zoo (correct, M7 deferral).
+- items_core.json NOT modified (correct).
+- V6.3 MachineCraftingStation public API NOT changed (correct;
+  only internals + new sibling PowerConsumerNode).
+
+Deviations accepted:
+- Battery / sink / junction are Component-kind items so V7.1
+  IsPlaceable doesn't route them through the player placer yet
+  (M2 tests drive them programmatically; M7 polish adds the
+  Component-place path).
+- Cable burnout is visual-free in M2 (M7 polish adds smoke VFX).
+- HandCrankGenerator polls Keyboard.current.eKey directly (M7
+  polish wires a dedicated action + hold-progress UI).
+- SteamGenerator adjacency probe uses Mathf.RoundToInt on world
+  position (no BuildGrid pin requirement; tests bypass via
+  BoilerOverride).
+- PowerNetwork tick is FixedUpdate accumulation (not a coroutine);
+  M8 polish can swap to a coroutine if profiling demands.
+
+Codebase rules: no emojis, runtime-visible (production files are
+not #if UNITY_EDITOR-gated; tests sit under #if UNITY_INCLUDE_TESTS
+as expected). Coop heads-ups (deterministic tick, server-authoritative
+in V21) are documented in XML doc remarks on PowerNetwork,
+CableSegment, Battery, and CablePlacer.
+
+NEXT UP: V9.1 (MachineRuntime). V9.x machines need the V8 power
+contract; that's now in place. The V8 implementer's V9.1 heads-ups
+are accurate and remain on the implementer's desk.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 8 Chunks 8.1 + 8.2 + 8.3 (Power & Wiring)
+Notes:
+
+V8.1, V8.2, V8.3 flipped from [ ] to [D]. V8.4 (Worn Battery Pack)
+remains [~] per the M2-scope deferral. Volume 8 is the M2 power slice
+delivered as a single batched pass.
+
+V8.1 -- POWER NETWORK GRAPH:
+- Assets/Scripts/Core/GameConstants.cs created. GameConstants.Power
+  carries the cable-tier ceilings (T1=200W, T2=1000W, T3=5000W),
+  battery_basic capacity (10000Ws), sink absorb ceiling (500W),
+  generator output watts (steam=100W, hand-crank=30W), and the
+  network tick frequency (10Hz). M7 polish or future balance tweaks
+  are one-file edits here.
+- PowerNetwork.cs: singleton MonoBehaviour with lazy Instance getter
+  + ResetInstance test seam. Maintains a List<PowerNode> + a
+  List<CableSegment>. Auto-ticks in FixedUpdate at 10Hz by default,
+  with the public TickOnce(dt) method exposed as the EditMode test
+  seam (tests drive ticks deterministically without a Unity update
+  loop).
+- Tick algorithm (per call):
+  1. Walk connected components via BFS over the cable list.
+  2. Per component: sum generator output (each generator's
+     GetTickOutputWatts() -- the subclass gate is consulted), sum
+     consumer RequiredWatts. Sinks are peeled out into a dedicated
+     bucket so they only absorb after real loads + batteries.
+  3. Distribute supply to real consumers sorted by Priority
+     (machines=0 first, gadgets=1, sinks=2).
+  4. Surplus -> batteries (charge: ChargeWatts converts watts*dt to
+     watt-seconds).
+  5. Deficit -> batteries discharge to top up the shortfall, then
+     re-distribute the recovered watts to deficient consumers (still
+     priority order).
+  6. Final surplus -> sinks (cable protection).
+  7. Per-cable burnout check: cable flow = max(|EndpointA.CurrentWatts|,
+     |EndpointB.CurrentWatts|). flow > tier ceiling -> remove from
+     graph + Destroy the cable GO + log a warning. M7 polish swaps
+     in a charred prefab + smoke VFX.
+- PowerNode.cs: base class. Auto-registers in Awake (PlayMode) AND
+  exposes a public ForceRegister() seam (EditMode tests need this
+  because Unity does NOT fire Awake on AddComponent in EditMode).
+  Subclasses override InitializeRole() to set their role flags +
+  default watts; ConfigureNode() force-registers + lets tests build
+  synthetic nodes without subclassing. PowerNode has three NOT
+  mutually exclusive role flags (IsGenerator/IsConsumer/IsStorage),
+  CurrentWatts (written by the network each tick), RequiredWatts,
+  MaxOutputWatts, Priority, and an OnPowerChanged event.
+- PowerCableTier.cs: T1/T2/T3 enum + MaxWatts() extension that
+  resolves through GameConstants.Power.
+- CableSegment.cs: placed cable component. Auto-registers via
+  Init() (which the CablePlacer and the EditMode test fixture both
+  call after AddComponent). LineRenderer between endpoints is the
+  M2 minimum-viable visual; M7 polish adds routed splines and
+  pylons. NotifyBurnedOut() destroys the GO.
+- CablePlacer.cs: SEPARATE controller from BlockPlacer per the V7
+  review heads-up (cables are edges, not cells). First-click on a
+  PowerNode arms a source; second-click on another commits a new
+  CableSegment + consumes one copper_cable_t1 from inventory.
+  Right-click / Esc cancels the source-armed state. Preview line
+  via a transient LineRenderer.
+
+V8.2 -- GENERATORS (2 only):
+- PowerGenerator.cs: base. Subclasses override GetTickOutputWatts()
+  for gated generators. Default returns MaxOutputWatts (always-on).
+- SteamGenerator.cs: 100W when an adjacent placed steam_boiler is
+  actively running (its MachineCraftingStation.IsRunning is true).
+  Adjacency is resolved via BlockRegistry.GetAt(cell) on the six
+  axis-aligned neighbours of this generator's rounded cell. Test
+  seam BoilerOverride bypasses the BlockRegistry scan.
+- HandCrankGenerator.cs: 30W while the player holds E within 2m
+  (crankRadius). IsBeingCranked is a public property the
+  Update-loop sets in PlayMode and EditMode tests set directly.
+
+V8.3 -- STORAGE & DISTRIBUTION + MACHINE INTEGRATION:
+- Battery.cs: capacityWs=10000 by default (~100W for 100s).
+  ChargeWatts/DischargeWatts convert watts<->watt-seconds via dt;
+  PowerNetwork.TickOnce passes dt through so the math is exact
+  regardless of tick frequency.
+- PowerSink.cs: consumer with MaxAbsorbWatts (default 500W) +
+  Priority=2 so the sort puts real consumers ahead. Peeled out of
+  the priority-sorted consumer list into a dedicated bucket so it
+  absorbs ONLY the final surplus, not before real loads. No
+  gameplay effect; pure cable protection.
+- JunctionBox.cs: pure pass-through. All three role flags false so
+  the BFS walks through it without contributing to generation or
+  demand totals.
+- PowerConsumerNode.cs: sibling component on any placed machine
+  whose machineDef.needsPower is true. Carries
+  machineDef.powerDrawWatts into the network as a consumer.
+  RequireComponent(typeof(MachineCraftingStation)) enforces the
+  pairing. Priority=0 (highest).
+- MachineCraftingStation INTEGRATION (no public API change per
+  spec scope guard):
+  * Added a private _powerConsumer field, ResolvePowerConsumer()
+    helper (called from Awake and lazily from NeedsPower /
+    PowerSatisfaction getters), and an Init() hook that auto-
+    attaches PowerConsumerNode when def.needsPower is true.
+  * NeedsPower now returns "true if a PowerConsumerNode is sibling-
+    attached" (was: machineDef.needsPower). The existing V6.3 test
+    MachineStation_NeedsPowerReflectsMachineDef still passes
+    because Init() auto-attaches the consumer.
+  * PowerSatisfaction now returns _powerConsumer.PowerSatisfaction
+    (clamped 0..1) when a consumer is attached; otherwise falls
+    back to the legacy _powerSatisfaction field (also still settable
+    via SetPowerSatisfaction for any test that needs the old shape).
+  * AdvanceTick(dt) now scales dt by PowerSatisfaction when
+    NeedsPower is true. A station at 50% power runs at 50% speed;
+    a station at 0% stalls (zero advance). This is the V8.3 power-
+    gated-recipe behaviour the master prompt requires.
+- BlockPlacer.AttachMachineStation EXTENSION: when the placed item
+  is a Machine with needsPower=true, the station's Init() path now
+  also attaches a PowerConsumerNode. The placer additionally calls
+  AttachPowerNodeIfPowerItem so steam_generator / hand_crank_generator
+  items grow their concrete PowerGenerator subclass on placement
+  without any prefab authoring. Battery/sink/junction are Component-
+  kind items (not Machine), so they don't pass the V7.1 IsPlaceable
+  gate yet -- M7 polish will add a Component-place path; M2 tests
+  drive them programmatically.
+
+TESTS -- Assets/Tests/EditMode/PowerNetworkTests.cs (13 new):
+- V8.1 (6):
+  * PowerNetwork_NodesAutoRegister
+  * PowerNetwork_ConnectedComponentsFormCorrectly
+  * PowerNetwork_DistributesSupplyToConsumers
+  * PowerNetwork_DeficitMarksConsumersUnderpowered
+  * JunctionBox_BridgesComponentsTransparently
+  * PowerCable_BurnoutOnOvercurrent  (LogAssert.Expect on the
+    "Cable burnout" regex; verifies the cable lands out of
+    PowerNetwork.Cables after the tick)
+- V8.2 (3):
+  * SteamGenerator_OutputsWhenBoilerActive  (via BoilerOverride)
+  * SteamGenerator_ZeroOutputWhenNoBoiler
+  * HandCrankGenerator_OutputsWhilePlayerCranking  (via IsBeingCranked)
+- V8.3 (4):
+  * Battery_ChargesOnSurplus  (5 ticks at 0.1s; StoredWs increases)
+  * Battery_DischargesOnDeficit  (5 ticks; StoredWs decreases from 1000)
+  * PowerSink_AbsorbsSurplus  (gen 500W + consumer 100W + sink ->
+    sink.CurrentWatts > 0, no burnout)
+  * MachineStation_ScalesProgressByPowerSatisfaction  (two crusher
+    stations, one at PowerSatisfaction=1.0 and one at =0.5; after
+    AdvanceTick(0.5f) on both, the half-power station's Progress
+    is ~50% of the full-power one's. Ratio asserted to [0.4, 0.6].
+    This is the canonical underpowered-machines-run-slower proof.)
+
+VERIFICATION:
+- refresh_unity force+compile: success, zero errors, zero new
+  warnings on Scripts\Power\* (three FindObjectOfType call sites
+  were updated to FindFirstObjectByType to avoid the project-wide
+  CS0618 obsolete warning).
+- run_tests EditMode: 396/396 passing in 10.62s. Pre-V8 baseline
+  383 + 13 new PowerNetworkTests = 396. Meets the spec target of
+  >= 396.
+
+DEVIATIONS:
+- Battery/sink/junction NOT placed via BlockPlacer in M2 (they're
+  Component-kind, not Machine-kind, so V7.1 IsPlaceable doesn't
+  cover them). M2 tests drive these programmatically. M7 polish
+  will add a generic Component-place path or extend IsPlaceable.
+- Cable burnout is visual-free (M2): the cable GO is destroyed +
+  removed from the graph + a warning is logged. The master prompt
+  explicitly schedules "visual smoke" for M7.
+- HandCrankGenerator polls Keyboard.current.eKey directly (no
+  dedicated InputSystem_Actions binding for "engage crank"). M7
+  polish will wire a proper action and a hold-progress UI.
+- SteamGenerator adjacency probe uses Mathf.RoundToInt on the
+  generator's world position (no BuildGrid pin requirement). Works
+  in M2 because all placed blocks share the same grid origin once
+  pinned; tests bypass the probe via BoilerOverride.
+- PowerNetwork tick frequency is 10Hz via FixedUpdate accumulation
+  (not a dedicated coroutine). M8 polish can swap in a coroutine
+  if profiling shows the FixedUpdate hook is too noisy.
+
+CODEBASE RULES: no emojis, runtime-visible (no #if UNITY_EDITOR
+on production files; tests are under #if UNITY_INCLUDE_TESTS as
+expected for the EditMode assembly). Coop heads-ups for
+PowerNetwork (server-authoritative tick in V21; deterministic
+math means clients agree on CurrentWatts given the same generator
+gate inputs), CableSegment (Init + burnout events map to ServerRpc),
+and Battery (storage state server-authoritative in V21) are
+documented in XML doc remarks on each file.
+
+V9.1 HEADS-UPS (MachineRuntime):
+- MachineCraftingStation.PowerSatisfaction is the V8.3 contract
+  V9.1 should preserve. The current implementation auto-attaches
+  PowerConsumerNode in Init() for any machine with needsPower=true,
+  and AdvanceTick(dt) scales dt by PowerSatisfaction. V9.1's
+  recipe processor should NOT reinvent this scaling -- just call
+  AdvanceTick and trust the station.
+- The V8.3 BlockPlacer wiring (AttachPowerNodeIfPowerItem) routes
+  steam_generator + hand_crank_generator items through their
+  concrete PowerGenerator subclass on placement. V9.1 doesn't need
+  to re-do this; the placed prefab already has the right
+  component. V9.1 should focus on the rest of the Core 8
+  (workbench, furnace, steam_boiler, composter, drying_rack,
+  storage_chest, crusher) and use MachineDefinition.needsPower as
+  the discriminator for which need a PowerConsumerNode.
+- The V6.3 _powerSatisfaction backing field + SetPowerSatisfaction
+  test seam are still present and unchanged. They're the fallback
+  when no PowerConsumerNode is attached, so the existing V6.3
+  tests stay green.
+
+V9.5 HEADS-UPS (Conveyor + Inserter):
+- Both will need power. The shape is identical to the V8.3
+  MachineCraftingStation integration: attach a PowerConsumerNode
+  sibling on placement (BlockPlacer.AttachPowerNodeIfPowerItem
+  for the inserter item; the conveyor is a Component-kind segment
+  so V9.5 will need its own attach path or a generalised
+  "Component-with-PowerNode" helper).
+- For the conveyor specifically, segment placement (V7's
+  AutomationSegment / SegmentPlacementController pattern) is the
+  right precedent; the conveyor's PowerConsumerNode lives on each
+  segment so a long belt has aggregate draw.
+- The Inserter is a single tile so it can use the same
+  MachineCraftingStation + PowerConsumerNode auto-attach path
+  V8.3 wired for crusher / press machines.
+- Underpowered conveyor / inserter behaviour: PowerSatisfaction
+  should drive the per-tick item-move rate. Following the
+  AdvanceTick precedent, V9.5 scales movement * satisfaction.
+
+NEXT UP: V9.1 (MachineRuntime). V9.x machines need the V8 power
+contract; that's now in place. V9.2 lights up the Core 8 machine
+prefabs against the existing MachineCraftingStation.
 ```
 
 ```

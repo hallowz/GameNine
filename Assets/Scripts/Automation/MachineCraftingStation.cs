@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Voidborne.Crafting;
+using Voidborne.Power;
 using Voidborne.UI;
 
 namespace Voidborne.Automation
@@ -63,6 +64,7 @@ namespace Voidborne.Automation
         private Coroutine _tickRoutine;
         private ItemStack _fuelSlot;
         private float _powerSatisfaction = 1f;
+        private PowerConsumerNode _powerConsumer;
 
         private readonly DefaultCraftingMatchEngine _engine = new DefaultCraftingMatchEngine();
 
@@ -73,8 +75,33 @@ namespace Voidborne.Automation
         public IReadOnlyList<ItemStack> Inputs => _inputs ?? Array.Empty<ItemStack>();
         public IReadOnlyList<ItemStack> Outputs => _outputs ?? Array.Empty<ItemStack>();
         public float Progress => _progress01;
-        public bool NeedsPower => machineDef != null && machineDef.needsPower;
-        public float PowerSatisfaction => _powerSatisfaction;
+        /// <summary>
+        /// V8.3 — true when a <see cref="PowerConsumerNode"/> is sibling-attached.
+        /// The V7 BlockPlacer attaches one for any machine whose
+        /// <see cref="MachineDefinition.needsPower"/> is true.
+        /// </summary>
+        public bool NeedsPower
+        {
+            get
+            {
+                if (_powerConsumer == null) ResolvePowerConsumer();
+                return _powerConsumer != null;
+            }
+        }
+        /// <summary>
+        /// V8.3 — Live power satisfaction from the attached
+        /// <see cref="PowerConsumerNode"/> (clamped 0..1). Returns 1 when no
+        /// power node is attached (the machine doesn't need power) OR when
+        /// the test seam has been set via <see cref="SetPowerSatisfaction"/>.
+        /// </summary>
+        public float PowerSatisfaction
+        {
+            get
+            {
+                if (_powerConsumer == null) ResolvePowerConsumer();
+                return _powerConsumer != null ? _powerConsumer.PowerSatisfaction : _powerSatisfaction;
+            }
+        }
         public bool NeedsFuel => RequiresFuel(machineDef);
         public ItemStack FuelSlot => _fuelSlot;
 
@@ -96,6 +123,25 @@ namespace Voidborne.Automation
         private void Awake()
         {
             if (machineDef != null) AllocateSlots();
+            // V8.3 — pick up a sibling PowerConsumerNode if one was added.
+            // Either order is supported (station added first, then consumer,
+            // OR consumer-via-RequireComponent first then station).
+            ResolvePowerConsumer();
+        }
+
+        private void OnEnable()
+        {
+            // Re-resolve in case a component was sibling-attached after Awake
+            // (e.g. the V7 BlockPlacer AddComponent path).
+            ResolvePowerConsumer();
+        }
+
+        private void ResolvePowerConsumer()
+        {
+            if (_powerConsumer == null)
+            {
+                _powerConsumer = GetComponent<PowerConsumerNode>();
+            }
         }
 
         private void OnDisable()
@@ -123,6 +169,23 @@ namespace Voidborne.Automation
         {
             machineDef = def;
             AllocateSlots();
+            // V8.3 — auto-attach a PowerConsumerNode sibling iff the machine
+            // declares needsPower. The V7 BlockPlacer also attaches one on
+            // its own AttachMachineStation path; both routes converge on
+            // the same single-component invariant.
+            if (def != null && def.needsPower)
+            {
+                ResolvePowerConsumer();
+                if (_powerConsumer == null)
+                {
+                    _powerConsumer = gameObject.AddComponent<PowerConsumerNode>();
+                }
+                _powerConsumer.Configure(def.powerDrawWatts);
+                // EditMode tests: Unity does not fire Awake on AddComponent
+                // here, so we force-register so the consumer is visible to
+                // the PowerNetwork solver. ForceRegister is idempotent.
+                _powerConsumer.ForceRegister();
+            }
             RaiseStateChanged();
         }
 
@@ -289,11 +352,22 @@ namespace Voidborne.Automation
         /// EditMode tests call this directly (no Unity Update loop). When the
         /// elapsed time crosses <c>activeDurationSeconds</c>, the output is
         /// deposited and the recipe is cleared.
+        ///
+        /// V8.3 — when a sibling <see cref="PowerConsumerNode"/> is present,
+        /// the advance is scaled by <see cref="PowerSatisfaction"/>:
+        /// fully-powered runs at 1x, half-powered runs at 0.5x, unpowered
+        /// stalls (zero advance). Machines without a power node run at 1x
+        /// (PowerSatisfaction returns 1 when not power-gated).
         /// </summary>
         public void AdvanceTick(float deltaSeconds)
         {
             if (_activeRecipe == null) return;
             if (deltaSeconds <= 0f) return;
+
+            // Power-gated machines run at PowerSatisfaction * speed.
+            float satisfaction = PowerSatisfaction;
+            if (NeedsPower && satisfaction <= 0f) return; // stalled
+            deltaSeconds *= satisfaction;
 
             _activeElapsedSeconds += deltaSeconds;
             if (_activeDurationSeconds <= 0f)

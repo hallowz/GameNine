@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Voidborne.Automation;
+using Voidborne.Power;
 
 namespace Voidborne.Building
 {
@@ -254,6 +255,11 @@ namespace Voidborne.Building
                 AttachMachineStation(instance, def);
             }
 
+            // V8.3 — power items (generators, batteries, junctions, sinks)
+            // get the right PowerNode subtype attached on placement so they
+            // auto-register with the PowerNetwork.
+            AttachPowerNodeIfPowerItem(instance, def);
+
             // V7.2 — Door form gets a hinge interaction.
             BlockFormResolver.Form form = BlockFormResolver.Resolve(def);
             if (form == BlockFormResolver.Form.Door && instance.GetComponent<DoorInteraction>() == null)
@@ -285,6 +291,63 @@ namespace Voidborne.Building
             MachineCraftingStation station = instance.GetComponent<MachineCraftingStation>();
             if (station == null) station = instance.AddComponent<MachineCraftingStation>();
             station.Init(mdef);
+
+            // V8.3 — if the machine needs power, attach a PowerConsumerNode
+            // sibling so the V8 PowerNetwork can write CurrentWatts each tick.
+            // MachineCraftingStation.NeedsPower flips on automatically when
+            // _powerConsumer != null.
+            if (mdef.needsPower)
+            {
+                var consumer = instance.GetComponent<PowerConsumerNode>();
+                if (consumer == null) consumer = instance.AddComponent<PowerConsumerNode>();
+                consumer.Configure(mdef.powerDrawWatts);
+            }
+        }
+
+        /// <summary>
+        /// V8.3 — Attach the correct <see cref="PowerNode"/> subtype for the
+        /// power-item being placed. Driven by the item id (Core 60 power
+        /// items are <c>steam_generator</c>, <c>hand_crank_generator</c>,
+        /// <c>battery_basic</c>, <c>junction_box</c>, <c>power_sink</c>).
+        /// Called by <see cref="TryPlace"/> after the placed prefab is
+        /// instantiated and the PlacedBlock initialized.
+        ///
+        /// Note: M2 only routes Machine-kind items through this placer
+        /// (<see cref="IsPlaceable"/> gate). The generator items
+        /// (<c>steam_generator</c>, <c>hand_crank_generator</c>) ARE
+        /// machines so they pass; battery/sink/junction are Component-kind
+        /// and currently arrive via tests + V9.x extensions. Wiring them
+        /// to the player-side placer is M7 polish.
+        /// </summary>
+        private static void AttachPowerNodeIfPowerItem(GameObject instance, ItemDefinition def)
+        {
+            if (instance == null || def == null) return;
+            string id = def.itemId;
+            if (string.IsNullOrEmpty(id)) return;
+
+            switch (id)
+            {
+                case "steam_generator":
+                    if (instance.GetComponent<SteamGenerator>() == null)
+                        instance.AddComponent<SteamGenerator>();
+                    break;
+                case "hand_crank_generator":
+                    if (instance.GetComponent<HandCrankGenerator>() == null)
+                        instance.AddComponent<HandCrankGenerator>();
+                    break;
+                case "battery_basic":
+                    if (instance.GetComponent<Battery>() == null)
+                        instance.AddComponent<Battery>();
+                    break;
+                case "junction_box":
+                    if (instance.GetComponent<JunctionBox>() == null)
+                        instance.AddComponent<JunctionBox>();
+                    break;
+                case "power_sink":
+                    if (instance.GetComponent<PowerSink>() == null)
+                        instance.AddComponent<PowerSink>();
+                    break;
+            }
         }
 
         // ---------------------------------------------------------------
