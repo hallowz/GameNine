@@ -148,6 +148,13 @@ public class UIManager : MonoBehaviour
         _terrainInteraction   = FindFirstObjectByType<PlayerTerrainInteraction>();
         _personalCraftingGrid = FindFirstObjectByType<PersonalCraftingGrid>();
 
+        // V4.3: the personal crafting block is now embedded directly in the
+        // inventory panel. CraftingUI is still used for crafting stations and
+        // furnaces, but no longer opens as a side panel when toggling the
+        // inventory. Bind the grid into InventoryUI here so the embedded
+        // 2x2 + output renders against the canonical model.
+        _inventoryUI.BindPersonalCraftingGrid(_personalCraftingGrid);
+
         if (_personalCraftingGrid == null)
             Debug.LogWarning("[UIManager] No PersonalCraftingGrid found on Player — personal crafting will not be available in the inventory panel.");
 
@@ -242,10 +249,17 @@ public class UIManager : MonoBehaviour
                 ReparentToBracer();
             }
 
-            // Show personal crafting grid alongside the inventory panel
-            // (only when no crafting station or furnace is already open)
-            if (_personalCraftingGrid != null && !_craftingStationOpen && !_furnaceOpen)
-                _craftingUI.Open(null, _personalCraftingGrid.Grid, OnTakeResultFromStation);
+            // V4.3: personal crafting is embedded directly in the inventory
+            // panel. CraftingUI is reserved for crafting-station / furnace
+            // panels and is no longer opened here. The InventoryUI's
+            // BindPersonalCraftingGrid hookup in Start() drives the embedded
+            // 2x2 + output slot.
+
+            // Keep the HUD visible above the inventory panel per V4.2
+            // heads-up: HudUI is a sibling of InventoryPanel on the canvas,
+            // and would otherwise be drawn under the panel.
+            if (_hudUI != null)
+                _hudUI.transform.SetAsLastSibling();
 
             SetCursorLocked(false);
 

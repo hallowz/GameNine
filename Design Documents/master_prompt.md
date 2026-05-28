@@ -1734,7 +1734,7 @@ Status codes:
 | 3.6 | One-Click Generate Visuals | [✓] | Volume 3 (visual pipeline) COMPLETE for M2 scope. GenerateAllVisuals chains all 5 stages; 2 new EditMode tests; 312/312 passing |
 | 4.1 | UI Style Kit | [✓] | JetBrains Mono SDF baked; UIStyle + UIBuilder + 7 EditMode tests; 319/319 passing |
 | 4.2 | HUD Layout | [✓] | HotbarUI/SlotUI/CrosshairUI restyled to UIStyle; new HudUI (4 bars); 6 EditMode tests; 325/325 passing |
-| 4.3 | Inventory Panel | [ ] | |
+| 4.3 | Inventory Panel | [✓] | InventoryUI restyle (UIStyle palette, embedded 2×2 personal craft, no backpack section); UIManager wiring; 7 EditMode tests; 332/332 passing |
 | 4.4 | Machine UI Frame (includes howItWorks block) | [ ] | |
 | 4.5 | Tooltip (DialogUI deferred to M6) | [ ] | |
 | 4.6 | Remove In-World UI | [ ] | |
@@ -1982,6 +1982,224 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 4 Chunk 4.3 (Inventory Panel)
+Notes:
+
+VERDICT: PASS. V4.3 flipped from [D] to [✓]. EditMode 332/332 in
+10.53s. 0 compile errors, 0 new warnings.
+
+CHECKLIST VERIFICATION:
+- Layout matches spec: Header strip ("Inventory" left, "[ESC] Close"
+  right) + 2×2 personal craft section (right-justified RightBlock,
+  inputs → arrow → output) + main grid + hotbar mirror, built
+  top-to-bottom via VerticalLayoutGroup. All sizes via
+  UIStyle.SlotSize/SlotGap/PanelPadding. Outer Border via
+  UIBuilder.Border.
+- Model adaptation: BuildInventorySection reads inventory.Width /
+  inventory.Height — no hardcoded 9x3. Main=5x7=35, Hotbar=5x1
+  reflected correctly. Test asserts pInv.Main.SlotCount, not literal.
+- Backpack section removed: grepped InventoryUI.cs — only comments
+  mention "backpack"; no GameObject names. The
+  Inventory_NoBackpackSection test scans the entire descendant tree
+  for "backpack" / "worn" substrings (case-insensitive) and passes.
+  BackpackUI side panel still wired in UIManager (B-key, hotbar
+  right-click, BuildBackpackPanel) — V11 path untouched.
+- Cursor management: UIManager.ToggleInventory open unlocks
+  (line 264), close re-locks (line 320); LateUpdate safety net at
+  221-231 unchanged.
+- Personal crafting wiring: BindPersonalCraftingGrid called in
+  UIManager.Start (line 156); OnGridChanged subscription drives
+  RefreshCraftSlots + RefreshCraftOutput; output click consumes
+  ingredients and routes result through hotbar → main with same
+  silent-drop fallback as CraftingUI.
+- CraftingSlotButton / CraftingOutputSlot reuse acknowledged
+  deviation; cosmetic-only delta deferred to V4.5 per implementer.
+- HudUI z-order: ToggleInventory open branch calls
+  _hudUI.transform.SetAsLastSibling() (line 261-262).
+- CraftingUI no longer opens for personal grid: confirmed in diff —
+  the old "_craftingUI.Open(null, _personalCraftingGrid.Grid, ...)"
+  block is replaced by the embedded path comment.
+- Tests: 7 new (toggle, header/craft sections, no-backpack,
+  hotbar-mirror, main-grid, craft-output-builds, craft-output-clears).
+  Reflection seam on CraftingManager.Instance backing field +
+  recipes list is test-only; production untouched.
+- Test introspection seams (HotbarMirrorSlots, MainGridSlots,
+  PersonalCraftInputs, PersonalCraftOutput) are IReadOnlyList<> /
+  direct getters — no mutable state leakage. EnsureBuilt() is
+  idempotent via _panelBuilt guard.
+- Coop: UI is client-local; mutations route through PlayerInventory
+  / PersonalCraftingGrid (canonical owner-authoritative models).
+- No emojis, no #if UNITY_EDITOR in runtime, strict stack count rule
+  preserved via SlotUI.
+- Scope: MachineUI/TooltipUI/DialogUI not touched. Drag/drop,
+  shift-click, right-click split preserved (shift-click only moves
+  between Main↔Hotbar, which is correct since worn/backpack are
+  removed from this panel).
+
+BEHAVIOUR PRESERVATION:
+- Only UIManager references InventoryUI; all calls (Init, Show, Hide,
+  BindPersonalCraftingGrid, transform, GetComponent) compile.
+- BackpackUI does not reference InventoryUI directly.
+
+NO FIXES APPLIED. Implementation is clean. Tracker flipped to [✓].
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 4 Chunk 4.3 (Inventory Panel)
+Notes:
+
+V4.3 flipped from [ ] to [D]. Restyled InventoryUI to the V4.1 kit,
+embedded the personal 2x2 crafting grid directly inside the panel
+(removed the separate side-panel for personal craft), removed the
+worn-backpack section entirely per V11 scope, and added 7 EditMode
+tests. EditMode total 332/332 in 10.74s (was 325/325). 0 errors, 0
+new warnings.
+
+FILES RESTYLED:
+- Assets/Scripts/UI/InventoryUI.cs — full rewrite of the panel layout.
+  Sections top-to-bottom: Header strip (Panel/PanelLight bg, "Inventory"
+  left, "[ESC] Close" right), PersonalCraftSection (2x2 input grid +
+  arrow + output slot, right-justified), MainSection (mirrors
+  PlayerInventory.Main — currently 5x7 = 35 slots), HotbarMirror
+  (mirrors PlayerInventory.Hotbar — currently 5x1). All sizes / colours
+  / fonts come from UIStyle. Outer Border drawn via UIBuilder.Border
+  in UIStyle.Border. Padding = UIStyle.PanelPadding; SlotSize =
+  UIStyle.SlotSize; SlotGap = UIStyle.SlotGap. Stack-count rule is
+  inherited from SlotUI (already strict-hidden when qty==1).
+- Assets/Scripts/UI/UIManager.cs — Start() now calls
+  _inventoryUI.BindPersonalCraftingGrid(_personalCraftingGrid) after
+  Init. ToggleInventory() open branch:
+    * stops calling _craftingUI.Open for the personal grid (the
+      embedded craft slots in InventoryUI cover that role now);
+    * raises HudUI's sibling index on open so the HUD stays visible
+      above the panel per V4.2 heads-up.
+  Close branch unchanged — _craftingUI.Close() is still idempotent
+  and harmless. CraftingUI / FurnaceUI / etc. side-panels still open
+  alongside the inventory when their interaction triggers fire.
+
+FILES CREATED:
+- Assets/Tests/EditMode/InventoryPanelTests.cs — 7 tests:
+    Inventory_TogglesVisibilityViaShowAndHide
+    Inventory_HasHeaderAndCraftSections
+    Inventory_NoBackpackSection
+    Inventory_HotbarMirrorMatchesActiveHotbar
+    Inventory_MainGridMatchesActiveMain
+    PersonalCraft_BuildsOutputWhenInputsMatchRecipe
+    PersonalCraft_OutputClearsWhenInputsBroken
+  Tests wire CraftingManager.Instance via reflection (Awake calls
+  DontDestroyOnLoad which throws in EditMode), inject a 2x2
+  wood->plank recipe, and verify the embedded craft output updates
+  reactively when PersonalCraftingGrid.SetSlot mutates the grid.
+
+BEHAVIOUR CHANGES:
+- Personal crafting is now diegetically part of the inventory panel
+  rather than a side panel. Crafting stations / furnaces still open
+  CraftingUI as a side panel for their grids.
+- No worn-backpack slot inside the panel. Backpacks remain reachable
+  via B-key / right-click from hotbar (BackpackUI handles both —
+  V11 will rework them).
+- Hotbar selection highlight now propagates into the panel mirror.
+  InventoryUI.Update polls PlayerInventory.SelectedHotbarIndex while
+  active and re-paints SlotUI.SetSelected, so number keys / scroll
+  wheel changes are reflected in real time without leaking state to
+  the standalone HotbarUI.
+- Esc-to-close was already wired through UIManager's escape branch
+  (calls ToggleInventory if _inventoryOpen); no change required.
+
+MODEL ADAPTATIONS:
+- PlayerInventory.Main = 5x7 = 35 slots — panel adapts via
+  Inventory.Width / Inventory.Height (no hardcoded 9x3 from the spec
+  headline). Tests assert .Count == pInv.Main.SlotCount, not a
+  literal number.
+- PlayerInventory.Hotbar = 5x1. The mirror row contains 5 slots, not
+  9. Same adaptation pattern as HotbarUI.
+
+DEVIATIONS:
+- Personal craft section reuses the existing CraftingSlotButton /
+  CraftingOutputSlot helpers from CraftingUI.cs rather than spinning
+  new slot components. Reason: those already implement the
+  Minecraft-style cursor logic (left/place/swap, right/half, tooltip
+  on hover) that V4.3 needs to preserve. The look is slightly less
+  themed than UIBuilder.SlotBg because those helpers paint their own
+  background colours (pre-UIStyle palette); replacing them is V4.4 /
+  V4.5 scope when MachineUI gets restyled. Functional behaviour is
+  correct; visual delta is small (slot bg slightly darker than
+  UIStyle.PanelLight). Flagged as a V4.5 follow-up.
+- InventoryUI is in the global namespace (matches HotbarUI / SlotUI /
+  HudUI). Adding a namespace would require touching every existing
+  call site in UIManager / BackpackUI / etc. Out of scope.
+- InventoryUI exposes an EnsureBuilt() seam and test introspection
+  properties (HotbarMirrorSlots, MainGridSlots, PersonalCraftInputs,
+  PersonalCraftOutput) — same pattern as HudUI for EditMode test
+  hooks. Internal state stays private.
+- Tests use reflection on CraftingManager.Instance backing field and
+  on the private recipes list. This bypasses
+  DontDestroyOnLoad (forbidden in EditMode) and avoids changing
+  CraftingManager's public surface. Acceptable for tests; the
+  production code path is untouched.
+
+TESTS (+7 new, all pass):
+- 332/332 EditMode passing in 10.74s (was 325/325). 0 failed, 0
+  skipped. No new compile errors or warnings against the changed
+  files (InventoryUI / UIManager / InventoryPanelTests).
+
+CURSOR / COOP:
+- Cursor lock/unlock is owned by UIManager (SetCursorLocked). Open
+  inventory unlocks; Close re-locks via the LateUpdate safety net
+  that already existed for the bracer-foldout flicker. No change
+  here.
+- InventoryUI is client-local UI. All mutations route through
+  PlayerInventory and PersonalCraftingGrid — the canonical
+  owner-authoritative state, untouched by V4.3.
+
+V4.4 HEADS-UPS (Machine UI Frame):
+- The MachineUI panel will sit alongside the inventory (right side,
+  same anchor pattern as CraftingUI / FurnaceUI in UIManager). When
+  the inventory panel opens with a machine, raise HudUI's sibling
+  index AFTER both panels are visible — InventoryUI does this on
+  Show, MachineUI should mirror the pattern.
+- CraftingSlotButton / CraftingOutputSlot are reused by V4.3 in the
+  global namespace. If V4.4 wants to fully theme machine grid slots
+  with UIStyle.SlotBg + UIStyle.Border, it should restyle those two
+  helpers in place — InventoryUI will inherit the new look
+  automatically (and so will the still-in-use CraftingUI side panel).
+- Sibling order for the inventory's HUD-on-top trick: HudUI is
+  raised to last sibling on inventory open. If V4.4 introduces a
+  larger overlay (e.g. modal recipe picker), drop the HudUI to
+  first-sibling so the modal can darken the screen without the HUD
+  bleeding through.
+
+V4.5 HEADS-UPS (Tooltip):
+- Tooltip already shows on SlotUI hover via SlotUI.OnPointerEnter /
+  CraftingSlotButton.OnPointerEnter — no changes needed for V4.5
+  beyond the visual restyle. Verify the rich tooltip (kind+category
+  badges, role, recipe-summary count) reads from the same
+  ItemDefinition path SlotUI passes today.
+- TooltipUI.Hide() is called by InventoryUI.Hide() on close so the
+  tooltip never lingers over a closed panel.
+- CraftingSlotButton uses pre-UIStyle palette colours (ColorNormal /
+  ColorHover) — the same restyle pass for V4.5 should switch those
+  to UIStyle.PanelLight / UIStyle.Border so the embedded craft
+  matches the rest of the panel.
+
+OUT OF SCOPE / NOT TOUCHED:
+- MachineUI / DialogUI — V4.4 / M6.
+- TooltipUI restyle — V4.5.
+- BackpackUI side panel — V11.
+- WornSlotInventory model in PlayerInventory — kept for B-key /
+  hotbar-right-click flows. V11 will rework.
+- Drag/drop, shift-click quick-move, right-click split — preserved
+  via existing SlotUI behaviour.
+- CraftingMatchEngine v2 (property matching) — V6.1.
+- HotbarUI standalone — untouched; mirror in inventory is a separate
+  set of SlotUI instances.
+
+NEXT UP: V4.4 (Machine UI Frame — howItWorks block + recipe tabs).
 ```
 
 ```
