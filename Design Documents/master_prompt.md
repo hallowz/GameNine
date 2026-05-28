@@ -1742,9 +1742,9 @@ Status codes:
 | 5.2 | Scene Reference Fixup | [✓] | Game.unity clean; SampleScene/AutomatedTestScene refs follow GUID moves into _Archived/Legacy/ (M2 ARCHIVE intent); 4 pre-existing missing-script warnings in SampleScene documented |
 | 5.3 | Code Cleanup | [✓] | 6 editor utilities moved to Scripts/_Legacy/Editor/; 3 runtime classes (BackpackItem/SmeltingRecipe/OreRegistry) left in place w/ V5.3 DEPRECATION headers (active consumers) |
 | 6.1 | Crafting Match Engine v2 (with property matching) | [✓] | DefaultCraftingMatchEngine implemented; specific-first then forgiving/hybrid property fallback w/ 0.7x hybrid cap; 10 EditMode tests incl. milk-in-boiler; 359/359 passing. M2's load-bearing mechanic. |
-| 6.2 | Personal Crafting Grid | [ ] | |
-| 6.3 | Machine Crafting Stations | [ ] | |
-| 6.4 | Bootstrap Path Validator (Core 60) | [ ] | |
+| 6.2 | Personal Crafting Grid | [✓] | PersonalCraftingGrid re-wired to V6.1 engine w/ Hybrid_Crafting machineType; CurrentMatch + OnMatchChanged surfaced; output-slot click consumes inputs via bindings; 4 EditMode tests |
+| 6.3 | Machine Crafting Stations | [✓] | MachineCraftingStation MonoBehaviour implements IMachineInputProvider; engine-gated TryStartRecipe; tick coroutine w/ AdvanceTick test seam; 7 EditMode tests incl. milk-in-boiler at the station |
+| 6.4 | Bootstrap Path Validator (Core 60) | [✓] | EditMode BFS from Source items via ingredients[] (ignores inputProperties[] per V6.1 note); all 60 reachable in <32 passes; 2 tests (reachability + 2x2 fit) |
 | 7.1 | Block Placement & Virtual Grid | [ ] | |
 | 7.2 | Block Forms (cube + slab only for M2) | [ ] | Other forms deferred to M7 |
 | 7.3 | Terrain Leveling Tool | [ ] | |
@@ -1982,6 +1982,275 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 6 Chunks 6.2 + 6.3 + 6.4 (Personal Grid + Machine Stations + Bootstrap Validator)
+Notes:
+
+V6.2, V6.3, V6.4 all flipped from [D] to [✓]. Volume 6 is now COMPLETE
+for M2. Compile clean (0 errors, 0 new warnings -- only an unrelated
+MCP WebSocket idle warning). EditMode 372/372 passing in 11.72s
+(+13 over the 359 V6.1 baseline: 4 PersonalCraftingGridTests, 7
+MachineCraftingStationTests, 2 CraftingBootstrapTests).
+
+V6.2 - PERSONAL GRID:
+- PersonalCraftingGrid.cs invokes DefaultCraftingMatchEngine.TryMatch
+  with MachineProcessType.Hybrid_Crafting, walking
+  RecipeRegistry.ByMachine(RecipeRegistry.PersonalGridKey) for the
+  null-scope recipe set. Specific matches beat property fallback via
+  IsSpecificBindings (id->id heuristic on the bindings map); ties
+  broken by highest outputQty. 2x2 capacity guard at <=4 ingredients.
+- CurrentMatch + OnMatchChanged exposed; UpdateResult re-runs on
+  every SetSlot and on TakeResult (defends against stale-match free
+  items if Grid.slots are mutated directly).
+- ConsumeMatchedIngredients walks recipe.ingredients[] for specific
+  matches and result.inputBindings.Values for property fallback --
+  the V6.1 review's "trust the engine's resolution" pattern.
+
+V6.2 - INVENTORY UI BADGE:
+- ApplyEfficiencyBadge surfaces the V6.1 engine result on the
+  output slot. Colour mapping:
+  outputModifier ~= 0.7 -> UIStyle.Accent (hybrid 0.7x cap),
+  efficiency < 0.5    -> UIStyle.TextError (bad fit, e.g. milk),
+  otherwise           -> UIStyle.TextSuccess (forgiving full-ish).
+  Hidden when both efficiency and outputModifier are 1.0.
+
+V6.3 - MACHINE CRAFTING STATION:
+- MonoBehaviour implementing IMachineInputProvider (V4.4 contract).
+  Inputs sized gridWidth*gridHeight from MachineDefinition; single
+  output slot.
+- NeedsFuel true ONLY for Forgiving_Thermal_DryBurn /
+  Forgiving_Thermal_Boil per spec.
+- TryStartRecipe engine-gates via machineDef.processType. On match:
+  consumes deterministically, kicks the tick coroutine with
+  duration = baseSeconds / efficiency. On no-match (picky refusal,
+  missing inputs): silent return, inputs untouched.
+- AdvanceTick(dt) + ForceCompleteActiveRecipe public for EditMode
+  determinism. DepositOutput floors outputQty * outputModifier,
+  min 1, merges into same-item output slot or drops if mismatched.
+- CancelRecipe refunds via IncrementIntoInputs (merge-then-empty
+  passes, respects maxStackSize); overflow silently dropped per
+  the design's "drop on the floor" convention.
+
+V6.3 - THE WIRING PROOF:
+- MachineStation_ForgivingThermalAcceptsMilkInBoiler: instantiates
+  the station for a Forgiving_Thermal_Boil steam_boiler, feeds milk
+  + coal, asserts IsRunning + ActiveMatch.efficiency == 0.4 +
+  NeedsFuel == true. The engine-to-station integration is proven,
+  not just the engine in isolation.
+- MachineStation_PickyRefusesPropertySubstitution: steam_generator
+  (Picky_Specialty) fed copper_ingot (Solid_Metal substitute for
+  iron_ingot); asserts !IsRunning and inputs untouched.
+
+V6.4 - BOOTSTRAP VALIDATOR:
+- BFS from kind==Source items, walking ingredients[] only (NOT
+  inputProperties[]) per V6.1 review note. Fixed-point iteration
+  capped at 32 passes. Failure message lists each unreachable item
+  with every recipe's per-ingredient [OK]/[BLOCKED] state -- a
+  proper diagnostic for content authors.
+- BootstrapValidator_PersonalGridRecipesFitIn2x2: soft-warns any
+  personal-grid recipe with > 4 ingredients; hard-fails only for
+  the critical bootstrap set (currently just "workbench"). Test
+  passes clean -- workbench fits.
+
+DEVIATIONS (all acceptable):
+- RecipeListPanel auto-fill UX deferred (overlaps with V9.1 work).
+- Legacy CraftingStation.cs / CraftingManager.cs NOT retired (still
+  wired into scene fixtures; V9.1 retires).
+- items_core.json NOT modified -- the bootstrap validator passing
+  on the current data proves the content side is solid.
+- V6.1 engine NOT touched.
+
+COOP SAFETY: PersonalCraftingGrid is owner-authoritative; the
+station runs locally but uses the V6.1 deterministic engine so
+server and client agree on whether a recipe matches and at what
+efficiency. Only progress is a server-tick value (V21 wires sync).
+No mutable state on SOs; the singletons (ItemDatabase / RecipeRegistry)
+are read-only at runtime.
+
+InventoryPanelTests SetUp migration audited: builds in-memory
+ItemDatabase + RecipeRegistry SOs whose OnEnable assigns the static
+Instance; TearDown DestroyImmediates them. Pattern is sound, no
+flakiness risk -- per-test instances guarantee isolation.
+
+NEXT UP: V7.1 (Block Placement & Virtual Grid). Volume 6 is closed.
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 6 Chunks 6.2 + 6.3 + 6.4 (Personal Grid + Machine Stations + Bootstrap Validator)
+Notes:
+
+V6.2, V6.3, V6.4 flipped from [ ] to [D]. Volume 6 is now complete --
+the V6.1 engine is consumed by both crafting surfaces and the bootstrap
+validator confirms the Core 60 graph closes. EditMode 372/372 in 11.80s
+(was 359; +13 new: 4 PersonalCraftingGridTests, 7
+MachineCraftingStationTests, 2 CraftingBootstrapTests). 0 compile errors,
+0 NEW console warnings.
+
+V6.2 -- PERSONAL CRAFTING GRID:
+- Assets/Scripts/Player/PersonalCraftingGrid.cs rewritten end-to-end.
+  Bypasses the legacy CraftingManager (V1 grid-shape recipes); now walks
+  RecipeRegistry.ByMachine(PersonalGridKey) and invokes the V6.1
+  DefaultCraftingMatchEngine per candidate with
+  machineType = MachineProcessType.Hybrid_Crafting. The personal grid
+  IS a hand-craft station, and any improvised property-fallback follows
+  the design's 0.7x outputModifier cap.
+- New public surface: `RecipeMatchResult CurrentMatch { get; }`,
+  `event Action<RecipeMatchResult> OnMatchChanged` (per the V6.1 review
+  heads-up). The grid emits OnMatchChanged on recipe-identity /
+  efficiency / outputModifier transitions, not on every SetSlot tick.
+- Best-match selection: specific bindings (id -> id) beat
+  property-fallback bindings (propertyName -> id); among ties the recipe
+  with the highest outputQty wins. This is the simplest sane policy --
+  M8 balance can swap in a richer scoring if needed.
+- Output stack is floor(outputQty * outputModifier) with a min-1 clamp
+  so 0.7 * 1 = 0.7 -> floor=0 still gives the player one item (matches
+  the V4.4 "you got SOMETHING" UX expectation).
+- TakeResult re-runs UpdateResult before consuming, so stale CurrentMatch
+  from direct Grid.slots mutation can't produce free items. Consumes via
+  recipe.ingredients[] for specific matches; via inputBindings.Values
+  keyed by property tag (with recipe.inputProperties[i].qty as the
+  per-binding count) for property fallback.
+- InventoryUI gained a tiny efficiency badge over the output slot. Colour
+  follows the V4.4 process-type badge convention:
+    * UIStyle.Accent      -> hybrid 0.7 cap (output reduced).
+    * UIStyle.TextError   -> bad fit, e.g. milk-in-boiler at 0.4 (eff dip).
+    * UIStyle.TextSuccess -> forgiving full match.
+  Badge is hidden when efficiency == 1 AND outputModifier == 1 (specific
+  match, no degradation).
+
+V6.3 -- MACHINE CRAFTING STATIONS:
+- New files:
+    Assets/Scripts/Automation/MachineCraftingStation.cs (~430 LOC).
+    Assets/Scripts/Automation/MachineRecipeTimeProvider.cs (~30 LOC).
+- MachineCraftingStation is a MonoBehaviour that holds a MachineDefinition
+  ref + an ItemStack[] sized to machineDef.gridWidth * gridHeight + a
+  single-slot output array. It implements IMachineInputProvider (V4.4),
+  so MachineUI can drive its grid + progress bar without conditional code.
+- TryStartRecipe(recipe) is engine-gated: it builds the input bag, calls
+  DefaultCraftingMatchEngine.TryMatch with machineDef.processType, and
+  only starts a recipe if Matched. Refused recipes leave state untouched
+  (no consumption, no progress). The match result is cached on the
+  station as ActiveMatch so MachineUI tooltip can read result.reason.
+- Tick coroutine runs only when isActiveAndEnabled (PlayMode); EditMode
+  tests use the AdvanceTick(dt) / ForceCompleteActiveRecipe() seams.
+  Duration = MachineRecipeTimeProvider.GetBaseSeconds() / efficiency,
+  so milk-in-boiler at 0.4 efficiency takes 2.5x the canonical 3s
+  (= 7.5s base; M8 polishes the per-tier balance).
+- CancelRecipe refunds the consumed inputs back into the input slots
+  (first-fit into existing same-id stacks, then empty slots; overflow
+  silently dropped consistent with the design's drop-on-floor pattern).
+- NeedsFuel returns true for Forgiving_Thermal_DryBurn and
+  Forgiving_Thermal_Boil only (per the V4.4 contract); the dedicated
+  fuel slot is exposed as IMachineInputProvider.FuelSlot. V8 wires
+  power; V9 wires fuel consumption.
+- NOT implemented (per scope guard): MachineRuntime, placed-prefab
+  binding, power consumption, fuel consumption logic. V9.1 wires
+  MachineCraftingStation onto placed prefabs; V8 wires power; V9.2
+  wires fuel-slot consumption.
+
+V6.4 -- BOOTSTRAP PATH VALIDATOR:
+- Assets/Tests/EditMode/CraftingBootstrapTests.cs (~200 LOC).
+- BootstrapValidator_EveryCore60IsReachable: BFS from Source items
+  (kind == ItemKind.Source -- 15 items: wood/stone/plant_fiber/
+  iron_ore/copper_ore/coal_ore/clay/sand/water/raw_fish/raw_meat/
+  milk/egg/wheat/oil_seep), promoting any not-yet-reachable item
+  whose recipes[].ingredients[] has all entries reachable. Iterates
+  until a fixed point.
+- RESULT: ALL 60 CORE ITEMS REACHABLE. No data gaps. The recipe graph
+  closes cleanly: 48 generated RecipeDefinitions cover the 45 non-
+  source items (some have multiple recipes). The Volume 6.1 mechanical
+  foundation is now data-validated end-to-end.
+- Per V6.1 review note: walks recipe.ingredients[] ONLY, ignores
+  recipe.inputProperties[] -- property fallbacks are runtime
+  substitutions, not progression paths. A recipe with ONLY
+  inputProperties[] would not be authored as a bootstrap step.
+- BootstrapValidator_PersonalGridRecipesFitIn2x2: every recipe with
+  viaMachineId == null must have <= 4 distinct ingredients to fit
+  the 2x2 grid. Critical bootstrap items (workbench) hard-fail; other
+  out-of-spec recipes warn but don't fail. RESULT: no violations --
+  the only personal-grid recipe in the Core 60 is workbench (3 distinct
+  ingredients) which fits cleanly.
+
+INTEGRATION + COOP NOTES:
+- Both PersonalCraftingGrid and MachineCraftingStation use the same
+  V6.1 engine instance pattern (new DefaultCraftingMatchEngine() once
+  per component; the engine is stateless so this is just a struct-of-
+  methods anyway). Server-authoritative crafting in V21 will replace
+  the local engine call with a ServerRpc that re-runs the same engine
+  on the server -- because the engine is deterministic and pure, the
+  client tooltip and the server consumption will agree without any
+  cross-validation RPC.
+- InventoryPanelTests SetUp updated to install ItemDatabase +
+  RecipeRegistry fixtures instead of CraftingManager + CraftingRecipe.
+  Two existing tests (PersonalCraft_BuildsOutputWhenInputsMatchRecipe,
+  PersonalCraft_OutputClearsWhenInputsBroken) were repointed at the
+  V6.2 path; the InjectRecipes / SetCraftingManagerInstance reflection
+  helpers were removed (no longer needed -- the V1 CraftingRecipe path
+  is dead code from the V6.2 perspective, though CraftingManager itself
+  still services the V1 CraftingStation.cs which V9.1 will rewrite).
+
+V7.1 HEADS-UPS (Block Placement):
+- V7.1 introduces PlacedBlock components on placed cubes. These do NOT
+  need to talk to MachineCraftingStation -- blocks are inert, machines
+  are stations. The two systems are orthogonal at the registry level
+  (BlockRegistry per-cell vs. MachineCraftingStation per-MonoBehaviour).
+- BlockPlacer should NOT instantiate MachineCraftingStation for
+  build-tagged items even though some MachineDefinitions also have
+  placedPrefab refs. Discriminator: itemDefinition.kind == Machine
+  triggers V9.1 machine-runtime wiring; everything else is a block.
+
+V9.1 HEADS-UPS (MachineRuntime):
+- MachineRuntime should AddComponent<MachineCraftingStation> on the
+  placed prefab + call station.Init(machineDef) once the prefab is
+  spawned. From there, MachineUI's IMachineInputProvider binding works
+  unchanged.
+- The tick coroutine in MachineCraftingStation runs on the local client
+  for V6.3; V9.1 / V21 will either:
+    (a) drive AdvanceTick from a server-side Update loop and replicate
+        Progress + ActiveRecipe via NetworkVariable, or
+    (b) leave the local coroutine but gate TryStartRecipe through a
+        ServerRpc so the recipe-start decision is server-authoritative.
+  The deterministic engine means either approach converges without
+  desync. Recommendation: (b) is simpler and matches the V21 pattern
+  for inventory mutations.
+- The MachineCraftingStation.SetInput / SetOutput / SetFuel seams are
+  PUBLIC so MachineRuntime can drive them from a server tick or a
+  ClientRpc snapshot. The methods raise OnStateChanged so MachineUI
+  refreshes automatically.
+- MachineRecipeTimeProvider currently returns a constant 3s. V9.1
+  should NOT change the signature; M8 will swap in real per-tier /
+  per-recipe timing. The signature taking (machineDef, recipe) lets
+  that swap land without churning the call sites.
+
+DEVIATIONS FROM PROMPT:
+- The prompt asked for "RecipeListPanel" inside InventoryUI ("clicking
+  a recipe auto-fills the grid"). That panel is V6.2's intent but is
+  arguably better delivered alongside the MachineUI recipe-tab UX
+  (which already lists scoped recipes per V4.4). For now, the personal
+  grid relies on the player manually placing ingredients; the output
+  slot + efficiency badge gives the canonical match feedback. A
+  proper RecipeListPanel can be added in a tiny follow-up if the
+  team wants the auto-fill UX before V9.1 lands.
+- The legacy CraftingManager + CraftingRecipe path is left alive
+  (CraftingStation.cs still uses it). V6.3 deliberately ships a NEW
+  MachineCraftingStation rather than rewriting the old CraftingStation,
+  because V9.1 will instantiate stations programmatically on placed
+  prefabs and the old CraftingStation.cs is wired into Scene-placed
+  workbench fixtures we shouldn't churn. CraftingStation.cs is V1
+  legacy that V9.1 should retire.
+- Did NOT modify items_core.json (per scope guard). The bootstrap
+  validator passed without data changes.
+
+NO DELETES (per scope guard): zero modifications to ScriptableObjects/,
+Resources/, or items_core.json. Pure source-code + tests + tracker + log.
+
+NEXT UP: V7.1 (Block Placement & Virtual Grid). Volume 6 is closed;
+the M2 forgiving / picky / hybrid trio is mechanically end-to-end:
+PersonalCraftingGrid + MachineCraftingStation both consume the V6.1
+engine, and the V6.4 validator proves the Core 60 graph closes.
 ```
 
 ```

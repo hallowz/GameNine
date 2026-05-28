@@ -25,15 +25,20 @@ namespace Voidborne.Tests.EditMode
         private GameObject _canvasGo;
         private Canvas     _canvas;
 
-        // Shared test items / recipe (built once per test)
+        // Shared test items / recipe (built once per test).
+        // V6.2 rewires PersonalCraftingGrid to call the V6.1 CraftingMatchEngine
+        // against RecipeRegistry, not the legacy CraftingManager. We therefore
+        // install in-memory ItemDatabase + RecipeRegistry fixtures and feed the
+        // grid a V3 RecipeDefinition (with ingredients[]), not the V1 grid
+        // CraftingRecipe.
         private ItemDefinition _wood;
         private ItemDefinition _stone;
         private ItemDefinition _plank;
-        private CraftingRecipe _woodToPlankRecipe;
+        private RecipeDefinition _woodToPlankRecipe;
 
-        // Crafting singleton (rebuilt per test to avoid leaks)
-        private GameObject _craftingManagerGo;
-        private CraftingManager _craftingManager;
+        // Fixture singletons for V6.2 wiring (rebuilt per test to avoid leaks).
+        private ItemDatabase _itemDbFixture;
+        private RecipeRegistry _recipeRegFixture;
 
         [SetUp]
         public void SetUp()
@@ -48,34 +53,40 @@ namespace Voidborne.Tests.EditMode
             _stone = MakeItem("stone", "Stone", 64);
             _plank = MakeItem("plank", "Plank", 64);
 
-            // Build a 2x2 recipe: 4 wood -> 1 plank, fits the personal craft grid.
-            _woodToPlankRecipe = ScriptableObject.CreateInstance<CraftingRecipe>();
-            _woodToPlankRecipe.recipeName = "wood_to_plank";
-            _woodToPlankRecipe.gridWidth  = 2;
-            _woodToPlankRecipe.gridHeight = 2;
-            _woodToPlankRecipe.ingredients = new[] { _wood, _wood, _wood, _wood };
-            _woodToPlankRecipe.result = new ItemStack(_plank, 1);
+            // V6.2 personal-grid recipe: 4 wood -> 1 plank. Scope = personal
+            // grid (viaMachineId == null). The V6.1 engine matches via
+            // bag-of-ingredients (position-independent) so we don't need to
+            // populate any explicit gridWidth/gridHeight.
+            _woodToPlankRecipe = ScriptableObject.CreateInstance<RecipeDefinition>();
+            _woodToPlankRecipe.outputItemId   = "plank";
+            _woodToPlankRecipe.outputQty      = 1;
+            _woodToPlankRecipe.ingredients    = new[] { new Ingredient("wood", 4) };
+            _woodToPlankRecipe.efficiency     = 1.0f;
+            _woodToPlankRecipe.outputModifier = 1.0f;
+            _woodToPlankRecipe.viaMachineId   = null;
 
-            // CraftingManager singleton — required by PersonalCraftingGrid.UpdateResult.
-            // We do NOT invoke Awake() here because it calls DontDestroyOnLoad
-            // which throws in EditMode. Instead, wire the Instance property
-            // directly via reflection and inject the recipe list.
-            _craftingManagerGo = new GameObject("CraftingManager_Test");
-            _craftingManager = _craftingManagerGo.AddComponent<CraftingManager>();
-            SetCraftingManagerInstance(_craftingManager);
-            InjectRecipes(_craftingManager, new List<CraftingRecipe> { _woodToPlankRecipe });
+            // Install fixture singletons for ItemDatabase + RecipeRegistry.
+            // ScriptableObject.CreateInstance triggers OnEnable which sets
+            // ItemDatabase.Instance / RecipeRegistry.Instance on each SO.
+            _itemDbFixture = ScriptableObject.CreateInstance<ItemDatabase>();
+            _itemDbFixture.items = new List<ItemDefinition> { _wood, _stone, _plank };
+            _itemDbFixture.Reindex();
+
+            _recipeRegFixture = ScriptableObject.CreateInstance<RecipeRegistry>();
+            _recipeRegFixture.allRecipes = new List<RecipeDefinition> { _woodToPlankRecipe };
+            _recipeRegFixture.Reindex();
         }
 
         [TearDown]
         public void TearDown()
         {
             if (_canvasGo != null) Object.DestroyImmediate(_canvasGo);
-            if (_craftingManagerGo != null) Object.DestroyImmediate(_craftingManagerGo);
             if (_wood  != null) Object.DestroyImmediate(_wood);
             if (_stone != null) Object.DestroyImmediate(_stone);
             if (_plank != null) Object.DestroyImmediate(_plank);
             if (_woodToPlankRecipe != null) Object.DestroyImmediate(_woodToPlankRecipe);
-            SetCraftingManagerInstance(null);
+            if (_itemDbFixture != null) Object.DestroyImmediate(_itemDbFixture);
+            if (_recipeRegFixture != null) Object.DestroyImmediate(_recipeRegFixture);
         }
 
         // ---------------------------------------------------------------
@@ -322,42 +333,6 @@ namespace Voidborne.Tests.EditMode
                 name,
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (m != null) m.Invoke(target, null);
-        }
-
-        private static void InjectRecipes(CraftingManager mgr, List<CraftingRecipe> recipes)
-        {
-            FieldInfo f = typeof(CraftingManager).GetField(
-                "recipes",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, "CraftingManager.recipes field not found via reflection.");
-            f.SetValue(mgr, recipes);
-        }
-
-        /// <summary>
-        /// Sets the auto-property backing field for <c>CraftingManager.Instance</c>.
-        /// We can't call Awake() in EditMode because it invokes DontDestroyOnLoad.
-        /// </summary>
-        private static void SetCraftingManagerInstance(CraftingManager instance)
-        {
-            // Auto-property backing field name is "<Instance>k__BackingField"
-            FieldInfo f = typeof(CraftingManager).GetField(
-                "<Instance>k__BackingField",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            if (f != null)
-            {
-                f.SetValue(null, instance);
-                return;
-            }
-
-            // Fall back to property setter if the property has one (it doesn't,
-            // but defensive against future refactors).
-            PropertyInfo p = typeof(CraftingManager).GetProperty(
-                "Instance",
-                BindingFlags.Static | BindingFlags.Public);
-            if (p != null && p.GetSetMethod(true) != null)
-            {
-                p.SetValue(null, instance);
-            }
         }
     }
 }

@@ -52,6 +52,10 @@ public class InventoryUI : MonoBehaviour
     // Personal craft slots (4 input + 1 output)
     private readonly List<CraftingSlotButton> _craftInputs = new List<CraftingSlotButton>();
     private CraftingOutputSlot _craftOutput;
+    // V6.2: small efficiency badge mirroring the V4.4 process-type badge style.
+    // Sits at the bottom-left of the output slot; visible only when efficiency
+    // or outputModifier is non-default.
+    private TextMeshProUGUI _craftEfficiencyBadge;
 
     // Section roots (used by HandleShiftClick to determine source pool)
     private GameObject _mainSection;
@@ -358,6 +362,26 @@ public class InventoryUI : MonoBehaviour
 
         _craftOutput = outGO.AddComponent<CraftingOutputSlot>();
         _craftOutput.Init(OnClickCraftOutput);
+
+        // ---- Efficiency badge (V6.2) ----
+        // Tiny overlay on the output slot; surfaces the V6.1 engine result's
+        // efficiency / output modifier so a player crafting via property
+        // fallback sees a visible "you'd get less than full quality" hint.
+        // Hidden by default; ApplyEfficiencyBadge() drives visibility.
+        _craftEfficiencyBadge = UIBuilder.Text(
+            outGO.transform, string.Empty,
+            UIStyle.FontSizeSmall, UIStyle.Text, "EfficiencyBadge");
+        _craftEfficiencyBadge.alignment = TextAlignmentOptions.BottomLeft;
+        _craftEfficiencyBadge.fontStyle = FontStyles.Bold;
+        _craftEfficiencyBadge.outlineWidth = 0.2f;
+        _craftEfficiencyBadge.outlineColor = Color.black;
+        _craftEfficiencyBadge.raycastTarget = false;
+        RectTransform badgeRT = _craftEfficiencyBadge.rectTransform;
+        badgeRT.anchorMin = new Vector2(0f, 0f);
+        badgeRT.anchorMax = new Vector2(1f, 0.4f);
+        badgeRT.offsetMin = new Vector2(2f, 0f);
+        badgeRT.offsetMax = new Vector2(-2f, 0f);
+        _craftEfficiencyBadge.enabled = false;
     }
 
     /// <summary>
@@ -489,10 +513,54 @@ public class InventoryUI : MonoBehaviour
         if (_personalCraftingGrid == null)
         {
             _craftOutput.SetStack(default);
+            ApplyEfficiencyBadge(null);
             return;
         }
         _personalCraftingGrid.UpdateResult();
         _craftOutput.SetStack(_personalCraftingGrid.CurrentResult);
+        ApplyEfficiencyBadge(_personalCraftingGrid.CurrentMatch);
+    }
+
+    /// <summary>
+    /// V6.2 — paints the efficiency badge on the output slot. Colour follows
+    /// the V4.4 process-type badge convention:
+    ///   * outputModifier &lt; 1 (hybrid property fallback) -> Accent (orange-ish accent).
+    ///   * efficiency &lt; 1   (forgiving property fallback) -> TextError (degraded yield).
+    ///   * efficiency == 1 AND outputModifier == 1         -> hidden (specific match, full quality).
+    /// </summary>
+    private void ApplyEfficiencyBadge(Voidborne.Crafting.RecipeMatchResult match)
+    {
+        if (_craftEfficiencyBadge == null) return;
+
+        if (match == null || match.recipe == null)
+        {
+            _craftEfficiencyBadge.enabled = false;
+            return;
+        }
+
+        bool reducedEff = match.efficiency < 0.999f;
+        bool reducedOut = match.outputModifier < 0.999f;
+        if (!reducedEff && !reducedOut)
+        {
+            _craftEfficiencyBadge.enabled = false;
+            return;
+        }
+
+        // Hybrid 0.7x cap is the canonical case where outputModifier dips;
+        // forgiving boil-style efficiency dips are surfaced as "x0.4" etc.
+        // We show whichever multiplier is more visibly degraded.
+        float worst = Mathf.Min(match.efficiency, match.outputModifier);
+        Color color;
+        if (reducedOut && Mathf.Approximately(match.outputModifier, 0.7f))
+            color = UIStyle.Accent;          // hybrid property-fallback cap (orange accent)
+        else if (reducedEff && match.efficiency < 0.5f)
+            color = UIStyle.TextError;       // bad fit (e.g. milk in boiler)
+        else
+            color = UIStyle.TextSuccess;     // forgiving full or near-full
+
+        _craftEfficiencyBadge.text = "x" + worst.ToString("0.##");
+        _craftEfficiencyBadge.color = color;
+        _craftEfficiencyBadge.enabled = true;
     }
 
     // ---------------------------------------------------------------
