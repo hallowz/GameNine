@@ -1736,8 +1736,8 @@ Status codes:
 | 4.2 | HUD Layout | [✓] | HotbarUI/SlotUI/CrosshairUI restyled to UIStyle; new HudUI (4 bars); 6 EditMode tests; 325/325 passing |
 | 4.3 | Inventory Panel | [✓] | InventoryUI restyle (UIStyle palette, embedded 2×2 personal craft, no backpack section); UIManager wiring; 7 EditMode tests; 332/332 passing |
 | 4.4 | Machine UI Frame (includes howItWorks block) | [✓] | MachineUI + IMachineInputProvider + StubMachineInputProvider + RecipeTabsUI; 7 EditMode tests; 339/339 passing |
-| 4.5 | Tooltip (DialogUI deferred to M6) | [ ] | |
-| 4.6 | Remove In-World UI | [ ] | |
+| 4.5 | Tooltip (DialogUI deferred to M6) | [✓] | TooltipUI restyle + rich content (kind/category/property badges, machine processType, recipe summary); PropertyDescriptions (18 entries); CraftingSlotButton/CraftingOutputSlot restyled; 10 EditMode tests; 349/349 passing |
+| 4.6 | Remove In-World UI | [✓] | InteractionPromptUI + PlayerInteractionPromptDriver; WorldSpace audit clean (only Index/Cortex bracer preserved per project_index_device.md); folded into V4.5 test fixture |
 | 5.1 | Archive (not delete) legacy SOs to _Archived/ | [ ] | After 2.9 runs |
 | 5.2 | Scene Reference Fixup | [ ] | |
 | 5.3 | Code Cleanup | [ ] | |
@@ -1982,6 +1982,294 @@ Date: YYYY-MM-DD
 Agent: [Implementation/Review] Volume X Chunk Y
 Notes:
 -
+```
+
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 4 Chunks 4.5 + 4.6 (Tooltip + Remove In-World UI)
+Notes:
+
+VERDICT: PASS. V4.5 + V4.6 flipped from [D] to [✓]. Volume 4 is now
+COMPLETE for M2 (4.1-4.6 all [✓]).
+
+VERIFICATION:
+- Unity force-refresh + compile: 0 errors, 0 warnings.
+- EditMode tests: 349/349 passing in 14.6s. Confirms the implementer's
+  reported 339 → 349 baseline shift (+10 TooltipAndInteractionTests).
+- Test job id ff00bcc8111042d1a4a3308b1d7193c9, resultState Passed.
+
+V4.5 CHECKS:
+- TooltipUI.cs rich-content layout matches spec: name (FontSizeHeader
+  Bold) → badges row (kind + Source if applicable + categories) →
+  properties row (color-coded) → description → machine prose (first
+  sentence of howItWorks) → recipe summary → stats. All four new
+  Show overloads present and exercised by tests.
+- Property color coding confirmed: Combustible_* uses Lerp(Accent,
+  red, 0.7) for warm orange; Liquid_* uses (0.45, 0.75, 1) blue;
+  Organic_* uses UIStyle.TextSuccess green; Solid_* uses UIStyle.Text
+  neutral; Conducts_Electric/Crystalline/Magical use UIStyle.Accent.
+- PropertyDescriptions.cs has exactly 18 entries covering every
+  MaterialProperties enum value (verified MaterialProperties.cs has 18
+  members). PropertyDescriptions_HasEntryForAllEnumValues asserts
+  non-empty prose, not bare enum names, and Count parity.
+- MachineUI hover wiring verified: TooltipItemHover on every input
+  slot (ItemSupplier captures index closure), output slot
+  (ResolveOutputSlotItem), and fuel slot (ResolveFuelSlotItem).
+  TooltipMachineHover on processType badge with raycastTarget=true.
+- RecipeTabsUI: TooltipRecipeHover attached per tab, walks to output
+  ItemDefinition via ItemDatabase with graceful fallback.
+- CraftingSlotButton + CraftingOutputSlot restyle is cosmetic only —
+  ColorNormal/Hover/Empty/Ready all bind to UIStyle.PanelLight /
+  Border / AccentDim / Accent; font + colors via UIStyle. No logic
+  changes (V4.3/V4.4 lift-with discipline preserved).
+
+V4.6 CHECKS:
+- RenderMode.WorldSpace audit: exactly two source-code hits, both in
+  IndexBracerController.cs (BracerScreen L294, fold-out panels L342).
+  Index/Cortex device's diegetic UI preserved per
+  project_index_device.md.
+- m_RenderMode in scenes/prefabs: every authored Canvas is value 0
+  (ScreenSpaceOverlay). No WorldSpace canvases in any prefab or scene.
+- WorldSpaceCanvases_Removed test's whitelist (parent-chain walk for
+  IndexBracerController + name match on "BracerScreen" and "*_Panel")
+  matches the actual GO names in IndexBracerController.BuildBracerScreen
+  and BuildFoldoutPanel — both heuristics verified.
+- InteractionPromptUI: bottom-center anchored, PanelLight bg + Border,
+  FontSizeBody Bold. Show(verb, target) produces "[E] Open Workbench"
+  exactly per spec. Hide deactivates GO.
+- PlayerInteractionPromptDriver: per-frame OverlapSphere; modal
+  suppression via UIManager.IsAnyUIOpen; "Press E to X" → "[E] X"
+  normaliser capitalises the verb. Confirmed many existing
+  IInteractable.InteractPrompt strings (Assembler, Furnace, Terminal,
+  CircuitEtcher, etc.) use the legacy phrasing — the normaliser is
+  the correct non-invasive choice over a 17-file rewrite.
+
+DEVIATIONS (all acceptable):
+- IInteractable interface not refactored (verb/target split) — scope
+  guard. Normaliser is sound and covers all existing callers.
+- PlayerInteraction.cs untouched — driver mounts as sibling
+  MonoBehaviour. No coupling, no ownership conflict.
+- Per-property hover drill-in inside the tooltip's own children not
+  auto-attached (raycast bleed risk). API stays available for future
+  property-glossary panel.
+
+VOLUME 4 (M2 UI) IS NOW COMPLETE. All six chunks [✓].
+NEXT UP: V5.1 (Archive Legacy SOs).
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 4 Chunks 4.5 + 4.6 (Tooltip + Remove In-World UI)
+Notes:
+
+V4.5 + V4.6 flipped from [ ] to [D]. Landed the tooltip restyle + rich
+content, the V4.6 in-world UI audit + screen-space InteractionPromptUI,
+and the V4.3/V4.4 lift-with cosmetic restyle of CraftingSlotButton /
+CraftingOutputSlot. EditMode 349/349 in 11.39s (was 339/339). 0 errors,
+0 new warnings against the new / touched files.
+
+FILES CREATED:
+- Assets/Scripts/UI/PropertyDescriptions.cs — static lookup of
+  player-facing prose for every MaterialProperties enum value (18
+  entries; Combustible/Liquid/Organic/Solid/Conducts_Electric/
+  Crystalline/Magical). Exposes GetDescription, HasDescription,
+  Count, GetShortLabel, and the All enumerable. Pure C#, no Unity
+  references.
+- Assets/Scripts/UI/TooltipHoverHandlers.cs — four reusable
+  pointer-enter/exit components: TooltipItemHover (ItemDefinition,
+  supports a Func supplier so MachineUI's input/output slots can
+  surface the current bound stack), TooltipMachineHover
+  (MachineDefinition, used by the processType badge),
+  TooltipRecipeHover (RecipeDefinition, walks to the output's
+  ItemDefinition for the rich tooltip), TooltipPropertyHover
+  (MaterialProperties, surfaces the PropertyDescriptions body).
+- Assets/Scripts/UI/InteractionPromptUI.cs — screen-space corner-of-
+  screen prompt label, anchored bottom-center above the hotbar.
+  Uses UIStyle.PanelLight + UIStyle.Border + FontSizeBody Bold. API:
+  Show(prompt), Show(verb, target), Hide; IsVisible / CurrentText
+  test seams; EnsureBuilt idempotent for EditMode.
+- Assets/Scripts/Player/PlayerInteractionPromptDriver.cs — per-frame
+  OverlapSphere scan for the nearest IInteractable in range; pushes
+  the legacy InteractPrompt string through a "Press E to" -> "[E]"
+  normaliser so existing interactables get the V4.6 corner form for
+  free. Suppresses while any modal UI is open. Owner-authoritative
+  interaction itself remains in PlayerInteraction (untouched, per
+  scope guard).
+- Assets/Tests/EditMode/TooltipAndInteractionTests.cs — 10 EditMode
+  tests:
+    Tooltip_ShowsItemName
+    Tooltip_ShowsBadgesForKindAndCategories
+    Tooltip_ShowsPropertiesWhenPresent
+    Tooltip_ShowsRecipeCountWhenRecipesExist  (fallback-tolerant —
+       runs without a populated RecipeRegistry by exercising the
+       generic Show(string, string) path)
+    Tooltip_MachineShowsProcessTypeBadge
+    Tooltip_HideRemovesPanel
+    PropertyDescriptions_HasEntryForAllEnumValues  (asserts non-empty
+       authored prose for every MaterialProperties enum member +
+       Count equality)
+    InteractionPrompt_FormatsCorrectly
+    InteractionPrompt_HidesWhenNoInteractable
+    WorldSpaceCanvases_Removed  (FindObjectsByType<Canvas>; whitelist
+       walks parent chain for IndexBracerController, also matches the
+       BracerScreen and *_Panel naming convention)
+
+FILES MODIFIED:
+- Assets/Scripts/UI/TooltipUI.cs — full restyle to UIStyle. New
+  content layout (top-to-bottom): name (FontSizeHeader bold), badges
+  row (kind + source + categories), properties row (color-coded by
+  family), description, machine prose block (first-sentence of
+  howItWorks for ItemKind.Machine items), recipe summary ("Made via
+  N recipes"), stats line. Panel sized 280px wide with
+  VerticalLayoutGroup + ContentSizeFitter so the body auto-grows.
+  Public Show overloads: ItemDefinition (mouse-following), explicit
+  (ItemDefinition, Vector2), (MachineDefinition, Vector2) for
+  badge-hover family explainer, (MaterialProperties, Vector2) for
+  property-badge drill-in, (string, string, Vector2) generic
+  fallback. Legacy Show(ItemDefinition, VehiclePartCondition) call
+  signature preserved. EnsureBuilt() seam mirrors HudUI/MachineUI;
+  also claims the singleton so EditMode AddComponent paths work.
+- Assets/Scripts/UI/MachineUI.cs — wired TooltipItemHover on every
+  rebuilt input slot (per-index closure resolves the current stack
+  via _provider.Inputs[i]), on the output slot
+  (_provider.Outputs[0]), and on the fuel slot. Wired
+  TooltipMachineHover on the processType badge (suppliers MachineSupplier=() => _machine). The
+  processBadge bg's raycastTarget flipped to true so the hover fires
+  (V4.4 had it false). Added ResolveInputSlotItem(index) /
+  ResolveOutputSlotItem / ResolveFuelSlotItem helpers.
+- Assets/Scripts/UI/RecipeTabsUI.cs — every tab now gets a
+  TooltipRecipeHover component carrying the recipe; on hover the
+  tooltip surfaces the recipe's output ItemDefinition (via
+  ItemDatabase) or a "Recipe" generic fallback when the database
+  isn't loaded.
+- Assets/Scripts/UI/CraftingUI.cs — cosmetic restyle: panel bg ->
+  UIStyle.Panel + Border; title / arrow / hint TMP text use UIStyle
+  Font + sizes + Text/TextDim colours. CraftingSlotButton: ColorNormal
+  -> UIStyle.PanelLight, ColorHover -> UIStyle.Border, stack label
+  font + color via UIStyle. CraftingOutputSlot: ColorEmpty ->
+  UIStyle.PanelLight, ColorReady -> UIStyle.AccentDim, ColorHover
+  -> UIStyle.Accent, stack label font + color via UIStyle. Functional
+  click / hover / tooltip logic untouched per V4.3 / V4.4 deferral
+  note — purely cosmetic delta.
+- Assets/Scripts/UI/UIManager.cs — BuildCanvas pipeline now calls
+  BuildInteractionPrompt() after BuildTooltip(). The prompt label
+  parent is the InventoryCanvas (ScreenSpaceOverlay) so it inherits
+  the V4.6 corner-of-screen anchoring.
+
+V4.6 — WORLDSPACE CANVAS AUDIT:
+- Grep RenderMode.WorldSpace (cs): two hits, both in
+  Assets/Scripts/Player/IndexBracerController.cs (BracerScreen
+  canvas at line 294, fold-out panel canvases at line 342). Both
+  are the Cortex/Index device's diegetic bracer UI which is
+  intentionally world-space per project_index_device.md (recently
+  renamed from "Cortex Device" to "Index"). PRESERVED — whitelisted
+  in the WorldSpaceCanvases_Removed test by walking the parent
+  chain to look for an IndexBracerController, plus name-based fall-
+  backs ("BracerScreen", "*_Panel").
+- Grep m_RenderMode (prefab/unity): no value of 1 (ScreenSpaceCamera)
+  or 2 (WorldSpace) — every authored Canvas in scenes and prefabs is
+  already ScreenSpaceOverlay (m_RenderMode: 0).
+- Grep "WorldSpace" (cs): same two IndexBracerController hits plus a
+  test-name match in TerrainGenerationTests (false positive — refers
+  to terrain world-space chunk math, not Canvas mode).
+- Nothing else removed. No on-machine 3D text/labels existed pre-V4.6
+  — placed machines never had WorldSpace prompt labels in this
+  branch, so V4.6 ships as the prompt addition only.
+
+PROPERTY DESCRIPTIONS:
+- 18 entries cover every MaterialProperties enum value. Test
+  PropertyDescriptions_HasEntryForAllEnumValues iterates the enum,
+  asserts each entry is non-empty and not a bare enum-name stub, and
+  also asserts PropertyDescriptions.Count == enum cardinality so a
+  new enum value can't ship without prose.
+
+COOP / AUTHORITY:
+- TooltipUI is client-local. Reads stateless content data only
+  (ItemDefinition, MachineDefinition.howItWorks, MachineRegistry,
+  RecipeRegistry). Never mutates state.
+- InteractionPromptUI is client-local. The driver's per-frame scan
+  is also client-local — the actual interaction (E-key) lives in
+  PlayerInteraction and remains owner-authoritative.
+- MachineUI's per-slot tooltip hover reads ItemStack from the
+  IMachineInputProvider; no writes through the hover path.
+
+DEVIATIONS:
+- PlayerInteraction was NOT refactored. PlayerInteractionPromptDriver
+  is a sibling MonoBehaviour that mounts independently. Both can
+  live on the same Player GameObject without colliding —
+  PlayerInteraction handles the E-press, the driver handles the
+  prompt label.
+- IInteractable.InteractPrompt was NOT changed. The existing string
+  contract is reused; the driver normalises "Press E to {verb}" to
+  "[E] {Verb}" for the V4.6 corner form. Splitting into verb/target
+  fields would be a 17-file rewrite — out of scope.
+- The tooltip's recipe-summary line is best-effort in EditMode where
+  RecipeRegistry.Instance may be null; the test guards for that
+  case and exercises the generic Show fallback instead.
+- Per-property drill-in (hover a property badge to see its
+  description) is wired via the TooltipPropertyHover component but
+  not auto-attached inside the tooltip's badge row. Adding a Hover
+  component to the tooltip's own children would consume pointer
+  events the tooltip is supposed to ignore; the descriptions surface
+  via the inline property tag list instead. The Show(MaterialProperties,
+  Vector2) API + TooltipPropertyHover stay available for the future
+  property-glossary panel.
+
+TESTS (+10 new, all pass):
+- 349/349 EditMode passing in 11.39s (was 339/339). 0 failed, 0
+  skipped. TooltipAndInteractionTests suite runs in ~1.0s.
+
+V5.1 HEADS-UPS (Archive Legacy SOs):
+- No new SO assets shipped in V4.5/V4.6 — V5.1 has nothing new to
+  catalogue. TooltipUI, InteractionPromptUI, PropertyDescriptions,
+  TooltipHoverHandlers, and PlayerInteractionPromptDriver are
+  runtime scripts only.
+- The V4.5 prose for MaterialProperties lives in code
+  (PropertyDescriptions.cs), not in a ScriptableObject. If V12
+  wants to move these into a localizable SO (e.g.
+  PropertyDescriptionTable.asset), the lookup is a one-line swap;
+  the static API stays.
+- CraftingSlotButton / CraftingOutputSlot now read UIStyle directly
+  (no constant colors). Any V5/V6 work that touches them must keep
+  the UIStyle binding so global palette changes carry through.
+
+V6.1 HEADS-UPS (Crafting Match Engine):
+- RecipeTabsUI's per-tab TooltipRecipeHover currently looks up the
+  recipe's OUTPUT item. When V6.1 lands the match preview, the
+  hover could be expanded to surface "you have / you need"
+  highlighting in the same tooltip body — the recipe is the wired
+  payload, so the data path is ready.
+- The processType badge tooltip body already explains the
+  Forgiving / Picky / Hybrid families. V6.1's match-engine error
+  surfaces ("can't accept this property") can drop in via the
+  generic Show(title, body, screenPos) overload without a new
+  TooltipUI API.
+
+V9.1 HEADS-UPS (MachineRuntime Base):
+- The MachineUI's per-slot TooltipItemHover binds via
+  ItemSupplier=() => _provider.Inputs[i] (and Outputs[0], FuelSlot).
+  When V9.1 swaps StubMachineInputProvider for the live
+  MachineRuntime-backed provider, the tooltip will read the
+  authoritative inventory contents automatically — no rewire needed.
+- InteractionPromptUI is owned by UIManager; V9.1's
+  MachineRuntime.OnInteract should set the IInteractable's
+  InteractPrompt to something like "Open Workbench" so the
+  "Press E to" -> "[E]" normaliser produces "[E] Open Workbench"
+  per the V4.6 spec exemplar.
+
+OUT OF SCOPE / NOT TOUCHED:
+- ICraftingMatchEngine wiring — V6.1.
+- MachineRuntime — V9.1.
+- DialogUI — M6.
+- IInteractable refactor (verb/target split) — out of scope; the
+  existing string prompt suffices.
+- Per-property hover drill-in inside the tooltip's own children —
+  available via TooltipPropertyHover but not auto-attached
+  (raycast bleed risk on the tooltip surface).
+
+NEXT UP: V5.1 (Archive Legacy SOs — Vol 2.9 moved 999 items to
+_Archived/ already, V5.1 just needs to flip the tracker and confirm
+nothing the V4 surfaces still binds to the archived assets).
 ```
 
 ```

@@ -127,6 +127,7 @@ public class UIManager : MonoBehaviour
         BuildQuestUI();
         BuildDialogueUI();
         BuildTooltip();
+        BuildInteractionPrompt();
         BuildCursorItem();
         BuildPauseMenu();
     }
@@ -1256,6 +1257,17 @@ public class UIManager : MonoBehaviour
         // Must be last sibling so it renders on top of all other canvas children.
         // Set AFTER AddComponent so Awake() cannot accidentally reorder it.
         ttGO.transform.SetAsLastSibling();
+    }
+
+    private void BuildInteractionPrompt()
+    {
+        // V4.6 — screen-space corner-of-screen interaction label. Replaces
+        // any prior on-machine 3D text. The prompt is shown by
+        // PlayerInteractionPromptDriver each frame when the player's scan
+        // finds an IInteractable.
+        GameObject ipGO = new GameObject("InteractionPromptUI", typeof(RectTransform));
+        ipGO.transform.SetParent(_canvas.transform, false);
+        ipGO.AddComponent<Voidborne.UI.InteractionPromptUI>();
     }
 
     private void BuildQuestUI()

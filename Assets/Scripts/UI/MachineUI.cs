@@ -57,17 +57,21 @@ namespace Voidborne.UI
         private TextMeshProUGUI     _howItWorksText;
         private TextMeshProUGUI     _processBadge;
         private Image               _processBadgeBg;
+        private TooltipMachineHover _processBadgeHover;
         private RectTransform       _inputGridRect;
         private readonly List<Image>           _inputSlotBgs    = new List<Image>();
         private readonly List<Image>           _inputSlotIcons  = new List<Image>();
         private readonly List<TMP_Text>        _inputSlotLabels = new List<TMP_Text>();
+        private readonly List<TooltipItemHover> _inputSlotHovers = new List<TooltipItemHover>();
         private Image               _outputSlotBg;
         private Image               _outputSlotIcon;
         private TMP_Text            _outputSlotLabel;
+        private TooltipItemHover    _outputSlotHover;
         private GameObject          _fuelSlotGo;
         private Image               _fuelSlotBg;
         private Image               _fuelSlotIcon;
         private TMP_Text            _fuelSlotLabel;
+        private TooltipItemHover    _fuelSlotHover;
         private Image               _progressFill;
         private GameObject          _powerGaugeGo;
         private Image               _powerGaugeFill;
@@ -282,7 +286,11 @@ namespace Voidborne.UI
 
             _processBadgeBg = badge.GetComponent<Image>();
             _processBadgeBg.color = UIStyle.PanelLight;
-            _processBadgeBg.raycastTarget = false;
+            // Raycast must be true so hover surfaces the family-explanation
+            // tooltip (V4.5 — addresses the V4.4 heads-up).
+            _processBadgeBg.raycastTarget = true;
+            _processBadgeHover = badge.AddComponent<TooltipMachineHover>();
+            _processBadgeHover.MachineSupplier = () => _machine;
 
             RectTransform bRt = badge.GetComponent<RectTransform>();
             bRt.anchorMin = new Vector2(1f, 1f);
@@ -341,6 +349,10 @@ namespace Voidborne.UI
             _outputSlotBg = slot.GetComponent<Image>();
             _outputSlotBg.color = UIStyle.PanelLight;
             _outputSlotBg.raycastTarget = true;
+            // V4.5 — output slot hover surfaces the tooltip for the current
+            // output ItemDefinition (looked up via ItemDatabase).
+            _outputSlotHover = slot.AddComponent<TooltipItemHover>();
+            _outputSlotHover.ItemSupplier = ResolveOutputSlotItem;
 
             float size = UIStyle.SlotSize * OutputSlotScale;
             RectTransform sRt = slot.GetComponent<RectTransform>();
@@ -393,6 +405,9 @@ namespace Voidborne.UI
             _fuelSlotBg = _fuelSlotGo.GetComponent<Image>();
             _fuelSlotBg.color = UIStyle.PanelLight;
             _fuelSlotBg.raycastTarget = true;
+            // V4.5 — fuel slot hover surfaces the current fuel item's tooltip.
+            _fuelSlotHover = _fuelSlotGo.AddComponent<TooltipItemHover>();
+            _fuelSlotHover.ItemSupplier = ResolveFuelSlotItem;
 
             RectTransform fRt = _fuelSlotGo.GetComponent<RectTransform>();
             fRt.anchorMin = new Vector2(0f, 1f);
@@ -613,6 +628,7 @@ namespace Voidborne.UI
             _inputSlotBgs.Clear();
             _inputSlotIcons.Clear();
             _inputSlotLabels.Clear();
+            _inputSlotHovers.Clear();
 
             int total = gridWidth * gridHeight;
             int uiLayer = LayerMask.NameToLayer("UI");
@@ -629,6 +645,12 @@ namespace Voidborne.UI
                 bg.color = UIStyle.PanelLight;
                 bg.raycastTarget = true;
                 _inputSlotBgs.Add(bg);
+
+                // V4.5 — per-slot hover supplies its own item via index.
+                int capturedIndex = i;
+                TooltipItemHover hover = slot.AddComponent<TooltipItemHover>();
+                hover.ItemSupplier = () => ResolveInputSlotItem(capturedIndex);
+                _inputSlotHovers.Add(hover);
 
                 UIBuilder.Border(slot.GetComponent<RectTransform>(), UIStyle.Border);
 
@@ -813,6 +835,35 @@ namespace Voidborne.UI
             if (s < 0f) s = 0f;
             if (s > 1f) s = 1f;
             _powerGaugeFill.fillAmount = s;
+        }
+
+        // ---------------------------------------------------------------
+        //  Tooltip hover suppliers (V4.5)
+        // ---------------------------------------------------------------
+
+        private ItemDefinition ResolveInputSlotItem(int index)
+        {
+            if (_provider == null) return null;
+            IReadOnlyList<ItemStack> inputs = _provider.Inputs;
+            if (inputs == null || index < 0 || index >= inputs.Count) return null;
+            ItemStack s = inputs[index];
+            return s.IsEmpty ? null : s.item;
+        }
+
+        private ItemDefinition ResolveOutputSlotItem()
+        {
+            if (_provider == null) return null;
+            IReadOnlyList<ItemStack> outs = _provider.Outputs;
+            if (outs == null || outs.Count == 0) return null;
+            ItemStack s = outs[0];
+            return s.IsEmpty ? null : s.item;
+        }
+
+        private ItemDefinition ResolveFuelSlotItem()
+        {
+            if (_provider == null || !_provider.NeedsFuel) return null;
+            ItemStack s = _provider.FuelSlot;
+            return s.IsEmpty ? null : s.item;
         }
 
         private static void ApplyStackToSlot(ItemStack stack, Image icon, TMP_Text label)

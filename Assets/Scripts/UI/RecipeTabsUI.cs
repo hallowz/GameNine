@@ -156,6 +156,11 @@ namespace Voidborne.UI
             btn.targetGraphic = bg;
             if (onClick != null) btn.onClick.AddListener(() => onClick());
 
+            // V4.5 — hovering a tab surfaces the recipe's output ItemDefinition
+            // tooltip (rich content, recipe summary, properties).
+            TooltipRecipeHover hover = tabGo.AddComponent<TooltipRecipeHover>();
+            hover.Recipe = recipe;
+
             // Resolve a display label for the recipe's output. The
             // ItemDatabase lookup is best-effort — in tests without a
             // populated database we fall back to the raw item ID.
