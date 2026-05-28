@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1290502351225531517}
   - component: {fileID: 4894838042583614366}
+  - component: {fileID: 3423051974518726885}
+  - component: {fileID: 5719724019690505708}
   m_Layer: 0
   m_Name: composter_placed
   m_TagString: Untagged
@@ -55,6 +57,32 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3423051974518726885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814403523812733565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec88246d9c97ec74bb9529e814dd4494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineCraftingStation
+  machineDef: {fileID: 0}
+--- !u!114 &5719724019690505708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814403523812733565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d83c3800c1c8f4ebe35fc87ec1c8a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineRuntime
+  interactRange: 4
 --- !u!1 &6788265055210857957
 GameObject:
   m_ObjectHideFlags: 0

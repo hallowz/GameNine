@@ -252,7 +252,17 @@ namespace Voidborne.Building
             // wired on placement. Block items do NOT.
             if (def.kind == ItemKind.Machine)
             {
-                AttachMachineStation(instance, def);
+                // V9.5 — Conveyor segments are Machine-kind in items_core.json
+                // but they don't behave like crafting machines (no recipes, no
+                // station). Special-case them off the standard machine path.
+                if (def.itemId == "conveyor_belt")
+                {
+                    AttachConveyorSegment(instance);
+                }
+                else
+                {
+                    AttachMachineStation(instance, def);
+                }
             }
 
             // V8.3 — power items (generators, batteries, junctions, sinks)
@@ -302,6 +312,65 @@ namespace Voidborne.Building
                 if (consumer == null) consumer = instance.AddComponent<PowerConsumerNode>();
                 consumer.Configure(mdef.powerDrawWatts);
             }
+
+            // V9.1 — attach the appropriate MachineRuntime subclass per item
+            // id so the placed prefab gets its IInteractable hook + any
+            // per-machine special behaviour. Falls back to the base
+            // MachineRuntime when no specialised subclass is registered.
+            AttachMachineRuntime(instance, mdef);
+        }
+
+        /// <summary>
+        /// V9.1/V9.2/V9.5 — Attach the right <see cref="MachineRuntime"/>
+        /// subclass for <paramref name="mdef"/>. Workbench is the safe
+        /// default for any unhandled machine id.
+        /// </summary>
+        private static void AttachMachineRuntime(GameObject instance, MachineDefinition mdef)
+        {
+            if (instance == null || mdef == null) return;
+            // If a runtime is already present (e.g. baked into the prefab),
+            // honour that.
+            if (instance.GetComponent<MachineRuntime>() != null) return;
+
+            switch (mdef.itemId)
+            {
+                case "workbench":
+                    instance.AddComponent<Voidborne.Automation.Machines.WorkbenchRuntime>();
+                    break;
+                case "campfire":
+                    instance.AddComponent<Voidborne.Automation.Machines.CampfireRuntime>();
+                    break;
+                case "furnace":
+                    instance.AddComponent<Voidborne.Automation.Machines.FurnaceRuntime>();
+                    break;
+                case "steam_boiler":
+                    instance.AddComponent<Voidborne.Automation.Machines.SteamBoilerRuntime>();
+                    break;
+                case "steam_generator":
+                    instance.AddComponent<Voidborne.Automation.Machines.SteamGeneratorRuntime>();
+                    break;
+                case "composter":
+                    instance.AddComponent<Voidborne.Automation.Machines.ComposterRuntime>();
+                    break;
+                case "drying_rack":
+                    instance.AddComponent<Voidborne.Automation.Machines.DryingRackRuntime>();
+                    break;
+                case "storage_chest":
+                    instance.AddComponent<Voidborne.Automation.Machines.StorageChestRuntime>();
+                    break;
+                case "crusher":
+                    instance.AddComponent<Voidborne.Automation.Machines.CrusherRuntime>();
+                    break;
+                case "inserter":
+                    instance.AddComponent<Voidborne.Automation.Transport.Inserter>();
+                    break;
+                default:
+                    // Unknown / not-yet-implemented machine id -- the base
+                    // workbench runtime gives the player the standard
+                    // Machine UI hookup.
+                    instance.AddComponent<Voidborne.Automation.Machines.WorkbenchRuntime>();
+                    break;
+            }
         }
 
         /// <summary>
@@ -348,6 +417,20 @@ namespace Voidborne.Building
                         instance.AddComponent<PowerSink>();
                     break;
             }
+        }
+
+        /// <summary>
+        /// V9.5 — Attach a per-segment <see cref="Voidborne.Automation.Transport.ConveyorBelt"/>
+        /// + a configured <see cref="PowerNode"/> (consumer role, 10W draw)
+        /// to the placed prefab. Each segment is its own consumer so a long
+        /// belt's draw aggregates naturally.
+        /// </summary>
+        private static void AttachConveyorSegment(GameObject instance)
+        {
+            if (instance == null) return;
+            var belt = instance.GetComponent<Voidborne.Automation.Transport.ConveyorBelt>();
+            if (belt == null) belt = instance.AddComponent<Voidborne.Automation.Transport.ConveyorBelt>();
+            belt.EnsurePowerConsumerNode();
         }
 
         // ---------------------------------------------------------------

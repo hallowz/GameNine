@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6301684733693475542}
   - component: {fileID: 2065723336398004225}
+  - component: {fileID: 1794530120903173501}
+  - component: {fileID: 7372553467411322251}
   m_Layer: 0
   m_Name: crusher_placed
   m_TagString: Untagged
@@ -55,6 +57,32 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1794530120903173501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3252425689094638457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec88246d9c97ec74bb9529e814dd4494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineCraftingStation
+  machineDef: {fileID: 0}
+--- !u!114 &7372553467411322251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3252425689094638457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d83c3800c1c8f4ebe35fc87ec1c8a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineRuntime
+  interactRange: 4
 --- !u!1 &5026362852324380264
 GameObject:
   m_ObjectHideFlags: 0
