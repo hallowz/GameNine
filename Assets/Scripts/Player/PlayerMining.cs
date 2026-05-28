@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Voidborne.Building;
 using Voidborne.Diagnostics;
 using Voidborne.World.Chunks;
 using Voidborne.World.Decoration;
@@ -191,16 +192,48 @@ namespace Voidborne.Player
                 }
             }
 
-            // Fall through to terrain mining (pickaxe equipped + ray hits terrain)
-            if (pickaxe == null)
+            // Raycast forward. The hit is shared between the block-break (V7.5)
+            // and terrain-mine paths; a single Physics.Raycast keeps the cost
+            // constant per frame.
+            Ray mineRay = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            if (!Physics.Raycast(mineRay, out RaycastHit hit, maxRaycastDistance))
             {
                 ResetProgress();
                 RuntimeProfiler.End(s_prof);
                 return;
             }
 
-            Ray mineRay = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-            if (!Physics.Raycast(mineRay, out RaycastHit hit, maxRaycastDistance))
+            // V7.5 — Block-mining branch.
+            // If the raycast hit a PlacedBlock, route damage through
+            // BlockBreaker instead of TerrainDeformer. No tool-tier
+            // requirement: any tool (or no tool) chips blocks at the same
+            // rate for M2. Tool tiers land in M7 polish.
+            PlacedBlock placedBlock = hit.collider != null
+                ? hit.collider.GetComponentInParent<PlacedBlock>()
+                : null;
+            if (placedBlock != null)
+            {
+                isMining = true;
+                SetProgressBarVisible(true);
+                SetProgressBarColor(new Color(0.4f, 0.7f, 1f, 1f)); // blue for block-break
+
+                float blockRate = baseProgressRate * 2f; // M2: constant rate
+                miningProgress += blockRate * Time.deltaTime;
+                miningProgress = Mathf.Clamp01(miningProgress);
+                UpdateProgressBarFill(miningProgress);
+
+                if (miningProgress >= 1f)
+                {
+                    int dmg = PlacedBlock.DefaultHealth; // one hit cycle = one block (M2)
+                    BlockBreaker.ApplyDamage(placedBlock, dmg);
+                    ResetProgress();
+                }
+                RuntimeProfiler.End(s_prof);
+                return;
+            }
+
+            // Fall through to terrain mining (pickaxe equipped + ray hits terrain)
+            if (pickaxe == null)
             {
                 ResetProgress();
                 RuntimeProfiler.End(s_prof);

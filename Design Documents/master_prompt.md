@@ -1745,11 +1745,11 @@ Status codes:
 | 6.2 | Personal Crafting Grid | [✓] | PersonalCraftingGrid re-wired to V6.1 engine w/ Hybrid_Crafting machineType; CurrentMatch + OnMatchChanged surfaced; output-slot click consumes inputs via bindings; 4 EditMode tests |
 | 6.3 | Machine Crafting Stations | [✓] | MachineCraftingStation MonoBehaviour implements IMachineInputProvider; engine-gated TryStartRecipe; tick coroutine w/ AdvanceTick test seam; 7 EditMode tests incl. milk-in-boiler at the station |
 | 6.4 | Bootstrap Path Validator (Core 60) | [✓] | EditMode BFS from Source items via ingredients[] (ignores inputProperties[] per V6.1 note); all 60 reachable in <32 passes; 2 tests (reachability + 2x2 fit) |
-| 7.1 | Block Placement & Virtual Grid | [ ] | |
-| 7.2 | Block Forms (cube + slab only for M2) | [ ] | Other forms deferred to M7 |
-| 7.3 | Terrain Leveling Tool | [ ] | |
+| 7.1 | Block Placement & Virtual Grid | [✓] | BuildGrid (lazy origin pin) + PlacedBlock + BlockRegistry + BlockPlacer w/ ghost preview; machine-vs-block discriminator on ItemDefinition.kind |
+| 7.2 | Block Forms (cube + slab only for M2) | [✓] | BlockFormResolver (id-suffix mapping) + DoorInteraction (hinge IInteractable); slab/door positions snap to half-cell-Y |
+| 7.3 | Terrain Leveling Tool | [✓] | TerrainLevelTool wraps TerrainDeformer.DeformSphere; F10 dev-key trigger (terrain_leveler item deferred to M7) |
 | 7.4 | Blueprint Capture & Place | [~] | DEFERRED to M5/M6 |
-| 7.5 | Block Breaking | [ ] | |
+| 7.5 | Block Breaking | [✓] | BlockBreaker centralizes damage->drop->unregister sequence; PlayerMining routes PlacedBlock hits through it (any tool, constant rate for M2) |
 | 8.1 | Power Network Graph | [ ] | |
 | 8.2 | Generators — 2 only (steam + hand crank) | [ ] | Full 54-zoo deferred to M7 |
 | 8.3 | Storage (battery_basic) + Sink only | [ ] | |
@@ -1984,6 +1984,297 @@ Notes:
 -
 ```
 
+```
+Date: 2026-05-27
+Agent: Review M2 Volume 7 Chunks 7.1 + 7.2 + 7.3 + 7.5 (Building & Grid System)
+Notes:
+
+V7.1 / V7.2 / V7.3 / V7.5 flipped from [D] to [✓]. V7.4 (Blueprint
+Capture) remains [~] per the M2 deferral. Volume 7 is COMPLETE for M2.
+
+Verification:
+- refresh_unity force+compile: success, console clean (zero errors, zero
+  new warnings).
+- run_tests EditMode: 383/383 passing in 10.99s. Pre-V7 baseline 372 +
+  11 new BuildingTests = 383. Matches the implementer's delta exactly.
+
+Spot checks against the V6.3 / V6.4 contract:
+- BlockPlacer.AttachMachineStation runs ONLY when def.kind ==
+  ItemKind.Machine (BlockPlacer.cs L252-255). Build blocks stay inert.
+  Confirmed by tests BlockPlacer_AttachesMachineCraftingStationForMachineItems
+  and BlockPlacer_BuildBlockDoesNotGetMachineStation.
+- BlockPlacer.AttachMachineStation calls MachineRegistry.GetById(itemId)
+  -> MachineCraftingStation.Init(mdef) per V6.3's API (verified against
+  MachineCraftingStation.cs L122 + MachineRegistry.cs L65). Test reads
+  station.Machine -- the V6.3 getter at L50 -- and asserts identity.
+- BlockPlacer instantiates def.placedPrefab (V3.3 generated), NOT the
+  world-drop prefab. The placedPrefab is the machine's static mesh; the
+  attached MachineCraftingStation is the only runtime behaviour.
+
+Spot checks against the V7 spec:
+- BuildGrid: lazy pin via SetOriginIfUnset (idempotent, snaps to floor),
+  WorldToCell/CellToWorld round-trip preserves cell. Test
+  BuildGrid_FirstBlockSetsOrigin proves the second pin is a no-op and
+  the floor-snap lands at integer world coords.
+- PlacedBlock: itemId/cell/rotation/health fields all present; OnPlaced
+  initializer; TakeDamage clamps at 0; NotifyBroken raises
+  OnBlockBroken; OnHealthChanged also raised (bonus hook for future
+  HUD/VFX). DefaultHealth = 100.
+- BlockRegistry: Dictionary<Vector3Int, PlacedBlock>, double-placement
+  refused with Debug.LogWarning (test asserts via LogAssert.Expect),
+  IReadOnlyCollection AllBlocks exposed for V21 net sync.
+- BlockFormResolver: id-suffix routing (_door / _slab / _panel /
+  _stairs / _cube) + GetPlacementPosition snaps slab + door to
+  bottom-of-cell. Panel/cube/stairs default to cell centre. Unknown
+  build-tagged items default to Cube.
+- DoorInteraction: implements IInteractable; the actual contract is a
+  single InteractPrompt string ("Open Door"/"Close Door" depending on
+  state), not Verb+Target separately (the contract has never carried
+  Verb/Target). State-dependent prompt is correct. Slerp over 0.35s
+  default; SetOpenImmediate test seam present; no physics (M2 scope).
+  Adds a hinge to door-form blocks on placement (BlockPlacer L259-262).
+- TerrainLevelTool: F10 dev-key (NOT a Core 60 craftable -- M2
+  deviation already documented in the V7.3 tracker note). ApplyAt(point,
+  radius) walks the disk footprint and emits paired CUT + FILL
+  TerrainDeformer.DeformSphere calls per cell. Test
+  TerrainLevelTool_ModifiesVoxelsInRadius hand-counts the disk and
+  asserts cell-count matches.
+- BlockBreaker: ApplyDamage -> TakeDamage; on HP<=0 calls DestroyAndDrop
+  which fires NotifyBroken -> Unregister -> SpawnItem at cell centre ->
+  Destroy GO. One unit dropped, no tool-tier gating (M2 scope). Test
+  Block_AtZeroHealthDropsItemAndUnregisters covers the full chain.
+- PlayerMining: single Physics.Raycast feeds both the block-break and
+  terrain-mine branches; PlacedBlock detected via GetComponentInParent
+  (handles compound colliders on the placed prefab). Block-break is
+  constant-rate (no tool-tier requirement) for M2.
+
+Codebase rules: no emojis, runtime-visible. Coop heads-ups for BuildGrid
+(origin pinned once, idempotent for client/server race), BlockRegistry
+(local mirror of server state in V21), and BlockBreaker/PlacedBlock/
+DoorInteraction (owner-authoritative for M2 -- all trivially portable
+to ServerRpc in V21) are documented in the XML doc remarks on each
+file.
+
+Scope adherence:
+- V7.4 BlueprintCapture NOT implemented (correct -- deferred to M5/M6).
+- V8 (power) NOT implemented (correct -- V7 batch only).
+- items_core.json NOT modified (correct -- no new items added).
+- TerrainDeformer internals NOT touched, only wrapped via the public
+  DeformSphere API.
+- Door is animation-only (no physics swept-volume) -- acceptable for M2
+  scope, M7 polish lands swept-volume.
+
+No fixes required. Volume 7 is closed for M2; V7.4 stays [~] for M5/M6.
+
+NEXT UP: V8.1 (Power Network Graph). Power network + 2 generators
+(steam + hand crank) + battery_basic. Picks up the M2 thread the V7
+batch left behind.
+```
+
+```
+Date: 2026-05-27
+Agent: Implementation M2 Volume 7 Chunks 7.1 + 7.2 + 7.3 + 7.5 (Building & Grid System)
+Notes:
+
+V7.1, V7.2, V7.3, V7.5 flipped from [ ] to [D]. V7.4 (Blueprint Capture)
+remains [~] per the M2-scope deferral. Volume 7 is the M2 building
+backbone: virtual grid + block placement + terrain leveling + block
+breaking. Test delta +11 (BuildingTests.cs). EditMode 383/383 passing
+in 10.95s (was 372; +11 new: BuildingTests).
+
+V7.1 -- BLOCK PLACEMENT & VIRTUAL GRID:
+- Assets/Scripts/Building/BuildGrid.cs (~180 LOC). Singleton MonoBehaviour
+  with lazy-Instance via FindObjectOfType / on-demand GO. Origin pin
+  policy is LAZY: SetOriginIfUnset is idempotent and called by the first
+  BlockPlacer.TryPlace; subsequent calls are no-ops. Origin is snapped
+  to a cell-aligned world position (Floor(p / cellSize) * cellSize) so
+  the grid is always axis-aligned with the world even when the first
+  block is placed at a non-integer position. cellSize defaults to 1m
+  to match the V3.3 placedPrefab footprint.
+- Assets/Scripts/Building/PlacedBlock.cs (~140 LOC). Per-instance state
+  component: itemId, cell, rotation, healthRemaining (default 100), and
+  OnPlaced(id, cell, rot[, maxHp]) initializer. TakeDamage returns new
+  HP but DOES NOT auto-destroy; that's centralized in BlockBreaker so
+  drop policy lives in one place. OnHealthChanged / OnBlockBroken events.
+- Assets/Scripts/Building/BlockRegistry.cs (~150 LOC). Per-cell
+  Dictionary<Vector3Int, PlacedBlock> with Register / Unregister /
+  GetAt / IsCellOccupied / AllBlocks. Double-placement policy: refuse +
+  warn (the test asserts this via LogAssert.Expect). OnBlockRegistered
+  / OnBlockUnregistered events for the V21 net-replication hook.
+- Assets/Scripts/Building/BlockPlacer.cs (~280 LOC). Player-side
+  controller. Per-frame: ghost preview if ActiveHotbarItem is a
+  placeable; left-click commits, right-click rotates +90 around Y.
+  Public TryPlace(def, cell, placePos) seam so tests skip input.
+  - MACHINE-VS-BLOCK DISCRIMINATOR (V6.4 review heads-up):
+    Predicate IsPlaceable accepts both ItemKind.Machine and
+    isBuildBlock==true; placement attaches MachineCraftingStation only
+    when kind==Machine. Build blocks stay inert. Door form (V7.2)
+    additionally attaches DoorInteraction.
+  - Ghost preview: Instantiate(placedPrefab) with all colliders
+    disabled and material color set to ghostTint / ghostBlockedTint.
+    Tint switches on BlockRegistry.IsCellOccupied lookup. Best-effort
+    URP _BaseColor write; falls back silently on other shaders.
+  - Inventory consumption is owner-authoritative: decrements
+    PlayerInventory.Hotbar at SelectedHotbarIndex by 1 BEFORE
+    Instantiate. If decrement fails (slot mutated mid-frame), aborts
+    the placement so we never dupe items.
+  - UI gate: BlockPlacer.Update() bails out when UIManager.IsAnyUIOpen,
+    matching the PlayerMining + PlayerInteraction guard pattern.
+
+V7.2 -- BLOCK FORMS & VARIANTS (cube + slab + panel + door):
+- Assets/Scripts/Building/BlockFormResolver.cs (~80 LOC). Static
+  Resolve(def) -> Form enum (Cube / Slab / Panel / Door / Stairs /
+  Unknown). For M2 the mapping reads id suffix (the V2.2 schema
+  doesn't yet carry a structured "form" field); _slab -> Slab,
+  _panel -> Panel, _door -> Door, _cube -> Cube. GetPlacementPosition
+  snaps slab + door to half-cell-Y (origin sits at the cell floor); cube
+  + panel use the cell centre. The V3.3 placedPrefabs are already
+  form-specific geometry, so the resolver does NOT scale prefabs.
+- Assets/Scripts/Building/DoorInteraction.cs (~120 LOC). MonoBehaviour
+  implementing Voidborne.IInteractable with InteractPrompt "Open Door"
+  / "Close Door". Toggle() flips IsOpen + Slerps localRotation between
+  0 deg (closed) and 90 deg (open) over openDurationSeconds (default
+  0.35). SetOpenImmediate(bool) is the test seam + save-load entry
+  point. No physics, no collider-disable on open -- M2 ships a minimal
+  hinge; M7 polish adds a swept-volume open check.
+- Attached automatically by BlockPlacer.TryPlace when form==Door, so
+  existing PlayerInteractionPromptDriver (V4.6) picks the door up via
+  the existing InteractPrompt path -- no additional UI wiring required.
+
+V7.3 -- TERRAIN LEVELING TOOL (with M2 dev-key deviation):
+- Assets/Scripts/Building/TerrainLevelTool.cs (~120 LOC). Trigger:
+  Keyboard.current.f10Key (Update polls each frame). Public ApplyAt
+  (worldHitPoint, radius) seam: snaps the hit Y to cell-Y, walks a
+  disk footprint in [-radius..radius]^2 keeping only cells with
+  dx^2+dz^2 <= radius^2 (round footprint, not square), and emits two
+  TerrainDeformer.DeformSphere calls per cell: a CUT above the target
+  plane and a FILL below. Net effect: a flat platform. Returns
+  cellsModified so the test can assert the disk-footprint math
+  deterministically without depending on the marching-cubes pipeline.
+- M2 DEVIATION: master prompt names "terrain_leveler" as a hotbar item.
+  That id is NOT in Core 60 (items_core.json); per scope guard we MUST
+  NOT modify items_core.json. So the M2 build ships the leveler as a
+  dev/cheat key (F10) rather than a craftable. The acceptance criterion
+  ("carve a flat platform on rolling hills") is satisfied identically.
+  M7 wires the craftable: add terrain_leveler to items.json with a
+  workbench recipe, route TerrainLevelTool.Update through
+  PlayerInventory.ActiveHotbarItem (same predicate pattern as
+  BlockPlacer.IsPlaceable). Tracker reflects this in the V7.3 row.
+
+V7.5 -- BLOCK BREAKING:
+- Assets/Scripts/Building/BlockBreaker.cs (~75 LOC). Static helper:
+  ApplyDamage(block, dmg) returns broken-bool; DestroyAndDrop unifies
+  the "drop 1 of item -> Unregister -> Destroy GO" sequence. Drop spawn
+  goes through WorldItemSpawner.SpawnItem at the cell centre.
+- Assets/Scripts/Player/PlayerMining.cs modified (V7.5 branch). The
+  raycast was unified -- one Physics.Raycast feeds both the
+  block-mining and terrain-mining paths. If hit.collider has a
+  PlacedBlock (via GetComponentInParent), route through BlockBreaker
+  with NO tool-tier requirement and a constant rate (baseProgressRate
+  * 2). Tool-tier scaling lands in M7 polish per spec.
+- The block-break branch uses its own progress-bar color (pale blue)
+  so the UX distinguishes terrain-mine (orange) from block-break.
+
+INTEGRATION + COOP NOTES:
+- BuildGrid origin policy: lazy on first placement, server-authoritative
+  in V21. The SetOriginIfUnset API is idempotent so client replays that
+  race the server can call it safely.
+- BlockRegistry is a local read-through cache; V21 replicates Register /
+  Unregister events via NetworkVariable + ServerRpc.
+- BlockPlacer is owner-authoritative for M2; V21 gates every TryPlace
+  through a ServerRpc that re-runs (cell-free? inventory-has-1?) on
+  the server. Because the cell math is deterministic and pure, client
+  preview + server commit converge without cross-validation RPC.
+- MachineCraftingStation attachment on placement matches the V6.3
+  implementer-note pattern -- V9.1 (MachineRuntime) was anticipated
+  to "AddComponent<MachineCraftingStation> + call Init(machineDef)" on
+  placed prefabs; V7.1 does exactly that, so V9.1 can drop its own
+  AddComponent step. V9.1 will instead focus on the server-tick /
+  replication side (option (b) from the V6.3 review: ServerRpc on
+  TryStartRecipe).
+
+V8.1 HEADS-UPS (Power Network):
+- PowerNetwork.cs will discover PowerNode components on the same
+  placed prefabs we instantiate here. Recommend: PowerNode auto-
+  registers in OnEnable, so the moment BlockPlacer.TryPlace finishes
+  Instantiate + AddComponent<MachineCraftingStation>, PowerNode (also
+  on the placed prefab via the V3.3 generator OR added by V8.1 itself
+  in the AttachMachineStation path) will join the network automatically.
+- CableSegment placement (V8.1) should NOT use BlockPlacer -- it has
+  its own line-of-sight raycast + endpoint snap. The placeholder is
+  the existing SegmentPlacementController.cs (Voidborne.Automation).
+  V8.1 can wrap that or replace it; either way the V7 BlockRegistry
+  is NOT involved -- cables are edges between PowerNodes, not blocks.
+- BlockRegistry exposes AllBlocks for spatial queries. V8.1 wire-
+  routing can use it to auto-route cables along block faces if desired
+  (M7 polish, not M2).
+
+V9.1 HEADS-UPS (MachineRuntime):
+- V9.1 should AVOID re-attaching MachineCraftingStation -- V7.1 already
+  does this in BlockPlacer.AttachMachineStation. Instead, V9.1 should
+  add a MachineRuntime sibling component that owns the server-tick /
+  replication side (NetworkVariable<float> Progress, ServerRpc on
+  TryStartRecipe). MachineCraftingStation's existing AdvanceTick +
+  ForceCompleteActiveRecipe seams are the deterministic engine V9.1
+  drives -- no further refactor needed there.
+- The placed-prefab GO is now the canonical "machine instance" anchor:
+  PlacedBlock + MachineCraftingStation are both on it, so V9.1 can
+  query GetComponent<PlacedBlock>().ItemId and look up the machineDef
+  via MachineRegistry.GetById without any additional data plumbing.
+- ChestBlock / WorkbenchBlock / FurnaceBlock legacy components are NOT
+  retired by V7.1 (out of scope). V9.1 should retire them in the same
+  pass that wires MachineRuntime onto the V7 placed prefabs.
+
+TEST DELTA:
+- Assets/Tests/EditMode/BuildingTests.cs (~360 LOC). 11 new tests:
+  * BuildGrid_FirstBlockSetsOrigin (lazy pin, idempotent, cell-snap)
+  * BuildGrid_WorldToCellAndBack (round-trip; cell index stable)
+  * BlockRegistry_RegisterAndLookup
+  * BlockRegistry_DoesNotAllowDoublePlacement (refuse + LogAssert)
+  * BlockPlacer_PlacesBlockOnLeftClick (programmatic TryPlace seam)
+  * BlockPlacer_AttachesMachineCraftingStationForMachineItems
+    (the V6.4 review proof: machine items get a station)
+  * BlockPlacer_BuildBlockDoesNotGetMachineStation (the converse:
+    inert blocks must NOT surface as crafting stations)
+  * BlockPlacer_DoesNotPlaceInsideExistingBlock
+  * Block_DamageReducesHealth
+  * Block_AtZeroHealthDropsItemAndUnregisters (full V7.5 break path:
+    drop count, registry unregister)
+  * TerrainLevelTool_ModifiesVoxelsInRadius (disk-footprint count)
+- EditModeTests.asmdef gained a UnityEngine.TestRunner reference for
+  LogAssert.Expect (used by the double-placement test).
+- Final count: 383 EditMode tests passing (= 372 + 11 new), 0 failures,
+  10.95s total runtime. Verified via refresh_unity (force/all) + run_tests
+  (EditMode). 0 compile errors, 0 new console warnings.
+
+DEVIATIONS FROM PROMPT:
+- terrain_leveler is a dev-key (F10), not a craftable item. items_core
+  .json was NOT modified per scope guard; the proper craftable + hotbar
+  binding lands in M7 (see V7.3 deviation note above).
+- BlockPlacer's right-click rotate polls Mouse.current directly rather
+  than going through InputSystem_Actions (no dedicated "rotate ghost"
+  binding exists in the generated InputSystem_Actions.cs). RotateGhost90
+  is exposed as a public test seam.
+- Ghost preview uses a plain material color tint (URP _BaseColor +
+  Standard _Color) instead of a custom translucent shader. Per scope
+  guard: "Ghost preview can be a simple translucent material applied
+  to a stock instance".
+- BlockPlacer does NOT yet integrate with the legacy SocketCompatibility
+  / SnapSocket system (Voidborne.Building.SnapSocket etc). The V7 grid
+  IS the new building paradigm; the socket-based legacy will be retired
+  by a later cleanup pass (out of scope here).
+
+NO DELETES (per scope guard): zero modifications to ScriptableObjects/,
+Resources/, items_core.json, TerrainDeformer.cs internals, or any
+existing scene. Pure new files + 1 modification to PlayerMining.cs (the
+V7.5 block-break branch) + tracker + log + asmdef.
+
+NEXT UP: V8.1 (Power Network Graph). Volume 7 is closed for M2; the
+M2 acceptance criterion ("build workbench / furnace / boiler / wire
+them") now has the placement primitive needed -- V8 wires power, V9
+wires runtime, V21 wires net replication.
+
+```
 ```
 Date: 2026-05-27
 Agent: Review M2 Volume 6 Chunks 6.2 + 6.3 + 6.4 (Personal Grid + Machine Stations + Bootstrap Validator)
