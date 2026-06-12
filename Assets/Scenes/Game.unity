@@ -388,7 +388,7 @@ MonoBehaviour:
   unloadBuffer: 2
   maxOreCompletionsPerFrame: 2
   decorationManager: {fileID: 0}
-  oreRegistry: {fileID: 0}
+  oreRegistry: {fileID: 11400000, guid: 069c5d9efe55fc84ca7b7f3e036ab007, type: 2}
   defaultChunkMaterial: {fileID: 0}
   triplanarTexScale: 0.25
   triplanarBlendSharpness: 4
@@ -565,7 +565,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Voidborne::Voidborne.Dev.PlaytestDevConsole
   playerGameObject: {fileID: 0}
   flyVerticalSpeed: 8
-  flyPlanarSpeed: 12
 --- !u!4 &1352689119
 Transform:
   m_ObjectHideFlags: 0
@@ -649,6 +648,7 @@ GameObject:
   - component: {fileID: 1611527335}
   - component: {fileID: 1611527334}
   - component: {fileID: 1611527333}
+  - component: {fileID: 1611527348}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -921,6 +921,33 @@ Transform:
   - {fileID: 2045788866}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1611527348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611527332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a80e15569f34d5f41b288b52c8d5e7e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Voidborne::Voidborne.Combat.WeaponSwitcher
+  gunController: {fileID: 0}
+  adsController: {fileID: 0}
+  reloadSystem: {fileID: 0}
+  weaponSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  audioSource: {fileID: 0}
+  playerInventory: {fileID: 1611527343}
+  meleeController: {fileID: 0}
+  bowController: {fileID: 0}
+  throwController: {fileID: 0}
+  torchView: {fileID: 0}
+  flareGunView: {fileID: 0}
+  useInventoryHotbar: 1
 --- !u!1 &2045788865
 GameObject:
   m_ObjectHideFlags: 0

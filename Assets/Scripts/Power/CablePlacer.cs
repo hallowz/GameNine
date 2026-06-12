@@ -244,6 +244,13 @@ namespace Voidborne.Power
                 _previewLine.positionCount = 2;
                 _previewLine.widthMultiplier = 0.04f;
                 _previewLine.useWorldSpace = true;
+                // LineRenderer has no default material under URP — without one
+                // the preview renders magenta/invisible. Sprites/Default is
+                // unlit and respects vertex colors.
+                _previewLine.material = new Material(
+                    Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit"));
+                _previewLine.startColor = new Color(1f, 0.85f, 0.3f);
+                _previewLine.endColor   = new Color(1f, 0.85f, 0.3f);
             }
             _previewLine.SetPosition(0, from);
             _previewLine.SetPosition(1, to);

@@ -132,6 +132,17 @@ namespace Voidborne.Power
                 _line.positionCount = 2;
                 _line.widthMultiplier = 0.05f;
                 _line.useWorldSpace = true;
+                // LineRenderer has no default material under URP — without one
+                // the cable renders magenta/invisible. Sprites/Default is
+                // unlit and respects vertex colors.
+                if (_line.sharedMaterial == null)
+                {
+                    _line.material = new Material(
+                        Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit"));
+                    var copper = new Color(0.72f, 0.45f, 0.2f);
+                    _line.startColor = copper;
+                    _line.endColor   = copper;
+                }
             }
             _line.SetPosition(0, endpointA.transform.position);
             _line.SetPosition(1, endpointB.transform.position);
