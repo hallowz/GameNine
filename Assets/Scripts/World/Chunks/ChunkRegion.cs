@@ -37,12 +37,20 @@ namespace Voidborne.World.Chunks
             return a >= 0 ? a / b : (a - b + 1) / b;
         }
 
+        // Chunks whose meshes made it into the current combined mesh. Used to set
+        // per-chunk batched flags so individual renderers don't double-render.
+        private readonly HashSet<ChunkData> combinedChunks = new HashSet<ChunkData>();
+
         /// <summary>
         /// Rebuilds the combined mesh from all chunks in this region.
+        /// rendererResolver maps a chunk position to its ChunkRenderer (null if the
+        /// chunk has no GameObject) so combined chunks can disable their own renderer.
         /// </summary>
-        public void Rebuild(Material material, Transform parent)
+        public void Rebuild(Material material, Transform parent,
+                            System.Func<Vector3Int, ChunkRenderer> rendererResolver)
         {
             isDirty = false;
+            combinedChunks.Clear();
 
             // Collect valid meshes — only standard-format meshes (skip compacted ones)
             var combines = new List<CombineInstance>();
@@ -65,11 +73,12 @@ namespace Voidborne.World.Chunks
                     mesh = data.mesh,
                     transform = Matrix4x4.Translate(data.WorldPosition)
                 });
+                combinedChunks.Add(data);
             }
 
             if (combines.Count == 0)
             {
-                // No meshes — hide region
+                // No meshes — hide region, all chunks render individually
                 if (regionObject != null)
                     regionObject.SetActive(false);
                 if (combinedMesh != null)
@@ -77,6 +86,7 @@ namespace Voidborne.World.Chunks
                     Object.Destroy(combinedMesh);
                     combinedMesh = null;
                 }
+                ApplyBatchedFlags(rendererResolver);
                 return;
             }
 
@@ -93,6 +103,11 @@ namespace Voidborne.World.Chunks
             catch (System.Exception e)
             {
                 Debug.LogWarning($"[ChunkRegion] CombineMeshes failed for region {regionKey}: {e.Message}");
+                // Fall back to individual rendering — hide any stale combined mesh
+                if (regionObject != null)
+                    regionObject.SetActive(false);
+                combinedChunks.Clear();
+                ApplyBatchedFlags(rendererResolver);
                 return;
             }
 
@@ -111,6 +126,24 @@ namespace Voidborne.World.Chunks
             {
                 regionObject.GetComponent<MeshFilter>().sharedMesh = combinedMesh;
                 regionObject.SetActive(true);
+            }
+
+            // Combined chunks hide their individual renderers; excluded ones show theirs.
+            ApplyBatchedFlags(rendererResolver);
+        }
+
+        /// <summary>
+        /// Syncs every member chunk's batched flag with whether its mesh is in the
+        /// current combined mesh.
+        /// </summary>
+        private void ApplyBatchedFlags(System.Func<Vector3Int, ChunkRenderer> rendererResolver)
+        {
+            if (rendererResolver == null) return;
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                ChunkRenderer renderer = rendererResolver(chunks[i].chunkPosition);
+                if (renderer != null)
+                    renderer.SetBatched(combinedChunks.Contains(chunks[i]));
             }
         }
 

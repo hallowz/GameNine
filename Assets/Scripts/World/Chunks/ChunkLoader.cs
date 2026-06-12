@@ -100,6 +100,12 @@ namespace Voidborne.World.Chunks
         private Vector3 playerVelocity;
         private Vector3 prevPlayerPos;
 
+        /// <summary>
+        /// Smoothed player speed in m/s, updated every frame. Used by ChunkManager
+        /// for streaming-pressure heuristics (adaptive activation throughput).
+        /// </summary>
+        public static float CurrentPlayerSpeed { get; private set; }
+
         private void Start()
         {
             chunkManager = ChunkManager.Instance;
@@ -161,6 +167,7 @@ namespace Voidborne.World.Chunks
                 }
                 prevPlayerPos = currentPos;
             }
+            CurrentPlayerSpeed = playerVelocity.magnitude;
 
             // Adaptive check interval: at higher speeds, check less frequently to reduce
             // overhead. The queue already has velocity-biased priorities, so checking less
@@ -395,6 +402,10 @@ namespace Voidborne.World.Chunks
             {
                 velDir = playerVelocity / speed;
                 bias = velocityBias;
+                // At vehicle speed, lean harder into the direction of travel —
+                // chunks behind the player are about to be irrelevant anyway.
+                if (speed > 20f)
+                    bias = Mathf.Max(bias, 0.8f);
             }
 
             for (int x = -outer.negX; x <= outer.posX; x++)

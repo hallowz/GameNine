@@ -17,22 +17,39 @@ namespace Voidborne.World.Chunks
         private readonly List<Vector3Int> dirtyRegions = new List<Vector3Int>();
         private Transform regionParent;
         private Material material;
+        private System.Func<Vector3Int, ChunkRenderer> rendererResolver;
 
         /// <summary>Max region rebuilds per frame to prevent spikes.</summary>
         private const int MAX_REBUILDS_PER_FRAME = 2;
 
-        public void Initialize(Transform parent, Material mat)
+        // Only LOD2/3 are batched. LOD0 needs colliders/deformation/face culling,
+        // LOD1 sits at the ring edge and remeshes too often (combine churn),
+        // LOD4 uses a different material (DistantTerrain).
+        private const int MIN_BATCHED_LOD = 2;
+        private const int MAX_BATCHED_LOD = 3;
+
+        public void Initialize(Transform parent, Material mat,
+                               System.Func<Vector3Int, ChunkRenderer> resolver)
         {
             regionParent = parent;
             material = mat;
+            rendererResolver = resolver;
         }
 
         /// <summary>
-        /// Called when a LOD1+ chunk becomes active. Adds it to its region.
+        /// Called whenever a chunk becomes active (any LOD). Adds batchable LODs to
+        /// their region; removes the chunk from its region when its new LOD is not
+        /// batchable (handles LOD upgrades/downgrades cleanly).
         /// </summary>
         public void OnChunkActivated(ChunkData chunk)
         {
-            if (chunk.lodLevel == 0) return; // LOD0 not batched
+            if (chunk.lodLevel < MIN_BATCHED_LOD || chunk.lodLevel > MAX_BATCHED_LOD)
+            {
+                // Not batchable at this LOD — make sure it isn't lingering in a region
+                // from a previous LOD, and renders individually again.
+                OnChunkDeactivated(chunk);
+                return;
+            }
 
             Vector3Int key = ChunkRegion.ChunkToRegionKey(chunk.chunkPosition);
             if (!regions.TryGetValue(key, out ChunkRegion region))
@@ -48,14 +65,21 @@ namespace Voidborne.World.Chunks
         }
 
         /// <summary>
-        /// Called when a chunk is deactivated or unloaded.
+        /// Called when a chunk is deactivated, unloaded, or changes to a
+        /// non-batchable LOD. Restores its individual renderer.
         /// </summary>
         public void OnChunkDeactivated(ChunkData chunk)
         {
             Vector3Int key = ChunkRegion.ChunkToRegionKey(chunk.chunkPosition);
             if (!regions.TryGetValue(key, out ChunkRegion region)) return;
 
-            region.chunks.Remove(chunk);
+            if (!region.chunks.Remove(chunk)) return;
+
+            // The chunk renders on its own again (no-op if the GO was already pooled)
+            ChunkRenderer renderer = rendererResolver?.Invoke(chunk.chunkPosition);
+            if (renderer != null)
+                renderer.SetBatched(false);
+
             if (region.chunks.Count == 0)
             {
                 region.Destroy();
@@ -78,7 +102,7 @@ namespace Voidborne.World.Chunks
                 Vector3Int key = dirtyRegions[i];
                 if (regions.TryGetValue(key, out ChunkRegion region))
                 {
-                    region.Rebuild(material, regionParent);
+                    region.Rebuild(material, regionParent, rendererResolver);
                     rebuilt++;
                 }
                 dirtyRegions.RemoveAt(i);

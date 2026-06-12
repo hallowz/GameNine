@@ -16,7 +16,8 @@ namespace Voidborne.World.Chunks
 {
     /// <summary>
     /// Singleton MonoBehaviour that manages the lifecycle of all chunks in the world.
-    /// Not to be confused with Voidborne.World.MarchingCubes.ChunkManager (external MC repo).
+    /// The external MC repo's manager scripts were removed in the terrain overhaul (P0.1);
+    /// only its compute shaders remain under World/MarchingCubes/Resources.
     /// </summary>
     public class ChunkManager : MonoBehaviour
     {
@@ -51,6 +52,26 @@ namespace Voidborne.World.Chunks
         [Header("Callback Throttle")]
         [Tooltip("Max ore job completions processed per frame. Prevents spike when many chunks finish simultaneously.")]
         [SerializeField] private int maxOreCompletionsPerFrame = 2;
+
+        /// <summary>
+        /// Activation throughput adapted to streaming pressure. At walking pace the
+        /// serialized cap (default 2) prevents activation spikes; when the player is
+        /// moving fast or a finalization backlog builds up, the cap triples so terrain
+        /// ahead activates before it becomes visible pop-in. 0/negative = unlimited
+        /// (preserves existing semantics).
+        /// </summary>
+        private int EffectiveMaxCompletionsPerFrame
+        {
+            get
+            {
+                int cap = maxOreCompletionsPerFrame;
+                if (cap <= 0) return cap;
+                int backlog = pendingOreFinalization.Count + pendingUV2Jobs.Count;
+                if (ChunkLoader.CurrentPlayerSpeed > 15f || backlog > 24)
+                    cap *= 3;
+                return cap;
+            }
+        }
 
         [Header("Decoration")]
         [Tooltip("WorldDecorationManager that places trees, rocks, grass on active chunks.")]
@@ -363,10 +384,13 @@ namespace Voidborne.World.Chunks
             // Initialize the chunk pool
             chunkPool = new ChunkPool(chunkParent, defaultChunkMaterial);
 
-            // Initialize region batching for LOD1+ draw call reduction
+            // Initialize region batching for LOD2/3 draw call reduction
             var regionParent = new GameObject("ChunkRegions").transform;
             regionParent.SetParent(transform);
-            regionManager.Initialize(regionParent, defaultChunkMaterial);
+            regionManager.Initialize(regionParent, defaultChunkMaterial,
+                pos => chunkObjects.TryGetValue(pos, out GameObject go)
+                    ? go.GetComponent<ChunkRenderer>()
+                    : null);
 
             // Pre-allocate sort delegate to avoid lambda capture allocation each unload cycle
             _unloadSortComparison = (a, b) =>
@@ -914,6 +938,11 @@ namespace Voidborne.World.Chunks
             decorationManager?.OnChunkDeactivating(pos);
             BuildingManager.Instance?.OnChunkColumnDeactivated(pos);
 
+            // Remove from region batching while the GameObject still exists so the
+            // batched flag can be cleared before the GO is pooled
+            if (chunks.TryGetValue(pos, out ChunkData regionData))
+                regionManager.OnChunkDeactivated(regionData);
+
             // Return the GameObject to the pool
             if (chunkObjects.TryGetValue(pos, out GameObject go))
             {
@@ -986,6 +1015,9 @@ namespace Voidborne.World.Chunks
             ProcessPendingUV2Jobs();
             ProcessReadyPayloads();
 
+            // Rebuild dirty chunk regions (throttled internally)
+            regionManager.Update();
+
             // Occlusion culling: only run every 10 frames and only when camera moves
             if (Time.frameCount % 10 == 0)
                 UpdateOcclusionCulling();
@@ -1027,6 +1059,10 @@ namespace Voidborne.World.Chunks
                         var rnd = chunkGO.GetComponent<ChunkRenderer>();
                         rnd.ApplyMesh(capturedData.mesh);
                     }
+
+                    // If this chunk is region-batched (LOD2/3), the combined mesh now
+                    // holds stale geometry — re-mark the region dirty (no-op otherwise)
+                    regionManager.OnChunkActivated(capturedData);
 
                     // Notify decoration manager that this chunk's terrain changed
                     if (decorationManager != null)
@@ -1133,9 +1169,10 @@ namespace Voidborne.World.Chunks
             int oreIdx = 0;
             while (oreIdx < pendingOreFinalization.Count)
             {
-                // Budget check removed — maxOreCompletionsPerFrame is the correct throttle.
+                // Budget check removed — EffectiveMaxCompletionsPerFrame is the correct throttle.
                 // ChunkFrameBudget was starving this loop after MainThreadDispatcher consumed it.
-                if (maxOreCompletionsPerFrame > 0 && finalized >= maxOreCompletionsPerFrame)
+                int finalizeCap = EffectiveMaxCompletionsPerFrame;
+                if (finalizeCap > 0 && finalized >= finalizeCap)
                     break; // defer remaining to next frame
 
                 ChunkData chunk = pendingOreFinalization[oreIdx];
@@ -1316,7 +1353,8 @@ namespace Voidborne.World.Chunks
                 pendingUV2Jobs.RemoveAt(last);
 
                 // Budget: defer remaining activations to next frame
-                if (maxOreCompletionsPerFrame > 0 && activated >= maxOreCompletionsPerFrame)
+                int activateCap = EffectiveMaxCompletionsPerFrame;
+                if (activateCap > 0 && activated >= activateCap)
                     break;
             }
         }
@@ -1343,6 +1381,21 @@ namespace Voidborne.World.Chunks
         {
             var payload = chunk.finalizePayload;
             float[] skyExp = payload?.skyExposure ?? chunk.skyExposure;
+
+            // LOD1-3 chunks get boundary skirts on all 6 faces to hide cracks at LOD
+            // seams. Always-on (rather than neighbor-mask-based) so seams self-heal
+            // when neighbors change LOD without this chunk remeshing; skirts between
+            // same-LOD neighbors are buried inside solid terrain and invisible.
+            // Runs before UV2 expansion so the expanded buffer covers skirt vertices,
+            // and before any region combine so the combined mesh keeps the skirts.
+            if (chunk.lodLevel >= 1 && chunk.lodLevel <= 3
+                && chunk.mesh != null && chunk.mesh.vertexCount > 0
+                && !ReferenceEquals(chunk.mesh, chunk.lastSkirtedMesh))
+            {
+                float skirtDepth = MarchingCubesAdapter.LodToModifier(chunk.lodLevel);
+                LodSeamStitcher.AddSkirts(chunk.mesh, 0x3F, skirtDepth);
+                chunk.lastSkirtedMesh = chunk.mesh;
+            }
 
             // LOD0: compact vertex format using dedicated shader variant
             if (chunk.lodLevel == 0 && chunk.mesh != null)
@@ -1418,9 +1471,12 @@ namespace Voidborne.World.Chunks
                 payload.Clear();
             chunk.finalizePayload = null;
 
-            // Region batching disabled — causes z-fighting double rendering.
-            // if (chunk.lodLevel >= 1)
-            //     regionManager.OnChunkActivated(chunk);
+            // Region batching: LOD2/3 chunks join their 4×4×4 region for combined
+            // draws. The manager also handles LOD transitions out of the batchable
+            // range (removes + restores the individual renderer). The previous
+            // z-fighting is fixed: ChunkRegion.Rebuild now disables source renderers
+            // via ChunkRenderer.SetBatched.
+            regionManager.OnChunkActivated(chunk);
 
             if (chunk.lodLevel == 0)
             {
@@ -1745,6 +1801,11 @@ namespace Voidborne.World.Chunks
                     renderer.ApplyMesh(mesh);
                     chunkGO.SetActive(true);
                     capturedData.state = ChunkState.Active;
+
+                    // LOD4 is not region-batched — if this chunk just downgraded from
+                    // LOD2/3, remove it from its region so the stale combined copy of
+                    // its old mesh doesn't double-render with the new LOD4 mesh.
+                    regionManager.OnChunkDeactivated(capturedData);
                 }, null);
                 }
                 catch (System.Exception e)

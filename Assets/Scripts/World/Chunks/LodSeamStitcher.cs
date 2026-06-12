@@ -26,8 +26,12 @@ namespace Voidborne.World.Chunks
         ///
         /// boundaryMask: 6-bit mask indicating which faces border a lower-LOD neighbor.
         /// Bit 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z, 5=-Z.
+        ///
+        /// skirtDepth: how far skirt vertices are pushed past the boundary. Cracks grow
+        /// with the coarser side's cell size, so pass the LOD sampling step (2 for LOD1,
+        /// 4 for LOD2/3). Defaults to SKIRT_DEPTH.
         /// </summary>
-        public static void AddSkirts(Mesh mesh, int boundaryMask)
+        public static void AddSkirts(Mesh mesh, int boundaryMask, float skirtDepth = SKIRT_DEPTH)
         {
             if (mesh == null || mesh.vertexCount == 0 || boundaryMask == 0) return;
 
@@ -88,9 +92,9 @@ namespace Voidborne.World.Chunks
 
                 // For each boundary edge, create a skirt quad (2 triangles)
                 Vector3 skirtDir = Vector3.zero;
-                skirtDir[axis] = (face % 2 == 0) ? SKIRT_DEPTH : -SKIRT_DEPTH;
+                skirtDir[axis] = (face % 2 == 0) ? skirtDepth : -skirtDepth;
                 // Also push slightly downward for visual blending
-                skirtDir.y -= SKIRT_DEPTH * 0.5f;
+                skirtDir.y -= skirtDepth * 0.5f;
 
                 foreach (var edge in boundaryEdges.Values)
                 {

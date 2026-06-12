@@ -123,6 +123,13 @@ namespace Voidborne.World.Chunks
         public bool isDirty;
 
         /// <summary>
+        /// The mesh instance that last had LOD boundary skirts added (LOD1-3 only).
+        /// Guards against double-skirting when ActivateChunk runs again for the same
+        /// mesh; a regenerated mesh is a new instance, so it gets skirted fresh.
+        /// </summary>
+        public Mesh lastSkirtedMesh;
+
+        /// <summary>
         /// 15-bit visibility graph for occlusion culling.
         /// Each bit indicates whether two faces of this chunk are connected through air.
         /// 0xFFFF = all faces connected (fully open or deformed chunk).

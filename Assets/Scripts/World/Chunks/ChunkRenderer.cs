@@ -30,6 +30,32 @@ namespace Voidborne.World.Chunks
         /// </summary>
         public Mesh CurrentMesh => meshFilter != null ? meshFilter.sharedMesh : null;
 
+        // Visibility is the AND of two independent systems: occlusion culling
+        // (SetVisible) and region batching (SetBatched). Tracking both here keeps
+        // them from fighting over MeshRenderer.enabled.
+        private bool occlusionVisible = true;
+        private bool isBatched;
+
+        /// <summary>True while this chunk's mesh is rendered by a combined region mesh.</summary>
+        public bool IsBatched => isBatched;
+
+        private void UpdateRendererEnabled()
+        {
+            if (meshRenderer == null || meshFilter == null) return;
+            meshRenderer.enabled = occlusionVisible && !isBatched && meshFilter.sharedMesh != null;
+        }
+
+        /// <summary>
+        /// Marks this chunk as rendered (or not) by a combined region mesh.
+        /// While batched, the individual MeshRenderer stays disabled regardless
+        /// of occlusion culling, preventing double rendering / z-fighting.
+        /// </summary>
+        public void SetBatched(bool batched)
+        {
+            isBatched = batched;
+            UpdateRendererEnabled();
+        }
+
         private void Awake()
         {
             meshFilter = GetComponent<MeshFilter>();
@@ -58,9 +84,13 @@ namespace Voidborne.World.Chunks
         {
             if (mesh == null)
             {
-                // Empty chunk (all air or all solid) — hide renderer, clear collider
+                // Empty chunk (all air or all solid) — hide renderer, clear collider.
+                // Also resets visibility flags: this path runs on pool return, and a
+                // recycled GameObject must not inherit a previous chunk's batched state.
                 meshFilter.sharedMesh = null;
                 meshCollider.sharedMesh = null;
+                occlusionVisible = true;
+                isBatched = false;
                 meshRenderer.enabled = false;
 
                 if (ChunkData != null)
@@ -72,7 +102,12 @@ namespace Voidborne.World.Chunks
             }
 
             meshFilter.sharedMesh = mesh;
-            meshRenderer.enabled = true;
+            occlusionVisible = true;
+            // isBatched is intentionally preserved: if this chunk is in a combined
+            // region, the region rebuild (already queued by the caller) decides
+            // whether it renders individually again. Enabling it here would
+            // z-fight with the region's copy for a few frames.
+            UpdateRendererEnabled();
 
             // LOD chunks skip the collider entirely — huge perf saving
             bool useCollider = ChunkData == null || ChunkData.lodLevel == 0;
@@ -135,8 +170,8 @@ namespace Voidborne.World.Chunks
         /// </summary>
         public void SetVisible(bool visible)
         {
-            if (meshRenderer != null && meshFilter != null && meshFilter.sharedMesh != null)
-                meshRenderer.enabled = visible;
+            occlusionVisible = visible;
+            UpdateRendererEnabled();
         }
 
         // Face culling is now handled via index buffer rebuild in ChunkManager.UpdateFaceCulling
