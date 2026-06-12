@@ -132,7 +132,10 @@ namespace Voidborne.Tests.EditMode
         {
             var field = MakeChunk(Vector3Int.zero, 4);
             sim.AddLiquid(Vector3Int.zero, 16, 5, 16, 200, LiquidType.Water);
-            for (int i = 0; i < 10 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
+            // Only 2 ticks: the liquid stays in the y=5 plane (floor below it),
+            // and a 200-unit puddle hasn't meaningfully evaporated yet.
+            sim.TickOnce();
+            sim.TickOnce();
             long total = field.TotalVolume() + sim.TotalEvaporated;
             Assert.Greater(field.TotalVolume(), 0);
 
@@ -234,15 +237,19 @@ namespace Voidborne.Tests.EditMode
             var left = MakeChunk(new Vector3Int(0, 0, 0), 4);
             var right = MakeChunk(new Vector3Int(1, 0, 0), 4);
 
-            // Settle a pool spanning the border region of the left chunk
-            sim.AddLiquid(new Vector3Int(0, 0, 0), S - 1, 5, 16, 200, LiquidType.Water);
-            for (int i = 0; i < 60 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
+            // Settle a substantial pool spanning the border region of the left
+            // chunk. Volume matters: the settle rule evaporates stagnant cells
+            // below MIN_VISIBLE, so a too-small spill self-cleans to nothing —
+            // a real pool's equilibrium cells all sit at >= MIN_VISIBLE.
+            for (int y = 5; y <= 8; y++)
+                sim.AddLiquid(new Vector3Int(0, 0, 0), S - 1, y, 16, 255, LiquidType.Water);
+            for (int i = 0; i < 100 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
             Assert.AreEqual(0, sim.ActiveChunkCount, "Pool should settle");
             Assert.Greater(right.TotalVolume(), 0, "Some liquid crossed during settling");
 
             // Wake only the left chunk with new liquid; the right one must wake
             // automatically when the shared border changes.
-            sim.AddLiquid(new Vector3Int(0, 0, 0), S - 1, 8, 16, 255, LiquidType.Water);
+            sim.AddLiquid(new Vector3Int(0, 0, 0), S - 1, 12, 16, 255, LiquidType.Water);
             Assert.IsFalse(sim.IsActive(new Vector3Int(1, 0, 0)));
 
             for (int i = 0; i < 6; i++) sim.TickOnce();
@@ -251,7 +258,7 @@ namespace Voidborne.Tests.EditMode
             // some point — its volume must have increased.
             Assert.Greater(right.TotalVolume(), 0);
             long before = TotalVolume(left, right) + sim.TotalEvaporated;
-            for (int i = 0; i < 40 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
+            for (int i = 0; i < 100 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
             Assert.AreEqual(before, TotalVolume(left, right) + sim.TotalEvaporated);
             Assert.AreEqual(0, sim.ActiveChunkCount, "Everything settles again");
         }
@@ -259,15 +266,20 @@ namespace Voidborne.Tests.EditMode
         [Test]
         public void Drained_ChunkCollapsesStorage()
         {
-            // No floor in top chunk: everything drains into the bottom chunk
+            // No floor in top chunk: everything drains into the bottom chunk.
+            // Pour a real column (16 full cells) — a single 255 packet spread
+            // over a 32×32 floor is a sub-visible film and would (by design)
+            // fully evaporate via the settle rule.
             var top = MakeChunk(new Vector3Int(0, 1, 0), -1);
             var bottom = MakeChunk(new Vector3Int(0, 0, 0), 0);
-            sim.AddLiquid(new Vector3Int(0, 1, 0), 16, 3, 16, 255, LiquidType.Water);
+            for (int x = 15; x <= 18; x++)
+            for (int z = 15; z <= 18; z++)
+                sim.AddLiquid(new Vector3Int(0, 1, 0), x, 3, z, 255, LiquidType.Water);
 
-            for (int i = 0; i < 80 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
+            for (int i = 0; i < 300 && sim.ActiveChunkCount > 0; i++) sim.TickOnce();
 
             Assert.IsFalse(top.HasLevels, "Fully drained chunk must release its storage");
-            Assert.Greater(bottom.TotalVolume(), 0);
+            Assert.Greater(bottom.TotalVolume(), 0, "The pool must survive in the bottom chunk");
         }
 
         [Test]

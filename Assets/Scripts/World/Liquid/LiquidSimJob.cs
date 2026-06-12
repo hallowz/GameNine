@@ -69,6 +69,16 @@ namespace Voidborne.World.Liquid
         private const byte MAX = 255;
         private const byte MIN_VISIBLE = 4;
 
+        /// <summary>
+        /// Cells at or below this level stop spreading. Without this floor, any
+        /// pool with an open edge bleeds to death: an edge cell at level 4 halves
+        /// into two sub-MIN_VISIBLE cells, both evaporate, and the erosion walks
+        /// inward until the whole pool is gone. With it, pools settle into a
+        /// stable shape with a 4–8 level skin at the edges, while genuine films
+        /// (&lt; MIN_VISIBLE) still self-clean.
+        /// </summary>
+        private const byte MIN_SPREAD = MIN_VISIBLE * 2;
+
         private static int Index(int x, int y, int z) => x + y * SIZE + z * SIZE * SIZE;
 
         public void Execute()
@@ -131,21 +141,21 @@ namespace Voidborne.World.Liquid
                 }
 
                 // ---- 2. SPREAD (only liquid that could not fall) ----
-                if (fallBlocked && level > 1)
+                if (fallBlocked && level >= MIN_SPREAD)
                 {
                     // -X
                     level = SpreadLateral(level, x > 0 ? Index(x - 1, y, z) : -1,
                         y + z * SIZE, NbLevelXNeg, NbBlockedXNeg, OutXNeg);
                     // +X
-                    if (level > 1)
+                    if (level >= MIN_SPREAD)
                         level = SpreadLateral(level, x < SIZE - 1 ? Index(x + 1, y, z) : -1,
                             y + z * SIZE, NbLevelXPos, NbBlockedXPos, OutXPos);
                     // -Z
-                    if (level > 1)
+                    if (level >= MIN_SPREAD)
                         level = SpreadLateral(level, z > 0 ? Index(x, y, z - 1) : -1,
                             x + y * SIZE, NbLevelZNeg, NbBlockedZNeg, OutZNeg);
                     // +Z
-                    if (level > 1)
+                    if (level >= MIN_SPREAD)
                         level = SpreadLateral(level, z < SIZE - 1 ? Index(x, y, z + 1) : -1,
                             x + y * SIZE, NbLevelZPos, NbBlockedZPos, OutZPos);
                 }
