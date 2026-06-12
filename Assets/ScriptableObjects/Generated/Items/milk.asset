@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac44f502a5f71848a88cebcc794d933, type: 3}
+  m_Name: milk
+  m_EditorClassIdentifier: Voidborne::ItemDefinition
+  itemId: milk
+  displayName: Milk
+  description: "milked from Cluck (and future cow). The synergy-sandbox star: can
+    be used in any forgiving thermal boiler \u2014 badly."
+  kind: 0
+  source: 1
+  categories: []
+  itemType: 0
+  isBuildBlock: 0
+  isDeco: 0
+  buildColor: 
+  maxStackSize: 16
+  weight: 1
+  icon: {fileID: 21300000, guid: 3f20982f42bf6d745a185293383a46f5, type: 3}
+  modelPrefab: {fileID: 4553303523716516829, guid: 20f01e429fcb21841bb4769088cd41ad, type: 3}
+  placedPrefab: {fileID: 0}
+  properties: 0400000007000000

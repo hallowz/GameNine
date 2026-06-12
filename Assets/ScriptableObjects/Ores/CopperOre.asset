@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad5346ece7dfc2f45b220cb6617dde70, type: 3}
   m_Name: CopperOre
-  m_EditorClassIdentifier: Voidborne::Voidborne.World.Generation.OreDefinition
+  m_EditorClassIdentifier:
   oreTypeId: 2
   oreName: Copper Ore
-  associatedItem: {fileID: 11400000, guid: 6b2df0690a5565146a0cd710614f6d38, type: 2}
+  associatedItem: {fileID: 11400000, guid: 108f3eaff1cebb54ebf20bb2c0d76e61, type: 2}
   colorTint: {r: 0.8, g: 0.4, b: 0.1, a: 1}
   minY: -100
   maxY: 80
   noiseFrequency: 0.045
   noiseThreshold: 0.77
-  biomeRestriction: 
+  requiredBiomeId: 0

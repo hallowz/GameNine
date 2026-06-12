@@ -1,5 +1,15 @@
 using UnityEngine;
 
+// V5.3 DEPRECATION NOTE — kept in place because ChunkManager,
+// PlayerMining, AutoMiner, and OreGenerator still consume `OreRegistry`
+// and `OreDefinition` directly. The V12 (biome rework) plan replaces
+// these with the items_core.json-driven ore set wired through
+// TerrainSplines + BiomeField + VoxelClassificationJob. The original
+// .asset OreRegistry + 6 OreDefinitions were archived to
+// _Archived/Legacy/Ores/ in V5.1; SampleScene/AutomatedTestScene still
+// reference them by GUID (now resolving to the archived path) which is
+// the intended ARCHIVE-not-DELETE behaviour for M2.
+
 namespace Voidborne.World.Generation
 {
     /// <summary>

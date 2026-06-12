@@ -28,6 +28,12 @@ namespace Voidborne.Automation
         {
             _previewLine = GetComponent<LineRenderer>();
             _previewLine.positionCount = 0;
+            // LineRenderer has no default material under URP — without one the
+            // preview renders magenta/invisible. Sprites/Default is unlit and
+            // respects the start/end vertex colors set in UpdatePreviewLine.
+            if (_previewLine.sharedMaterial == null)
+                _previewLine.material = new Material(
+                    Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit"));
         }
 
         private void Start()
@@ -121,7 +127,9 @@ namespace Voidborne.Automation
             {
                 cableGO = new GameObject("NetworkCable");
                 cableGO.transform.position = midpoint;
-                cableGO.AddComponent<LineRenderer>();
+                var lr = cableGO.AddComponent<LineRenderer>();
+                lr.material = new Material(
+                    Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit"));
                 cableGO.AddComponent<NetworkCable>();
             }
 

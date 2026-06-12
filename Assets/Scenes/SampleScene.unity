@@ -349,25 +349,25 @@ MonoBehaviour:
     quantity: 99
   - item: {fileID: 11400000, guid: 4499c3d7447d0214e80d71a226c9fede, type: 2}
     quantity: 99
-  - item: {fileID: 11400000, guid: e4c7f56ce31c71e428e1b7c09ee59f83, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 24d851dc6aecfd74cb0c1089b8f10117, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 3557473ab37e9e74787daa766002998d, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 0cfa4c3f9ceb2d44d9bd05afaddd6b21, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 4b381c9fc732cf849960d1496eb87b12, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 6b2df0690a5565146a0cd710614f6d38, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 00f20f26799edc64697249f0d6db961f, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 471d011891869354194e848e66e58291, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: b9cae8ffe1b0b064bb5300c74f8d3ded, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: 42f5dca463a282148bb33a584ef7ada1, type: 2}
+  - item: {fileID: 0}
     quantity: 1
   - item: {fileID: 11400000, guid: 629d51e303606f0489b2763323d0b97a, type: 2}
     quantity: 1
@@ -375,17 +375,17 @@ MonoBehaviour:
     quantity: 1
   - item: {fileID: 11400000, guid: 01d019ab94f1ff348b8994931ad97719, type: 2}
     quantity: 1
-  - item: {fileID: 11400000, guid: 49f48b709154073479064b8a87a7a249, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: f5c6d9c04c2e62848b20cfc42a3d1d8c, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: c154e6e9e4ed4244c98b2b9ac8920bd7, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: a47026d60c97fc34ea6e709e702decf5, type: 2}
+  - item: {fileID: 0}
     quantity: 10
-  - item: {fileID: 11400000, guid: cb0c6d51e5a64564295f12ed834ea5fb, type: 2}
+  - item: {fileID: 0}
     quantity: 1
-  - item: {fileID: 11400000, guid: 65a383c170b82024786b1e9d49a0c1a7, type: 2}
+  - item: {fileID: 0}
     quantity: 1
   - item: {fileID: 11400000, guid: 50dd111b3a37da34db238b1c1a172a90, type: 2}
     quantity: 1

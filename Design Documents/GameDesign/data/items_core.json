@@ -1,0 +1,567 @@
+{
+  "_schema_version": 3,
+  "_schema_notes": [
+    "Core 60 — the hand-authored phase-1 item roster.",
+    "See Design Documents/master_prompt.md sections 'Design Philosophy', 'Material Properties & Machine Process Types', and 'The Core 60'.",
+    "Fields beyond the v2 schema (items_backlog.json):",
+    "  properties[]   — material property tags from MaterialProperties.cs (M1 Chunk 2.6).",
+    "  processType    — MachineProcessType enum value (machines only, M1 Chunk 2.7).",
+    "  howItWorks     — prose description shown in Machine UI tooltip (machines only, Volume 4).",
+    "Recipes may now carry inputProperties[], efficiency, outputModifier (M1 Chunk 2.8). Forgiving",
+    "  machines fall through to property matching when no specific recipe matches; picky machines",
+    "  refuse property matching.",
+    "Recipes marked TODO are placeholders — to be hand-authored during M2 implementation.",
+    "Underscore-prefixed keys are metadata and ignored by the generator."
+  ],
+  "wood": {
+    "kind": "source",
+    "src": "flora",
+    "name": "Wood",
+    "role": "harvested from trees",
+    "properties": ["Combustible_Dry", "Solid_Fiber"]
+  },
+  "stone": {
+    "kind": "source",
+    "src": "soil",
+    "name": "Stone",
+    "role": "surface rock",
+    "properties": ["Solid_Stone"]
+  },
+  "plant_fiber": {
+    "kind": "source",
+    "src": "flora",
+    "name": "Plant Fiber",
+    "role": "stripped from tall grasses",
+    "properties": ["Solid_Fiber", "Organic_Fresh", "Combustible_Dry"]
+  },
+  "iron_ore": {
+    "kind": "source",
+    "src": "ore",
+    "name": "Iron Ore",
+    "role": "shallow iron deposit",
+    "properties": ["Solid_Metal", "Solid_Stone"]
+  },
+  "copper_ore": {
+    "kind": "source",
+    "src": "ore",
+    "name": "Copper Ore",
+    "role": "shallow copper deposit",
+    "properties": ["Solid_Metal", "Solid_Stone", "Conducts_Electric"]
+  },
+  "coal_ore": {
+    "kind": "source",
+    "src": "ore",
+    "name": "Coal Ore",
+    "role": "coal seam",
+    "properties": ["Combustible_Dry", "Solid_Stone"]
+  },
+  "clay": {
+    "kind": "source",
+    "src": "soil",
+    "name": "Clay",
+    "role": "riverbed clay",
+    "properties": ["Solid_Stone"]
+  },
+  "sand": {
+    "kind": "source",
+    "src": "soil",
+    "name": "Sand",
+    "role": "loose desert sand",
+    "properties": ["Solid_Powder"]
+  },
+  "water": {
+    "kind": "source",
+    "src": "soil",
+    "name": "Water",
+    "role": "drawn from ponds or rain barrels",
+    "properties": ["Liquid_Aqueous"]
+  },
+  "raw_fish": {
+    "kind": "source",
+    "src": "fauna",
+    "name": "Raw Fish",
+    "role": "caught with rod or trap",
+    "properties": ["Organic_Fresh", "Combustible_Wet", "Liquid_Aqueous"]
+  },
+  "raw_meat": {
+    "kind": "source",
+    "src": "fauna",
+    "name": "Raw Meat",
+    "role": "butchered from any fauna",
+    "properties": ["Organic_Fresh", "Combustible_Wet"]
+  },
+  "milk": {
+    "kind": "source",
+    "src": "fauna",
+    "name": "Milk",
+    "role": "milked from Cluck (and future cow). The synergy-sandbox star: can be used in any forgiving thermal boiler — badly.",
+    "properties": ["Liquid_Aqueous", "Organic_Fresh"]
+  },
+  "egg": {
+    "kind": "source",
+    "src": "fauna",
+    "name": "Egg",
+    "role": "laid by Cluck",
+    "properties": ["Organic_Fresh"]
+  },
+  "wheat": {
+    "kind": "source",
+    "src": "flora",
+    "name": "Wheat",
+    "role": "cultivated grain",
+    "properties": ["Organic_Fresh", "Organic_Sweet", "Solid_Fiber"]
+  },
+  "oil_seep": {
+    "kind": "source",
+    "src": "ore",
+    "name": "Oil Seep",
+    "role": "surface crude oil deposit",
+    "properties": ["Liquid_Oil", "Combustible_Liquid"]
+  },
+  "iron_ingot": {
+    "kind": "component",
+    "name": "Iron Ingot",
+    "role": "smelted iron",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "furnace", "inputs": [{ "id": "iron_ore", "qty": 1 }], "notes": "Picky on furnace? No — Furnace is forgiving thermal. Specific recipe matches first; property fallback could substitute ore-like inputs at reduced efficiency." }
+    ]
+  },
+  "copper_ingot": {
+    "kind": "component",
+    "name": "Copper Ingot",
+    "role": "smelted copper",
+    "properties": ["Solid_Metal", "Conducts_Electric"],
+    "recipes": [
+      { "via": "furnace", "inputs": [{ "id": "copper_ore", "qty": 1 }] }
+    ]
+  },
+  "iron_powder": {
+    "kind": "component",
+    "name": "Iron Powder",
+    "role": "crushed iron ore",
+    "properties": ["Solid_Powder", "Solid_Metal"],
+    "recipes": [
+      { "via": "crusher", "inputs": [{ "id": "iron_ore", "qty": 1 }] }
+    ]
+  },
+  "copper_powder": {
+    "kind": "component",
+    "name": "Copper Powder",
+    "role": "crushed copper ore",
+    "properties": ["Solid_Powder", "Solid_Metal", "Conducts_Electric"],
+    "recipes": [
+      { "via": "crusher", "inputs": [{ "id": "copper_ore", "qty": 1 }] }
+    ]
+  },
+  "charcoal": {
+    "kind": "component",
+    "name": "Charcoal",
+    "role": "dried/baked wood; hotter than raw wood",
+    "properties": ["Combustible_Dry"],
+    "recipes": [
+      { "via": "drying_rack", "inputs": [{ "id": "wood", "qty": 1 }] },
+      { "via": "furnace", "inputs": [{ "id": "wood", "qty": 1 }], "notes": "alt path — slow bake at the furnace" }
+    ]
+  },
+  "plank": {
+    "kind": "component",
+    "name": "Plank",
+    "role": "sawn wood plank",
+    "properties": ["Combustible_Dry", "Solid_Fiber"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "nail": {
+    "kind": "component",
+    "name": "Nail",
+    "role": "iron fastener",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 1 }] }
+    ]
+  },
+  "wire": {
+    "kind": "component",
+    "name": "Wire",
+    "role": "drawn copper wire",
+    "properties": ["Conducts_Electric", "Solid_Metal"],
+    "recipes": [
+      { "via": "press", "inputs": [{ "id": "copper_ingot", "qty": 1 }] }
+    ]
+  },
+  "glass": {
+    "kind": "component",
+    "name": "Glass",
+    "role": "fused sand",
+    "properties": ["Solid_Stone", "Crystalline"],
+    "recipes": [
+      { "via": "furnace", "inputs": [{ "id": "sand", "qty": 1 }] }
+    ]
+  },
+  "gunpowder": {
+    "kind": "component",
+    "name": "Gunpowder",
+    "role": "explosive powder",
+    "properties": ["Combustible_Volatile", "Solid_Powder"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "coal_ore", "qty": 1 }], "notes": "TODO — placeholder recipe; final formulation pending M2 chemistry pass (saltpeter + sulfur + charcoal)." }
+    ]
+  },
+  "bullet_casing": {
+    "kind": "component",
+    "name": "Bullet Casing",
+    "role": "empty brass/copper case",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "press", "inputs": [{ "id": "copper_ingot", "qty": 1 }] }
+    ]
+  },
+  "gunpowder_bullet": {
+    "kind": "component",
+    "name": "Gunpowder Bullet",
+    "role": "loaded round for pistol/rifle",
+    "properties": ["Combustible_Volatile", "Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "bullet_casing", "qty": 1 }, { "id": "gunpowder", "qty": 1 }] }
+    ]
+  },
+  "arrow_shaft": {
+    "kind": "component",
+    "name": "Arrow Shaft",
+    "role": "wooden shaft for arrows",
+    "properties": ["Solid_Fiber"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "flour": {
+    "kind": "component",
+    "name": "Flour",
+    "role": "milled grain",
+    "properties": ["Organic_Sweet", "Solid_Powder"],
+    "recipes": [
+      { "via": "crusher", "inputs": [{ "id": "wheat", "qty": 1 }], "notes": "Forgiving — Crusher will accept any Organic_Sweet + Solid_Fiber input as flour at reduced efficiency." }
+    ]
+  },
+  "bread": {
+    "kind": "component",
+    "name": "Bread",
+    "role": "baked dough",
+    "properties": ["Organic_Fresh", "Organic_Sweet", "Combustible_Dry"],
+    "recipes": [
+      { "via": "furnace", "inputs": [{ "id": "flour", "qty": 1 }, { "id": "water", "qty": 1 }], "notes": "Forgiving — Furnace will bake any Organic_Sweet + Liquid_Aqueous combo. Milk in place of water = denser bread, lower yield." }
+    ]
+  },
+  "workbench": {
+    "kind": "machine",
+    "name": "Workbench",
+    "role": "T1 — 3x3 crafting (BOOTSTRAP)",
+    "properties": [],
+    "processType": "Hybrid_Crafting",
+    "howItWorks": "Crafts most early-game items by laying out components in a 3x3 grid. Accepts specific recipes (e.g. iron sword) AND improvised property-matching at reduced quality. The workhorse of early progression. Bootstrap recipe (built by hand from a personal grid).",
+    "recipes": [
+      { "via": null, "inputs": [{ "id": "wood", "qty": 4 }, { "id": "stone", "qty": 2 }, { "id": "plant_fiber", "qty": 2 }], "notes": "BOOTSTRAP — built from the personal 2x2 grid" }
+    ]
+  },
+  "campfire": {
+    "kind": "machine",
+    "name": "Campfire",
+    "role": "T1 — open flame",
+    "properties": [],
+    "processType": "Forgiving_Thermal_DryBurn",
+    "howItWorks": "Open flame. Burns any dry combustible to cook or transform target items by heat. Inefficient — most heat escapes. Bootstrap thermal — paves the way to Furnace.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "stone", "qty": 4 }, { "id": "wood", "qty": 2 }] }
+    ]
+  },
+  "furnace": {
+    "kind": "machine",
+    "name": "Furnace",
+    "role": "T2 — contained smelting",
+    "properties": [],
+    "processType": "Forgiving_Thermal_DryBurn",
+    "howItWorks": "Heat applied to ore yields ingots. Burns most dry combustibles; wet inputs reduce efficiency. Bootstrap recipe: crude smelt at Campfire (slower, lower yield) before you have a Workbench-built Furnace.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "stone", "qty": 8 }, { "id": "clay", "qty": 4 }] },
+      { "via": "campfire", "inputs": [{ "id": "stone", "qty": 8 }, { "id": "clay", "qty": 4 }], "notes": "BOOTSTRAP — crude assembly at the campfire if no workbench available; lower-quality furnace" }
+    ]
+  },
+  "steam_boiler": {
+    "kind": "machine",
+    "name": "Steam Boiler",
+    "role": "T3 — converts aqueous liquid + heat to steam",
+    "properties": [],
+    "processType": "Forgiving_Thermal_Boil",
+    "howItWorks": "Heats a working fluid to produce steam. Accepts ANY Liquid_Aqueous as the medium and ANY Combustible_* as fuel. Pure water boils efficiently. Milk works — barely; the fats burn first, the water boils second, the curds clog the outlet. Producing power from milk is the canonical 'weird path' synergy. Steam pipes downstream to a Steam Generator.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 4 }, { "id": "copper_ingot", "qty": 2 }, { "id": "stone", "qty": 4 }] }
+    ]
+  },
+  "steam_generator": {
+    "kind": "machine",
+    "name": "Steam Generator",
+    "role": "T3 — converts steam to electricity",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Converts steam into electricity. Requires a Steam Boiler upstream feeding steam. Picky — accepts only steam, refuses all substitutes.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 6 }, { "id": "copper_ingot", "qty": 3 }, { "id": "wire", "qty": 2 }] }
+    ]
+  },
+  "hand_crank_generator": {
+    "kind": "machine",
+    "name": "Hand Crank Generator",
+    "role": "T1 — player-powered electricity (BOOTSTRAP)",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Bootstrap power. Hold E to crank; outputs a trickle of electricity while held. Useless past the early game — but lets you charge a Battery Basic to bootstrap the first electrical machine.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 4 }, { "id": "copper_ingot", "qty": 1 }, { "id": "wire", "qty": 1 }] }
+    ]
+  },
+  "composter": {
+    "kind": "machine",
+    "name": "Composter",
+    "role": "T2 — slow organic decay",
+    "properties": [],
+    "processType": "Forgiving_Organic_Decay",
+    "howItWorks": "Slow biological decay. Accepts ANY Organic_* input. Output depends on subtype: Organic_Fresh -> compost; Organic_Sweet -> fermented mash; mixed -> decayed slurry.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 6 }, { "id": "stone", "qty": 2 }] }
+    ]
+  },
+  "drying_rack": {
+    "kind": "machine",
+    "name": "Drying Rack",
+    "role": "T1 — removes moisture",
+    "properties": [],
+    "processType": "Forgiving_Organic_Dry",
+    "howItWorks": "Removes moisture from organic matter or aqueous-containing items. Wet meat -> jerky. Raw wood -> charcoal-grade. Milk -> milk solids (a Cheese Press input — see Discovery Log). Slow, no power required.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 4 }, { "id": "plant_fiber", "qty": 4 }] }
+    ]
+  },
+  "crusher": {
+    "kind": "machine",
+    "name": "Crusher",
+    "role": "T2 — solid to powder",
+    "properties": [],
+    "processType": "Forgiving_Mechanical_Crush",
+    "howItWorks": "Grinds solids into powder. Accepts ANY Solid_* (Metal/Stone/Fiber). Output is the powdered form of the input. Used for ore preparation, flour milling, bone meal.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 4 }, { "id": "stone", "qty": 4 }, { "id": "wood", "qty": 2 }] }
+    ]
+  },
+  "press": {
+    "kind": "machine",
+    "name": "Press",
+    "role": "T3 — compression/extrusion (powered)",
+    "properties": [],
+    "processType": "Forgiving_Pressure",
+    "howItWorks": "Compresses or extrudes compatible inputs into sheets, wire, or casings. Powered — requires electricity. Forgiving on input class but picky on physical fit (you can't press a liquid).",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 6 }, { "id": "copper_ingot", "qty": 2 }, { "id": "wire", "qty": 1 }] }
+    ]
+  },
+  "storage_chest": {
+    "kind": "machine",
+    "name": "Storage Chest",
+    "role": "T1 — passive storage",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Stores items. Hopper-compatible: an Inserter can pull from or push into it. No recipes — pure storage.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "plank", "qty": 6 }, { "id": "nail", "qty": 4 }] }
+    ]
+  },
+  "conveyor_belt": {
+    "kind": "machine",
+    "name": "Conveyor Belt",
+    "role": "T2 — item transport",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Moves items in a straight line. Place a chain by clicking adjacent cells. Items dropped on a belt travel to the end. Powered.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 2 }, { "id": "wire", "qty": 1 }, { "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "copper_cable_t1": {
+    "kind": "component",
+    "name": "Copper Cable (T1)",
+    "role": "low-tier electrical cable (<=200W)",
+    "properties": ["Conducts_Electric", "Solid_Metal"],
+    "recipes": [
+      { "via": "press", "inputs": [{ "id": "copper_ingot", "qty": 1 }] },
+      { "via": "workbench", "inputs": [{ "id": "wire", "qty": 2 }, { "id": "plant_fiber", "qty": 1 }], "notes": "BOOTSTRAP — hand-twisted cable when no Press is built yet" }
+    ]
+  },
+  "junction_box": {
+    "kind": "component",
+    "name": "Junction Box",
+    "role": "wire hub (multi-port node)",
+    "properties": ["Conducts_Electric"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 1 }, { "id": "wire", "qty": 2 }] }
+    ]
+  },
+  "battery_basic": {
+    "kind": "component",
+    "name": "Battery (Basic)",
+    "role": "small electrical storage",
+    "properties": ["Conducts_Electric"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 2 }, { "id": "copper_ingot", "qty": 2 }, { "id": "wire", "qty": 1 }] }
+    ]
+  },
+  "inserter": {
+    "kind": "machine",
+    "name": "Inserter",
+    "role": "T2 — small arm; pulls from a chest into an adjacent machine and vice versa",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Small swinging arm. Configurable direction (chest -> machine or machine -> chest). One swing per second when powered. The piece that makes synergy visible — wire it up, watch the contraption run.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 2 }, { "id": "wire", "qty": 2 }, { "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "power_sink": {
+    "kind": "component",
+    "name": "Power Sink",
+    "role": "absorbs surplus watts to protect network",
+    "properties": ["Conducts_Electric"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 2 }, { "id": "wire", "qty": 2 }] }
+    ]
+  },
+  "wooden_spear": {
+    "kind": "component",
+    "name": "Wooden Spear",
+    "role": "T1 melee — bootstrap weapon",
+    "properties": ["Solid_Fiber"],
+    "recipes": [
+      { "via": null, "inputs": [{ "id": "wood", "qty": 2 }, { "id": "plant_fiber", "qty": 1 }], "notes": "BOOTSTRAP — built in the personal 2x2 grid" }
+    ]
+  },
+  "iron_sword": {
+    "kind": "component",
+    "name": "Iron Sword",
+    "role": "T2 melee",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 3 }, { "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "pistol": {
+    "kind": "component",
+    "name": "Pistol",
+    "role": "T3 firearm — semi-auto",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 3 }, { "id": "copper_ingot", "qty": 1 }, { "id": "wood", "qty": 1 }] }
+    ]
+  },
+  "bolt_rifle": {
+    "kind": "component",
+    "name": "Bolt Rifle",
+    "role": "T4 firearm — high damage, slow rate",
+    "properties": ["Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 5 }, { "id": "copper_ingot", "qty": 2 }, { "id": "plank", "qty": 2 }], "notes": "TODO — exact recipe pending M3 combat balance pass" }
+    ]
+  },
+  "hunting_bow": {
+    "kind": "component",
+    "name": "Hunting Bow",
+    "role": "T2 ranged — silent",
+    "properties": ["Solid_Fiber"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "wood", "qty": 3 }, { "id": "plant_fiber", "qty": 4 }] }
+    ]
+  },
+  "auto_turret": {
+    "kind": "machine",
+    "name": "Auto Turret",
+    "role": "T4 — automated defense",
+    "properties": [],
+    "processType": "Picky_Specialty",
+    "howItWorks": "Auto-fires at the nearest enemy in range. Consumes bullets from internal buffer. Buffer fillable manually or via Inserter pulling from a chest. Required for the M5 base-defense loop.",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 6 }, { "id": "copper_ingot", "qty": 2 }, { "id": "wire", "qty": 3 }, { "id": "pistol", "qty": 1 }], "notes": "Pistol mechanism reused as the turret's firing assembly." }
+    ]
+  },
+  "wood_cube": {
+    "kind": "product",
+    "name": "Wood Cube",
+    "role": "building — cube",
+    "properties": ["Combustible_Dry", "Solid_Fiber"],
+    "_build": true,
+    "_buildColor": "wood",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "plank", "qty": 4 }] }
+    ]
+  },
+  "wood_slab": {
+    "kind": "product",
+    "name": "Wood Slab",
+    "role": "building — slab (half-height)",
+    "properties": ["Combustible_Dry", "Solid_Fiber"],
+    "_build": true,
+    "_buildColor": "wood",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "plank", "qty": 2 }] }
+    ]
+  },
+  "stone_cube": {
+    "kind": "product",
+    "name": "Stone Cube",
+    "role": "building — cube",
+    "properties": ["Solid_Stone"],
+    "_build": true,
+    "_buildColor": "stone",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "stone", "qty": 4 }] }
+    ]
+  },
+  "iron_panel": {
+    "kind": "product",
+    "name": "Iron Panel",
+    "role": "building — armored panel",
+    "properties": ["Solid_Metal"],
+    "_build": true,
+    "_buildColor": "iron",
+    "recipes": [
+      { "via": "press", "inputs": [{ "id": "iron_ingot", "qty": 2 }] }
+    ]
+  },
+  "wood_door": {
+    "kind": "product",
+    "name": "Wood Door",
+    "role": "building — door (hinged, openable)",
+    "properties": ["Combustible_Dry", "Solid_Fiber"],
+    "_build": true,
+    "_buildColor": "wood",
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "plank", "qty": 4 }, { "id": "nail", "qty": 4 }] }
+    ]
+  },
+  "cart_chassis": {
+    "kind": "component",
+    "name": "Cart Chassis",
+    "role": "vehicle part — frame",
+    "properties": ["Solid_Metal", "Solid_Fiber"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "iron_ingot", "qty": 4 }, { "id": "plank", "qty": 4 }, { "id": "nail", "qty": 4 }], "notes": "Assembled at Vehicle Rig in M4 (Vehicle Rig is itself a later machine — bootstrap chassis at workbench)." }
+    ]
+  },
+  "cart_wheel": {
+    "kind": "component",
+    "name": "Cart Wheel",
+    "role": "vehicle part — wheel",
+    "properties": ["Solid_Fiber", "Solid_Metal"],
+    "recipes": [
+      { "via": "workbench", "inputs": [{ "id": "plank", "qty": 2 }, { "id": "iron_ingot", "qty": 1 }] }
+    ]
+  }
+}

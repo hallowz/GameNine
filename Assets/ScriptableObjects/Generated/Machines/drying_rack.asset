@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843bfa95536488b4a8d348912cbb9e51, type: 3}
+  m_Name: drying_rack
+  m_EditorClassIdentifier: Voidborne::Voidborne.Automation.MachineDefinition
+  itemId: drying_rack
+  displayName: Drying Rack
+  tier: 1
+  gridWidth: 3
+  gridHeight: 3
+  needsPower: 0
+  powerDrawWatts: 0
+  isAutomatable: 0
+  category: 7
+  processType: 3
+  howItWorks: "Removes moisture from organic matter or aqueous-containing items.
+    Wet meat -> jerky. Raw wood -> charcoal-grade. Milk -> milk solids (a Cheese
+    Press input \u2014 see Discovery Log). Slow, no power required."

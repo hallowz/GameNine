@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac44f502a5f71848a88cebcc794d933, type: 3}
+  m_Name: egg
+  m_EditorClassIdentifier: Voidborne::ItemDefinition
+  itemId: egg
+  displayName: Egg
+  description: laid by Cluck
+  kind: 0
+  source: 1
+  categories:
+  - food
+  itemType: 4
+  isBuildBlock: 0
+  isDeco: 0
+  buildColor: 
+  maxStackSize: 16
+  weight: 1
+  icon: {fileID: 21300000, guid: cfc667ffbbcb63142a16827965d0359a, type: 3}
+  modelPrefab: {fileID: 6233897440981675671, guid: eb31d36c7d0d3424cb4342c611c8c016, type: 3}
+  placedPrefab: {fileID: 0}
+  properties: 07000000

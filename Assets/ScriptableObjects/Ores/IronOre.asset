@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad5346ece7dfc2f45b220cb6617dde70, type: 3}
   m_Name: IronOre
-  m_EditorClassIdentifier: Voidborne::Voidborne.World.Generation.OreDefinition
+  m_EditorClassIdentifier:
   oreTypeId: 1
   oreName: Iron Ore
-  associatedItem: {fileID: 11400000, guid: 3557473ab37e9e74787daa766002998d, type: 2}
+  associatedItem: {fileID: 11400000, guid: 316a5c0473ad2284d88d12479b4f6fba, type: 2}
   colorTint: {r: 0.5, g: 0.3, b: 0.2, a: 1}
   minY: -200
   maxY: 50
   noiseFrequency: 0.04
   noiseThreshold: 0.75
-  biomeRestriction: 
+  requiredBiomeId: 0

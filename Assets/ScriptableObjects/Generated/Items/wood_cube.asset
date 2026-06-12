@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac44f502a5f71848a88cebcc794d933, type: 3}
+  m_Name: wood_cube
+  m_EditorClassIdentifier: Voidborne::ItemDefinition
+  itemId: wood_cube
+  displayName: Wood Cube
+  description: "building \u2014 cube"
+  kind: 3
+  source: 0
+  categories:
+  - build
+  itemType: 5
+  isBuildBlock: 1
+  isDeco: 0
+  buildColor: wood
+  maxStackSize: 64
+  weight: 1
+  icon: {fileID: 21300000, guid: f9686c7749e9e504c8b59549fb7f7f7f, type: 3}
+  modelPrefab: {fileID: 6003073732748092939, guid: 2456f68ef7ef6c445a07d18ed9db13cc, type: 3}
+  placedPrefab: {fileID: 8959677906804033753, guid: f78f389c5494e3347bdeed7e8f05835a, type: 3}
+  properties: 000000000e000000

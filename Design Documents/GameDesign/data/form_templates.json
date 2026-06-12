@@ -1,0 +1,42 @@
+[
+  {
+    "form": "cube",
+    "label": "Cube",
+    "mult": 1,
+    "extras": [],
+    "notes": "Full 1×1×1 building cube."
+  },
+  {
+    "form": "slab",
+    "label": "Slab",
+    "mult": 1,
+    "extras": [],
+    "notes": "Half-height. Yields 2 slabs per recipe."
+  },
+  {
+    "form": "panel",
+    "label": "Panel",
+    "mult": 1,
+    "extras": [],
+    "notes": "Thin wall. Yields 3 panels per recipe."
+  },
+  {
+    "form": "stairs",
+    "label": "Stairs",
+    "mult": 1.5,
+    "extras": [],
+    "notes": "Diagonal step block."
+  },
+  {
+    "form": "door",
+    "label": "Door",
+    "mult": 2,
+    "extras": [
+      {
+        "id": "hinge",
+        "qty": 1
+      }
+    ],
+    "notes": "Hinged. Pairs with frame slot."
+  }
+]

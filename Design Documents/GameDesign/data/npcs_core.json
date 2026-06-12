@@ -1,0 +1,147 @@
+[
+  {
+    "_schema_notes": "Phase-1 NPC roster for milestones M3/M4/M6. See master_prompt.md 'NPCs - start with one' and 'The Core 60'. Shape mirrors npcs_backlog.json.",
+    "_only_present": "Wren, Fungal Brood Mother, Vord Drone, Vord Raider, Graze, Cluck, Thornback. Everything else stays in npcs_backlog.json until M6+ expansion phases."
+  },
+  {
+    "cat": "named",
+    "section": "Kin Survivors",
+    "name": "Wren",
+    "desc": "The first Kin you rescue (M6 / Act 1). Quiet for most of Act 1; the moral hinge of Act 3 in later milestones. For M6 acceptance: she follows the player home from the M6 stronghold encounter, lives at the base, and comments on the player's discoveries via the Spirit Gateway link.",
+    "appearance": "Young Kin, mid-twenties. Pale, with dark hair down past her shoulders. Wears the clothes you find her in: a torn working dress, sturdy boots. Eyes deep brown, often looking down.",
+    "behaviors": [
+      "Follows the player back to base after rescue.",
+      "Speaks short hand-authored lines at scripted moments.",
+      "Stays at the base.",
+      "Reads the Discovery Log and comments on weird synergies."
+    ],
+    "abilities": [
+      "Provides hand-authored dialog at base.",
+      "Gates the Spirit Gateway unlock (M6 final step)."
+    ],
+    "drops": [
+      "Cannot be killed by player."
+    ]
+  },
+  {
+    "cat": "boss",
+    "section": "Brood Family",
+    "name": "Fungal Brood Mother",
+    "desc": "Act 1 boss for M6. Lurks in the hand-placed stronghold. Tier 1 - designed to validate the multi-path boss framework at the smallest scale: a frontal weak point, a glowing back weak point, vulnerability to poison bait. Players who explored the synergy sandbox in M2 should find multiple paths to victory.",
+    "appearance": "Bloated, slow Kin matriarch overgrown with bioluminescent fungal sacs. Her face is partially preserved, eyes blank but tracking. Trails spore-mist as she moves.",
+    "behaviors": [
+      "Stays mostly stationary, rarely chases.",
+      "Spawns 'Spore Mites' (small fast adds) every ~15 seconds.",
+      "Telegraphs sac-burst attacks 2 seconds before triggering.",
+      "Becomes more aggressive below 30% HP, releases panic spore-cloud.",
+      "Glowing back weak point exposed during sac-burst windup.",
+      "Vulnerable to poison bait (a 'weird path' kill validated in M6)."
+    ],
+    "abilities": [
+      "Spore-Sac Burst - AOE poison cloud, leaves lingering damage zone",
+      "Fungal Spawn - summons 3-5 Spore Mites",
+      "Tendril Lash - short-range pull toward her",
+      "Death Bloom - final ability, releases all stored spores"
+    ],
+    "drops": [
+      "Spirit Anchor (her Kin memory) - required to insert at the Spirit Gateway in M6",
+      "Spore Cluster x3-5",
+      "Glandular Sac (future Cheese Press / chem set ingredient)"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Drone",
+    "desc": "M3 fodder - the single enemy used to validate the combat-feels-good acceptance test. Must take a clean hit, react with flinch + ragdoll on death, react to crouch-aimed headshots. No NavMesh - uses the existing lidar-based AI on marching-cubes terrain.",
+    "appearance": "Hunched humanoid in tattered work clothes. Skin grey-purple, eyes filmed over. Slow shuffling gait, weak limbs.",
+    "behaviors": [
+      "Slow approach, swings clumsily.",
+      "Easily killed individually; dangerous in groups.",
+      "Reacts to hit with flinch + ragdolls on death.",
+      "Tends to clump near the boss for support."
+    ],
+    "abilities": [
+      "Clumsy Swing - basic melee",
+      "Lunge Bite - short-range attack"
+    ],
+    "drops": [
+      "Vord Scrap x1-2",
+      "Small amount of corruption material"
+    ]
+  },
+  {
+    "cat": "fodder",
+    "section": "Vord Fodder",
+    "name": "Vord Raider",
+    "desc": "M4 vehicle-driving fodder - the chase enemy. Drives a corrupted Vord cart and pursues the player. Validates driver AI (path-follow, pursue, collision avoidance) and gunner AI (aim while moving). Spawned by a simple director that rolls for a raid encounter when the player drives on a road.",
+    "appearance": "Vord Drone variant with reinforced shoulder armor and a bandolier of crude bullets. Crouches behind the cart's frame while gunner-seated.",
+    "behaviors": [
+      "Drives a Vord Cart along roads.",
+      "Pursues player vehicles within sight range.",
+      "Fires a primitive rifle from the gunner seat while in motion.",
+      "Disengages when its vehicle is below 30% HP."
+    ],
+    "abilities": [
+      "Drive (pursue) - simple path-following AI on roads",
+      "Mounted Fire - inaccurate but persistent shots from the cart",
+      "Ramming - collides with player vehicle if direct line"
+    ],
+    "drops": [
+      "Vord Scrap x2-3",
+      "Crude Rifle (rare)",
+      "Bullets x3-5"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Graze",
+    "desc": "M3 passive wildlife. Peaceful herd animal. Drops raw_meat - feeds the combat sandbox AND the synergy sandbox (Combustible_Wet in a boiler reduces efficiency; can be smoked/dried into jerky at the Drying Rack).",
+    "appearance": "Stocky four-legged grazer with thick brown fur. Long muzzle, gentle eyes, curved horns. Hooves leave clear prints in soft soil.",
+    "behaviors": [
+      "Travels in herds of 4-8.",
+      "Flees if attacked or approached aggressively.",
+      "Tameable in later milestones (M2 acceptance only needs the kill-and-drop loop)."
+    ],
+    "drops": [
+      "raw_meat x2-3",
+      "Hide x1-2"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Cluck",
+    "desc": "M2 passive wildlife - critical for the synergy sandbox. Lays eggs. Can be milked (the canonical 'weird path' interaction; future cow replaces this). Drops the milk that fuels the milk-in-boiler discovery.",
+    "appearance": "Round body, short legs, fluffy feathers in mottled grey-brown. Tiny eyes, big appetite.",
+    "behaviors": [
+      "Stays close to where it spawned.",
+      "Easy to catch by hand.",
+      "Lays eggs in nests if kept in Animal Pen (M2 has no pen yet - eggs drop on the ground at a low rate).",
+      "Can be 'milked' - lore-bending placeholder for the future cow."
+    ],
+    "drops": [
+      "egg x1 (passive)",
+      "milk x1 (passive, slower than egg)",
+      "raw_meat x1-2 (if killed)"
+    ]
+  },
+  {
+    "cat": "wildlife",
+    "section": "Lowlands Fauna",
+    "name": "Thornback",
+    "desc": "M3 aggressive wildlife - the one hostile non-Vord creature in the Core build. Pack hunter. Required for the combat-feels-good test: a hostile that bites back and isn't an enemy boss.",
+    "appearance": "Quadruped with bristling spine of bone spikes. Reptilian skin. Hooked tail.",
+    "behaviors": [
+      "Hunts in packs of 3-4.",
+      "Charges at the player from concealment.",
+      "Reacts to hit with flinch; ragdolls on death."
+    ],
+    "drops": [
+      "raw_meat x1",
+      "Sharp Bone Tip x2-3 (future ammo material)",
+      "Thornback Hide x1"
+    ]
+  }
+]

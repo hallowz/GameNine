@@ -8,6 +8,7 @@ using Voidborne;
 using Voidborne.Automation;
 using Voidborne.Player;
 using Voidborne.UI;
+using Voidborne.UI.Style;
 using Voidborne.Vehicles;
 
 /// <summary>
@@ -45,12 +46,14 @@ public class UIManager : MonoBehaviour
     private bool _questLogOpen;
     private bool _dialogueOpen;
     private bool _pauseMenuOpen;
+    private bool _machineUIOpen;
 
     // ---------------------------------------------------------------
     //  UI Components
     // ---------------------------------------------------------------
     private Canvas       _canvas;
     private HotbarUI     _hotbarUI;
+    private HudUI        _hudUI;
     private StaminaBarUI _staminaBarUI;
     private InventoryUI  _inventoryUI;
     private CraftingUI   _craftingUI;
@@ -67,6 +70,7 @@ public class UIManager : MonoBehaviour
     private DialogueUI     _dialogueUI;
     private DialogueRunner _dialogueRunner;
     private GameObject     _pauseMenuPanel;
+    private Voidborne.UI.MachineUI _machineUI;
 
     // Floating cursor-item image
     private Image         _cursorImage;
@@ -100,12 +104,19 @@ public class UIManager : MonoBehaviour
         }
         Instance = this;
 
+        // Force-load the UI font early so any fallback warning surfaces
+        // during UIManager init rather than on the first text draw.
+        // Per V4.1 heads-up.
+        _ = UIStyle.Font;
+
         BuildCanvas();
         BuildHotbar();
+        BuildHud();
         BuildStaminaBar();
         BuildAmmoUI();
         BuildInventoryPanel();
         BuildCraftingPanel();
+        BuildMachinePanel();
         BuildFurnacePanel();
         BuildChestPanel();
         BuildBackpackPanel();
@@ -116,6 +127,7 @@ public class UIManager : MonoBehaviour
         BuildQuestUI();
         BuildDialogueUI();
         BuildTooltip();
+        BuildInteractionPrompt();
         BuildCursorItem();
         BuildPauseMenu();
     }
@@ -139,6 +151,13 @@ public class UIManager : MonoBehaviour
         _fpsCamera            = FindFirstObjectByType<FirstPersonCamera>();
         _terrainInteraction   = FindFirstObjectByType<PlayerTerrainInteraction>();
         _personalCraftingGrid = FindFirstObjectByType<PersonalCraftingGrid>();
+
+        // V4.3: the personal crafting block is now embedded directly in the
+        // inventory panel. CraftingUI is still used for crafting stations and
+        // furnaces, but no longer opens as a side panel when toggling the
+        // inventory. Bind the grid into InventoryUI here so the embedded
+        // 2x2 + output renders against the canonical model.
+        _inventoryUI.BindPersonalCraftingGrid(_personalCraftingGrid);
 
         if (_personalCraftingGrid == null)
             Debug.LogWarning("[UIManager] No PersonalCraftingGrid found on Player — personal crafting will not be available in the inventory panel.");
@@ -171,6 +190,8 @@ public class UIManager : MonoBehaviour
         {
             if (_pauseMenuOpen)
                 ClosePauseMenu();
+            else if (_machineUIOpen)
+                CloseMachineUI();
             else if (_inventoryOpen)
                 ToggleInventory();
             else if (_questLogOpen)
@@ -234,10 +255,17 @@ public class UIManager : MonoBehaviour
                 ReparentToBracer();
             }
 
-            // Show personal crafting grid alongside the inventory panel
-            // (only when no crafting station or furnace is already open)
-            if (_personalCraftingGrid != null && !_craftingStationOpen && !_furnaceOpen)
-                _craftingUI.Open(null, _personalCraftingGrid.Grid, OnTakeResultFromStation);
+            // V4.3: personal crafting is embedded directly in the inventory
+            // panel. CraftingUI is reserved for crafting-station / furnace
+            // panels and is no longer opened here. The InventoryUI's
+            // BindPersonalCraftingGrid hookup in Start() drives the embedded
+            // 2x2 + output slot.
+
+            // Keep the HUD visible above the inventory panel per V4.2
+            // heads-up: HudUI is a sibling of InventoryPanel on the canvas,
+            // and would otherwise be drawn under the panel.
+            if (_hudUI != null)
+                _hudUI.transform.SetAsLastSibling();
 
             SetCursorLocked(false);
 
@@ -306,7 +334,58 @@ public class UIManager : MonoBehaviour
     public bool IsInventoryOpen => _inventoryOpen;
 
     /// <summary>True when any UI panel (inventory or crafting station) is blocking gameplay input.</summary>
-    public bool IsAnyUIOpen => _inventoryOpen || _craftingStationOpen || _furnaceOpen || _chestOpen || _assemblerOpen || _terminalOpen || _vehicleWorkbenchOpen || _vehicleCargoOpen || _questLogOpen || _dialogueOpen || _pauseMenuOpen;
+    public bool IsAnyUIOpen => _inventoryOpen || _craftingStationOpen || _furnaceOpen || _chestOpen || _assemblerOpen || _terminalOpen || _vehicleWorkbenchOpen || _vehicleCargoOpen || _questLogOpen || _dialogueOpen || _pauseMenuOpen || _machineUIOpen;
+
+    // ---------------------------------------------------------------
+    //  Machine UI (Volume 4.4)
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Open the generic Machine UI for the given machine definition. Only one
+    /// modal at a time — closes the inventory panel if it's open so the
+    /// machine panel takes centre stage. Raises the HUD's sibling index so
+    /// it stays visible above the modal (mirrors the inventory open trick).
+    ///
+    /// V9.1 will provide the real <see cref="IMachineInputProvider"/>; until
+    /// then early callers can pass a <see cref="StubMachineInputProvider"/>.
+    /// </summary>
+    public void OpenMachineUI(MachineDefinition machine, IMachineInputProvider provider)
+    {
+        if (_machineUI == null || machine == null) return;
+
+        // Only one modal at a time — close the inventory panel if open.
+        if (_inventoryOpen) ToggleInventory();
+
+        _machineUIOpen = true;
+        _machineUI.Open(machine, provider);
+
+        if (_hudUI != null)
+            _hudUI.transform.SetAsLastSibling();
+
+        SetCursorLocked(false);
+        if (_fpsCamera != null)         _fpsCamera.enabled         = false;
+        if (_terrainInteraction != null) _terrainInteraction.enabled = false;
+    }
+
+    public void CloseMachineUI()
+    {
+        if (!_machineUIOpen) return;
+        _machineUIOpen = false;
+
+        if (Cursor.IsHolding)
+            Cursor.CancelAndReturn();
+
+        if (_machineUI != null) _machineUI.Close();
+
+        if (!IsAnyUIOpen)
+        {
+            SetCursorLocked(true);
+            if (_fpsCamera != null)         _fpsCamera.enabled         = true;
+            if (_terrainInteraction != null) _terrainInteraction.enabled = true;
+        }
+    }
+
+    public bool IsMachineUIOpen => _machineUIOpen;
 
     // ---------------------------------------------------------------
     //  Crafting Station
@@ -948,6 +1027,24 @@ public class UIManager : MonoBehaviour
         _hotbarUI = hotbarGO.AddComponent<HotbarUI>();
     }
 
+    private void BuildHud()
+    {
+        // V4.2 HUD — health/stamina/temperature/corruption stack, bottom-left.
+        // Anchored to bottom-left of the canvas; the HudUI manages its own
+        // internal child layout.
+        GameObject hudGO = new GameObject("HudUI", typeof(RectTransform));
+        hudGO.transform.SetParent(_canvas.transform, false);
+
+        RectTransform rt = hudGO.GetComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0f, 0f);
+        rt.anchorMax        = new Vector2(0f, 0f);
+        rt.pivot            = new Vector2(0f, 0f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta        = new Vector2(260f, 200f);
+
+        _hudUI = hudGO.AddComponent<HudUI>();
+    }
+
     private void BuildStaminaBar()
     {
         // Hotbar sits at anchoredPosition.y = 10, height ≈ 62 (SlotSize 50 + padding 12)
@@ -1020,6 +1117,23 @@ public class UIManager : MonoBehaviour
         rt.anchoredPosition = new Vector2(262f, 0f);   // just right of the inventory panel
 
         _craftingUI = craftGO.AddComponent<CraftingUI>();
+    }
+
+    private void BuildMachinePanel()
+    {
+        // V4.4 — generic Machine UI panel. Centred modal sized 700×500.
+        // Opened by UIManager.OpenMachineUI; V9.1 wires the actual machine
+        // interaction once MachineRuntime lands.
+        GameObject machineGO = new GameObject("MachinePanel", typeof(RectTransform));
+        machineGO.transform.SetParent(_canvas.transform, false);
+
+        RectTransform rt = machineGO.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot     = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+
+        _machineUI = machineGO.AddComponent<Voidborne.UI.MachineUI>();
     }
 
     private void BuildFurnacePanel()
@@ -1143,6 +1257,17 @@ public class UIManager : MonoBehaviour
         // Must be last sibling so it renders on top of all other canvas children.
         // Set AFTER AddComponent so Awake() cannot accidentally reorder it.
         ttGO.transform.SetAsLastSibling();
+    }
+
+    private void BuildInteractionPrompt()
+    {
+        // V4.6 — screen-space corner-of-screen interaction label. Replaces
+        // any prior on-machine 3D text. The prompt is shown by
+        // PlayerInteractionPromptDriver each frame when the player's scan
+        // finds an IInteractable.
+        GameObject ipGO = new GameObject("InteractionPromptUI", typeof(RectTransform));
+        ipGO.transform.SetParent(_canvas.transform, false);
+        ipGO.AddComponent<Voidborne.UI.InteractionPromptUI>();
     }
 
     private void BuildQuestUI()

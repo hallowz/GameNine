@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28f5858218f1554aa43abaa8b8b6dcf, type: 3}
+  m_Name: wren
+  m_EditorClassIdentifier: Voidborne::Voidborne.NPCs.NpcDefinition
+  id: wren
+  displayName: Wren
+  description: 'The first Kin you rescue (M6 / Act 1). Quiet for most of Act 1; the
+    moral hinge of Act 3 in later milestones. For M6 acceptance: she follows the
+    player home from the M6 stronghold encounter, lives at the base, and comments
+    on the player''s discoveries via the Spirit Gateway link.'
+  section: Kin Survivors
+  behaviors:
+  - Follows the player back to base after rescue.
+  - Speaks short hand-authored lines at scripted moments.
+  - Stays at the base.
+  - Reads the Discovery Log and comments on weird synergies.
+  abilities:
+  - Provides hand-authored dialog at base.
+  - Gates the Spirit Gateway unlock (M6 final step).
+  dropOrTradeItems:
+  - Cannot be killed by player.
+  isKillable: 0
+  isQuestGiver: 1
+  prefab: {fileID: 3489618258458326178, guid: 5f13c6ff1cf2894469859088cf2aeb9e, type: 3}

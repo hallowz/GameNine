@@ -1,0 +1,1207 @@
+{
+  "circuit_panel": {
+    "name": "Circuit Wall Panel",
+    "role": "deco — tech",
+    "recipes": [
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 1
+          },
+          {
+            "id": "circuit_board",
+            "qty": 1
+          },
+          {
+            "id": "copper_wire",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 2
+          },
+          {
+            "id": "copper_wire",
+            "qty": 3
+          },
+          {
+            "id": "capacitor",
+            "qty": 1
+          }
+        ],
+        "notes": "Cheap variant."
+      }
+    ]
+  },
+  "holo_display": {
+    "name": "Holo Display",
+    "role": "deco — tech (animated)",
+    "recipes": [
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "optical_fiber",
+            "qty": 2
+          },
+          {
+            "id": "capacitor",
+            "qty": 1
+          },
+          {
+            "id": "battery_cell",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "cable_conduit": {
+    "name": "Cable Conduit",
+    "role": "deco — tech",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "copper_wire",
+            "qty": 4
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "iron_wire",
+            "qty": 4
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "server_rack": {
+    "name": "Server Rack",
+    "role": "deco — tech",
+    "recipes": [
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 3
+          },
+          {
+            "id": "circuit_board",
+            "qty": 2
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "neon_sign": {
+    "name": "Neon Sign",
+    "role": "deco — tech (lit)",
+    "recipes": [
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "copper_wire",
+            "qty": 2
+          },
+          {
+            "id": "glow_paste",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "bio_sac",
+            "qty": 2
+          },
+          {
+            "id": "copper_wire",
+            "qty": 1
+          }
+        ],
+        "notes": "Bio-neon — softer light."
+      }
+    ]
+  },
+  "trellis": {
+    "name": "Trellis",
+    "role": "deco — gardener (climbing plants)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 2
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "frostpine",
+            "qty": 3
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "planter_box": {
+    "name": "Planter Box",
+    "role": "deco — gardener (decorative crop)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "tilled_soil",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "loamy_soil",
+            "qty": 1
+          }
+        ],
+        "notes": "Premium soil."
+      }
+    ]
+  },
+  "lattice_wall": {
+    "name": "Lattice Wall",
+    "role": "deco — gardener",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 2
+          },
+          {
+            "id": "plant_fiber",
+            "qty": 3
+          }
+        ]
+      }
+    ]
+  },
+  "garden_arbor": {
+    "name": "Garden Arbor",
+    "role": "deco — gardener (overhead)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 4
+          },
+          {
+            "id": "trellis",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "hanging_basket": {
+    "name": "Hanging Basket",
+    "role": "deco — gardener",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "plant_fiber",
+            "qty": 4
+          },
+          {
+            "id": "string",
+            "qty": 2
+          },
+          {
+            "id": "tilled_soil",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "cloth",
+            "qty": 1
+          },
+          {
+            "id": "tilled_soil",
+            "qty": 1
+          }
+        ],
+        "notes": "Woven basket."
+      }
+    ]
+  },
+  "trophy_mount": {
+    "name": "Trophy Mount",
+    "role": "deco — beastmaster",
+    "recipes": [
+      {
+        "via": "taxidermy",
+        "inputs": [
+          {
+            "id": "trophy_skull",
+            "qty": 1
+          },
+          {
+            "id": "wood_planks",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "hide_tapestry": {
+    "name": "Hide Tapestry",
+    "role": "deco — beastmaster",
+    "recipes": [
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "leather",
+            "qty": 3
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "hide",
+            "qty": 5
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ],
+        "notes": "Crude variant."
+      }
+    ]
+  },
+  "bone_throne": {
+    "name": "Bone Throne",
+    "role": "deco — beastmaster (intimidate)",
+    "recipes": [
+      {
+        "via": "taxidermy",
+        "inputs": [
+          {
+            "id": "bone_plate",
+            "qty": 4
+          },
+          {
+            "id": "trophy_skull",
+            "qty": 1
+          },
+          {
+            "id": "thick_pelt",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "antler_chandelier": {
+    "name": "Antler Chandelier",
+    "role": "deco — beastmaster (lit)",
+    "recipes": [
+      {
+        "via": "taxidermy",
+        "inputs": [
+          {
+            "id": "bone",
+            "qty": 6
+          },
+          {
+            "id": "beeswax",
+            "qty": 2
+          },
+          {
+            "id": "string",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "spice_rack": {
+    "name": "Spice Rack",
+    "role": "deco — chef",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 2
+          },
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "spice_pod",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "hanging_pots": {
+    "name": "Hanging Pots",
+    "role": "deco — chef",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 2
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "iron_ingot",
+            "qty": 2
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "wine_rack": {
+    "name": "Wine Rack",
+    "role": "deco — chef",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 4
+          },
+          {
+            "id": "glass",
+            "qty": 3
+          }
+        ]
+      }
+    ]
+  },
+  "counter_block": {
+    "name": "Kitchen Counter",
+    "role": "deco — chef",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "stone_slab",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "copper_plate",
+            "qty": 1
+          }
+        ],
+        "notes": "Copper-top."
+      }
+    ]
+  },
+  "hearth_display": {
+    "name": "Hearth Display",
+    "role": "deco — chef (lit fireplace)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "brick",
+            "qty": 4
+          },
+          {
+            "id": "iron_plate",
+            "qty": 1
+          },
+          {
+            "id": "charcoal",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "bubbling_vat": {
+    "name": "Bubbling Vat",
+    "role": "deco — alchemist (animated)",
+    "recipes": [
+      {
+        "via": "chem_set",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 3
+          },
+          {
+            "id": "copper_plate",
+            "qty": 1
+          },
+          {
+            "id": "vinegar",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "reagent_shelf": {
+    "name": "Reagent Shelf",
+    "role": "deco — alchemist",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "glass",
+            "qty": 4
+          }
+        ]
+      }
+    ]
+  },
+  "symbol_tile": {
+    "name": "Sigil Floor Tile",
+    "role": "deco — alchemist (glowing)",
+    "recipes": [
+      {
+        "via": "chem_set",
+        "inputs": [
+          {
+            "id": "stone_slab",
+            "qty": 1
+          },
+          {
+            "id": "glow_paste",
+            "qty": 1
+          },
+          {
+            "id": "void_dust",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "glowing_brazier": {
+    "name": "Glowing Brazier",
+    "role": "deco — alchemist (lit)",
+    "recipes": [
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "iron_ingot",
+            "qty": 3
+          },
+          {
+            "id": "sulfur",
+            "qty": 1
+          },
+          {
+            "id": "glow_paste",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 3
+          },
+          {
+            "id": "bio_sac",
+            "qty": 1
+          }
+        ],
+        "notes": "Bio-brazier — cold light."
+      }
+    ]
+  },
+  "gear_wall": {
+    "name": "Gear Wall Panel",
+    "role": "deco — mechanical (rotating)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 1
+          },
+          {
+            "id": "gear",
+            "qty": 3
+          }
+        ]
+      },
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "iron_ingot",
+            "qty": 1
+          },
+          {
+            "id": "gear",
+            "qty": 4
+          }
+        ]
+      }
+    ]
+  },
+  "pipe_conduit": {
+    "name": "Pipe Conduit",
+    "role": "deco — mechanical",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "copper_plate",
+            "qty": 2
+          },
+          {
+            "id": "iron_wire",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "press",
+        "inputs": [
+          {
+            "id": "copper_plate",
+            "qty": 1
+          },
+          {
+            "id": "iron_plate",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "pressure_gauge_panel": {
+    "name": "Pressure Gauge Panel",
+    "role": "deco — mechanical (animated)",
+    "recipes": [
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 1
+          },
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "spring",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "spring_floor": {
+    "name": "Spring Floor Pad",
+    "role": "deco — mechanical (bouncy)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 2
+          },
+          {
+            "id": "spring",
+            "qty": 4
+          }
+        ]
+      }
+    ]
+  },
+  "power_conduit": {
+    "name": "Power Conduit Block",
+    "role": "deco — robotic (carries power)",
+    "recipes": [
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "copper_wire",
+            "qty": 4
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          },
+          {
+            "id": "capacitor",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "copper_wire",
+            "qty": 6
+          },
+          {
+            "id": "iron_plate",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "holo_console": {
+    "name": "Holo Console",
+    "role": "deco — robotic (interactive)",
+    "recipes": [
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "optical_fiber",
+            "qty": 2
+          },
+          {
+            "id": "circuit_board",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "led_strip": {
+    "name": "LED Strip",
+    "role": "deco — robotic (lit)",
+    "recipes": [
+      {
+        "via": "etcher",
+        "inputs": [
+          {
+            "id": "copper_wire",
+            "qty": 3
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          },
+          {
+            "id": "bio_sac",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "copper_wire",
+            "qty": 3
+          },
+          {
+            "id": "glow_paste",
+            "qty": 1
+          }
+        ],
+        "notes": "Glow-paste variant."
+      }
+    ]
+  },
+  "ember_brazier": {
+    "name": "Ember Brazier",
+    "role": "deco — pyro (lit + heat aura)",
+    "recipes": [
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "iron_ingot",
+            "qty": 3
+          },
+          {
+            "id": "thermal_rock",
+            "qty": 1
+          },
+          {
+            "id": "cinderroot_oil",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "lava_trough": {
+    "name": "Lava Trough",
+    "role": "deco — pyro (animated)",
+    "recipes": [
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "stone_slab",
+            "qty": 2
+          },
+          {
+            "id": "thermal_rock",
+            "qty": 2
+          },
+          {
+            "id": "obsidian",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "smolder_stone": {
+    "name": "Smolder Stone",
+    "role": "deco — pyro (warm to touch)",
+    "recipes": [
+      {
+        "via": "furnace",
+        "inputs": [
+          {
+            "id": "stone_cube",
+            "qty": 1
+          },
+          {
+            "id": "thermal_rock",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "frost_lantern": {
+    "name": "Frost Lantern",
+    "role": "deco — cryo (lit + cold aura)",
+    "recipes": [
+      {
+        "via": "assembler",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "frost_crystal",
+            "qty": 1
+          },
+          {
+            "id": "bio_sac",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "ice_pillar": {
+    "name": "Ice Pillar",
+    "role": "deco — cryo",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "frost_crystal",
+            "qty": 3
+          },
+          {
+            "id": "glass",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "crystalline_wall": {
+    "name": "Crystalline Wall",
+    "role": "deco — cryo (translucent)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "frost_crystal",
+            "qty": 2
+          },
+          {
+            "id": "glass_panel",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "hive_frame": {
+    "name": "Hive Frame Block",
+    "role": "deco — beekeeper (live bees)",
+    "recipes": [
+      {
+        "via": "apiary",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 2
+          },
+          {
+            "id": "beeswax",
+            "qty": 2
+          },
+          {
+            "id": "honey_bee",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "honey_window": {
+    "name": "Honey-Filled Window",
+    "role": "deco — beekeeper (translucent gold)",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "glass_panel",
+            "qty": 1
+          },
+          {
+            "id": "honey",
+            "qty": 2
+          },
+          {
+            "id": "wax_seal",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "carpet": {
+    "name": "Woven Carpet",
+    "role": "deco — soft floor",
+    "recipes": [
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "wool_yarn",
+            "qty": 4
+          }
+        ]
+      },
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "plant_fiber",
+            "qty": 6
+          }
+        ],
+        "notes": "Plant-fiber rug."
+      }
+    ]
+  },
+  "banner": {
+    "name": "Banner",
+    "role": "deco — wall hanging",
+    "recipes": [
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "cloth",
+            "qty": 3
+          },
+          {
+            "id": "wood_planks",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  "chandelier": {
+    "name": "Iron Chandelier",
+    "role": "deco — lit ceiling",
+    "recipes": [
+      {
+        "via": "forge",
+        "inputs": [
+          {
+            "id": "iron_ingot",
+            "qty": 3
+          },
+          {
+            "id": "beeswax",
+            "qty": 3
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "iron_plate",
+            "qty": 3
+          },
+          {
+            "id": "beeswax",
+            "qty": 3
+          },
+          {
+            "id": "string",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "stained_glass": {
+    "name": "Stained Glass",
+    "role": "deco — translucent color",
+    "recipes": [
+      {
+        "via": "furnace",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "copper_dust",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "via": "furnace",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "void_dust",
+            "qty": 1
+          }
+        ],
+        "notes": "Violet variant."
+      },
+      {
+        "via": "furnace",
+        "inputs": [
+          {
+            "id": "glass",
+            "qty": 2
+          },
+          {
+            "id": "saltpeter_powder",
+            "qty": 1
+          }
+        ],
+        "notes": "Yellow variant."
+      }
+    ]
+  },
+  "rug": {
+    "name": "Patterned Rug",
+    "role": "deco — soft floor",
+    "recipes": [
+      {
+        "via": "loom",
+        "inputs": [
+          {
+            "id": "cloth",
+            "qty": 3
+          },
+          {
+            "id": "wool_yarn",
+            "qty": 2
+          }
+        ]
+      }
+    ]
+  },
+  "bookshelf": {
+    "name": "Bookshelf",
+    "role": "deco — knowledge",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wood_planks",
+            "qty": 3
+          },
+          {
+            "id": "plant_fiber",
+            "qty": 4
+          },
+          {
+            "id": "leather",
+            "qty": 1
+          }
+        ],
+        "notes": "Plant fiber = paper proxy."
+      }
+    ]
+  },
+  "paper_lantern": {
+    "name": "Paper Lantern",
+    "role": "deco — soft light",
+    "recipes": [
+      {
+        "via": "workbench",
+        "inputs": [
+          {
+            "id": "wax_paper",
+            "qty": 2
+          },
+          {
+            "id": "wood_planks",
+            "qty": 1
+          },
+          {
+            "id": "glow_paste",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  }
+}

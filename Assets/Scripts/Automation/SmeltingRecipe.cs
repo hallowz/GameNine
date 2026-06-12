@@ -1,5 +1,13 @@
 using UnityEngine;
 
+// V5.3 DEPRECATION NOTE — kept in place because FurnaceBlock,
+// ElectricFurnace, and Grinder still consume `SmeltingRecipe` directly.
+// The V6 plan replaces this with the generic RecipeDefinition shape
+// (machine-scoped, property-aware) routed through CraftingMatchEngine.
+// The 4 pre-Core-60 .asset instances were archived to
+// _Archived/Legacy/SmeltingRecipes/ in V5.1; the runtime class stays
+// until V6/V9 swaps the furnace pipeline to MachineRuntime + RecipeDefinition.
+
 namespace Voidborne.Automation
 {
     /// <summary>

@@ -32,6 +32,18 @@ public class ChestBlock : MonoBehaviour, IInteractable
 
     public Inventory ChestInventory { get; private set; }
 
+    /// <summary>
+    /// V9.2 — Bind an externally-managed <see cref="Inventory"/> to this
+    /// chest. Used by <c>StorageChestRuntime</c> so its contents survive
+    /// across open/close cycles regardless of the ChestBlock's own Awake
+    /// timing. Idempotent; called by the runtime in its Interact path.
+    /// </summary>
+    public void BindInventory(Inventory inv)
+    {
+        if (inv == null) return;
+        ChestInventory = inv;
+    }
+
     [Tooltip("Items pre-loaded into the chest when the scene starts.")]
     [SerializeField] public List<ItemStack> starterItems = new List<ItemStack>();
 
@@ -48,7 +60,8 @@ public class ChestBlock : MonoBehaviour, IInteractable
 
     private void Awake()
     {
-        ChestInventory = new Inventory(cols, rows, stackMultiplier);
+        if (ChestInventory == null)
+            ChestInventory = new Inventory(cols, rows, stackMultiplier);
 
         if (powerConsumer == null)
             powerConsumer = GetComponent<PowerConsumer>();

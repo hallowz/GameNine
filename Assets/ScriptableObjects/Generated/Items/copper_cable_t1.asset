@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac44f502a5f71848a88cebcc794d933, type: 3}
+  m_Name: copper_cable_t1
+  m_EditorClassIdentifier: Voidborne::ItemDefinition
+  itemId: copper_cable_t1
+  displayName: Copper Cable (T1)
+  description: low-tier electrical cable (<=200W)
+  kind: 2
+  source: 0
+  categories: []
+  itemType: 0
+  isBuildBlock: 0
+  isDeco: 0
+  buildColor: 
+  maxStackSize: 64
+  weight: 1
+  icon: {fileID: 21300000, guid: 04847a1b2ce2fb24681d11af193a1136, type: 3}
+  modelPrefab: {fileID: 3669100029901150435, guid: 590d14aaec804d54194955b39d711a7e, type: 3}
+  placedPrefab: {fileID: 0}
+  properties: 0f0000000b000000

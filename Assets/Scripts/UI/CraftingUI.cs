@@ -7,6 +7,7 @@ using TMPro;
 using Voidborne;
 using Voidborne.Crafting;
 using Voidborne.UI;
+using Voidborne.UI.Style;
 
 /// <summary>
 /// UI panel for a CraftingStation (or the personal 2×2 grid).
@@ -109,9 +110,11 @@ public class CraftingUI : MonoBehaviour
 
     private void BuildPanel()
     {
-        // Dark background
+        // V4.5 restyle — UIStyle.Panel + Border for the standalone CraftingUI
+        // side panel. Matches V4.1 kit so palette changes are global.
         Image bg = gameObject.AddComponent<Image>();
-        bg.color = new Color(0.08f, 0.08f, 0.10f, 0.95f);
+        bg.color = UIStyle.Panel;
+        UIBuilder.Border(GetComponent<RectTransform>(), UIStyle.Border);
 
         VerticalLayoutGroup vlg = gameObject.AddComponent<VerticalLayoutGroup>();
         vlg.childControlWidth      = true;
@@ -131,8 +134,9 @@ public class CraftingUI : MonoBehaviour
         titleGO.transform.SetParent(transform, false);
         _titleLabel = titleGO.GetComponent<TMP_Text>();
         _titleLabel.text      = "CRAFTING";
-        _titleLabel.color     = new Color(0.8f, 0.8f, 0.8f);
-        _titleLabel.fontSize  = 14f;
+        _titleLabel.font      = UIStyle.Font;
+        _titleLabel.color     = UIStyle.Text;
+        _titleLabel.fontSize  = UIStyle.FontSizeHeader;
         _titleLabel.fontStyle = FontStyles.Bold;
         _titleLabel.alignment = TextAlignmentOptions.TopLeft;
         LayoutElement titleLE = titleGO.AddComponent<LayoutElement>();
@@ -148,8 +152,9 @@ public class CraftingUI : MonoBehaviour
         arrowGO.transform.SetParent(transform, false);
         TMP_Text arrow = arrowGO.GetComponent<TMP_Text>();
         arrow.text      = "->  Result";
-        arrow.color     = new Color(0.55f, 0.55f, 0.55f);
-        arrow.fontSize  = 11f;
+        arrow.font      = UIStyle.Font;
+        arrow.color     = UIStyle.TextDim;
+        arrow.fontSize  = UIStyle.FontSizeSmall;
         arrow.alignment = TextAlignmentOptions.TopLeft;
         LayoutElement arrowLE = arrowGO.AddComponent<LayoutElement>();
         arrowLE.preferredHeight = 18f;
@@ -182,8 +187,9 @@ public class CraftingUI : MonoBehaviour
         hintGO.transform.SetParent(transform, false);
         TMP_Text hint = hintGO.GetComponent<TMP_Text>();
         hint.text      = "[Esc] Close";
-        hint.color     = new Color(0.4f, 0.4f, 0.4f);
-        hint.fontSize  = 9f;
+        hint.font      = UIStyle.Font;
+        hint.color     = UIStyle.TextDim;
+        hint.fontSize  = UIStyle.FontSizeSmall;
         hint.alignment = TextAlignmentOptions.TopLeft;
         LayoutElement hintLE = hintGO.AddComponent<LayoutElement>();
         hintLE.preferredHeight = 16f;
@@ -523,8 +529,9 @@ public class CraftingUI : MonoBehaviour
 [RequireComponent(typeof(RectTransform), typeof(Image))]
 public class CraftingSlotButton : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    private static readonly Color ColorNormal = new Color(0.15f, 0.15f, 0.15f, 0.85f);
-    private static readonly Color ColorHover  = new Color(0.28f, 0.28f, 0.28f, 1.00f);
+    // V4.5 restyle — UIStyle palette. Normal = PanelLight, Hover = Border.
+    private static Color ColorNormal => UIStyle.PanelLight;
+    private static Color ColorHover  => UIStyle.Border;
 
     public int SlotX { get; private set; }
     public int SlotY { get; private set; }
@@ -605,8 +612,9 @@ public class CraftingSlotButton : MonoBehaviour, IPointerClickHandler, IPointerE
         labelGO.transform.SetParent(transform, false);
         _stackLabel = labelGO.GetComponent<TMP_Text>();
         _stackLabel.text          = "";
-        _stackLabel.color         = Color.white;
-        _stackLabel.fontSize      = 10f;
+        _stackLabel.font          = UIStyle.Font;
+        _stackLabel.color         = UIStyle.Text;
+        _stackLabel.fontSize      = UIStyle.FontSizeSmall;
         _stackLabel.fontStyle     = FontStyles.Bold;
         _stackLabel.alignment     = TextAlignmentOptions.BottomRight;
         _stackLabel.raycastTarget = false;
@@ -645,9 +653,11 @@ public class CraftingSlotButton : MonoBehaviour, IPointerClickHandler, IPointerE
 [RequireComponent(typeof(RectTransform), typeof(Image))]
 public class CraftingOutputSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    private static readonly Color ColorEmpty  = new Color(0.12f, 0.12f, 0.12f, 0.85f);
-    private static readonly Color ColorReady  = new Color(0.15f, 0.35f, 0.15f, 1.00f);
-    private static readonly Color ColorHover  = new Color(0.25f, 0.55f, 0.25f, 1.00f);
+    // V4.5 restyle — UIStyle palette. Empty = PanelLight, Ready = Accent (dim),
+    // Hover = Accent. Matches V4.1 kit so palette changes are global.
+    private static Color ColorEmpty => UIStyle.PanelLight;
+    private static Color ColorReady => UIStyle.AccentDim;
+    private static Color ColorHover => UIStyle.Accent;
 
     private Image    _background;
     private Image    _itemIcon;
@@ -710,8 +720,9 @@ public class CraftingOutputSlot : MonoBehaviour, IPointerClickHandler, IPointerE
         labelGO.transform.SetParent(transform, false);
         _stackLabel = labelGO.GetComponent<TMP_Text>();
         _stackLabel.text          = "";
-        _stackLabel.color         = Color.white;
-        _stackLabel.fontSize      = 10f;
+        _stackLabel.font          = UIStyle.Font;
+        _stackLabel.color         = UIStyle.Text;
+        _stackLabel.fontSize      = UIStyle.FontSizeSmall;
         _stackLabel.fontStyle     = FontStyles.Bold;
         _stackLabel.alignment     = TextAlignmentOptions.BottomRight;
         _stackLabel.raycastTarget = false;

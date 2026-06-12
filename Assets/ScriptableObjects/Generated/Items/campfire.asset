@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac44f502a5f71848a88cebcc794d933, type: 3}
+  m_Name: campfire
+  m_EditorClassIdentifier: Voidborne::ItemDefinition
+  itemId: campfire
+  displayName: Campfire
+  description: "T1 \u2014 open flame"
+  kind: 1
+  source: 0
+  categories: []
+  itemType: 6
+  isBuildBlock: 0
+  isDeco: 0
+  buildColor: 
+  maxStackSize: 1
+  weight: 1
+  icon: {fileID: 21300000, guid: 3420435e3a7c31749842d96c482897a3, type: 3}
+  modelPrefab: {fileID: 77024091266295392, guid: c55640dd05d3e854c92ec7769ec2cc1a, type: 3}
+  placedPrefab: {fileID: 5234366855740466983, guid: 6ccc657bf6751ae4aa1dd065d67b038c, type: 3}
+  properties: 

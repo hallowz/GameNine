@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using TMPro;
 using Voidborne.UI;
+using Voidborne.UI.Style;
 
 /// <summary>
 /// Individual inventory/hotbar slot.
@@ -12,6 +13,11 @@ using Voidborne.UI;
 ///
 /// Drag-and-drop has been removed; all interaction is click-based.
 /// InventoryUI / HotbarUI create these at runtime and call Init().
+///
+/// V4.2 restyle: colours and stack-count font now read from UIStyle so
+/// every slot in the game shares one palette. The selection frame is a
+/// thin Accent-coloured rect drawn behind the slot, with the slot itself
+/// inset by UIStyle.BorderWidth to produce the hollow-frame look.
 /// </summary>
 [RequireComponent(typeof(RectTransform), typeof(Image))]
 public class SlotUI : MonoBehaviour,
@@ -19,11 +25,11 @@ public class SlotUI : MonoBehaviour,
     IPointerClickHandler
 {
     // ---------------------------------------------------------------
-    //  Colours
+    //  Colours (sourced from UIStyle so visual changes are global)
     // ---------------------------------------------------------------
-    private static readonly Color ColorNormal   = new Color(0.15f, 0.15f, 0.15f, 0.85f);
-    private static readonly Color ColorHover    = new Color(0.28f, 0.28f, 0.28f, 1.00f);
-    private static readonly Color ColorSelected = new Color(0.70f, 0.60f, 0.10f, 1.00f); // gold
+    private static Color ColorNormal   => UIStyle.PanelLight;
+    private static Color ColorHover    => UIStyle.Border;
+    private static Color ColorSelected => UIStyle.Accent;
 
     // ---------------------------------------------------------------
     //  Slot data
@@ -264,32 +270,36 @@ public class SlotUI : MonoBehaviour,
     {
         // Size is controlled by the parent GridLayoutGroup — do not override sizeDelta here.
 
-        // Background
+        // Background — UIStyle.PanelLight (matches UIBuilder.SlotBg)
         _background = GetComponent<Image>();
         if (_background == null) _background = gameObject.AddComponent<Image>();
         _background.color = ColorNormal;
 
-        // Selection border (gold outline)
+        // Selection border (Accent-coloured rect drawn behind the slot)
         GameObject borderGO = new GameObject("SelectBorder", typeof(RectTransform), typeof(Image));
         borderGO.transform.SetParent(transform, false);
         _selectionBorder = borderGO.GetComponent<Image>();
-        _selectionBorder.color   = ColorSelected;
-        _selectionBorder.enabled = false;
+        _selectionBorder.color         = ColorSelected;
+        _selectionBorder.raycastTarget = false;
+        _selectionBorder.enabled       = false;
         RectTransform borderRT = borderGO.GetComponent<RectTransform>();
-        borderRT.anchorMin  = Vector2.zero;
-        borderRT.anchorMax  = Vector2.one;
-        borderRT.offsetMin  = new Vector2(-2, -2);
-        borderRT.offsetMax  = new Vector2(2, 2);
+        borderRT.anchorMin = Vector2.zero;
+        borderRT.anchorMax = Vector2.one;
+        borderRT.offsetMin = new Vector2(-UIStyle.BorderWidth, -UIStyle.BorderWidth);
+        borderRT.offsetMax = new Vector2( UIStyle.BorderWidth,  UIStyle.BorderWidth);
         borderGO.transform.SetAsFirstSibling();
 
-        // Inner background (covers the border overflow for clean look)
+        // Inner background (covers the border overflow for the hollow-frame look)
         GameObject innerBg = new GameObject("InnerBg", typeof(RectTransform), typeof(Image));
         innerBg.transform.SetParent(transform, false);
-        innerBg.GetComponent<Image>().color = ColorNormal;
-        innerBg.GetComponent<RectTransform>().anchorMin = Vector2.zero;
-        innerBg.GetComponent<RectTransform>().anchorMax = Vector2.one;
-        innerBg.GetComponent<RectTransform>().offsetMin = Vector2.zero;
-        innerBg.GetComponent<RectTransform>().offsetMax = Vector2.zero;
+        Image innerImg = innerBg.GetComponent<Image>();
+        innerImg.color         = ColorNormal;
+        innerImg.raycastTarget = false;
+        RectTransform innerRT = innerBg.GetComponent<RectTransform>();
+        innerRT.anchorMin = Vector2.zero;
+        innerRT.anchorMax = Vector2.one;
+        innerRT.offsetMin = Vector2.zero;
+        innerRT.offsetMax = Vector2.zero;
 
         // Item icon
         GameObject iconGO = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
@@ -303,42 +313,45 @@ public class SlotUI : MonoBehaviour,
         iconRT.offsetMin = Vector2.zero;
         iconRT.offsetMax = Vector2.zero;
 
-        // Stack count label (bottom-right)
+        // Stack count label (bottom-right) — UIStyle.Text + FontSizeSmall
         GameObject labelGO = new GameObject("StackCount", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelGO.transform.SetParent(transform, false);
         _stackLabel = labelGO.GetComponent<TMP_Text>();
-        _stackLabel.text           = "";
-        _stackLabel.color          = Color.white;
-        _stackLabel.fontSize       = 10f;
-        _stackLabel.fontStyle      = FontStyles.Bold;
-        _stackLabel.alignment      = TextAlignmentOptions.BottomRight;
-        _stackLabel.raycastTarget  = false;
-        // Add outline
-        _stackLabel.outlineWidth   = 0.2f;
-        _stackLabel.outlineColor   = Color.black;
+        _stackLabel.text          = "";
+        _stackLabel.font          = UIStyle.Font;
+        _stackLabel.color         = UIStyle.Text;
+        _stackLabel.fontSize      = UIStyle.FontSizeSmall;
+        _stackLabel.fontStyle     = FontStyles.Bold;
+        _stackLabel.alignment     = TextAlignmentOptions.BottomRight;
+        _stackLabel.raycastTarget = false;
+        // Add outline for readability against bright icons
+        _stackLabel.outlineWidth  = 0.2f;
+        _stackLabel.outlineColor  = Color.black;
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
-        labelRT.anchorMin  = Vector2.zero;
-        labelRT.anchorMax  = Vector2.one;
-        labelRT.offsetMin  = new Vector2(2, 2);
-        labelRT.offsetMax  = new Vector2(-2, -2);
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = new Vector2(2f, 2f);
+        labelRT.offsetMax = new Vector2(-2f, -2f);
     }
 
     private void SetVisuals(ItemStack stack)
     {
         if (stack.IsEmpty)
         {
-            _itemIcon.sprite  = null;
-            _itemIcon.enabled = false;
-            _stackLabel.text  = "";
+            _itemIcon.sprite    = null;
+            _itemIcon.enabled   = false;
+            _stackLabel.text    = "";
             _stackLabel.enabled = false;
         }
         else
         {
-            _itemIcon.sprite  = ItemIconGenerator.GetIcon(stack.item);
-            _itemIcon.color   = Color.white;
-            _itemIcon.enabled = true;
-            _stackLabel.enabled = true;
-            _stackLabel.text  = stack.quantity > 1 ? stack.quantity.ToString() : "";
+            _itemIcon.sprite    = ItemIconGenerator.GetIcon(stack.item);
+            _itemIcon.color     = Color.white;
+            _itemIcon.enabled   = true;
+            // Show stack count only when > 1 per V4.2 spec
+            bool showCount      = stack.quantity > 1;
+            _stackLabel.enabled = showCount;
+            _stackLabel.text    = showCount ? stack.quantity.ToString() : "";
         }
     }
 }

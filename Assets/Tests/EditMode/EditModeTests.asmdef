@@ -3,8 +3,12 @@
     "rootNamespace": "Voidborne.Tests.EditMode",
     "references": [
         "Voidborne",
+        "Voidborne.Editor.Data",
+        "Voidborne.Editor.ArtPipeline",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,5 +1,14 @@
 using UnityEngine;
 
+// V5.3 DEPRECATION NOTE — kept in place because PlayerInventory,
+// BackpackInstance, BackpackUI, UIManager, TooltipUI, WorldItem and
+// DevBackpackItem still consume `BackpackItem` directly. The V11 plan
+// is to fold these fields into ItemDefinition (or an ItemKind-driven
+// extension) so a single ItemDefinition shape covers backpacks too;
+// the asset SOs at Assets/ScriptableObjects/Backpacks/* were archived
+// to _Archived/Legacy/Backpacks/ in V5.1, but the runtime class stays
+// until V11 refactors the consumers.
+
 /// <summary>
 /// An ItemDefinition for backpack items. When equipped in the player's
 /// backpack slot, grants an additional inventory grid of size
