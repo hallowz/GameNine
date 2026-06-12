@@ -253,15 +253,18 @@ Candidates, in order of expected value — **do not start until P0–P3 metrics 
 
 | Phase | Chunk | Status |
 |-------|-------|--------|
-| P0 | P0.1 legacy delete | ☐ |
-| P0 | P0.2 GPU Resident Drawer | ☐ |
-| P0 | P0.3 directional submesh decision | ☐ |
-| P1 | P1.1 skirts wired | ☐ |
-| P1 | P1.2 region batching fixed | ☐ |
-| P1 | P1.3 Transvoxel go/no-go | ☐ |
-| P1 | P1.4 fast-movement hardening | ☐ |
+| P0 | P0.1 legacy delete | ✓ 2026-06-11 — Scripts/ folder removed, compute shaders kept, no scene/prefab GUID refs |
+| P0 | P0.2 GPU Resident Drawer | ✓ 2026-06-11 — mode=InstancedDrawing + GPU occlusion in PC_RPAsset; GraphicsSettings BRG variants set to Keep All (required, editor errors otherwise); renderer already Forward+ |
+| P0 | P0.3 directional submesh decision | ☐ deferred — needs in-game profiling (plains + cave, culling on/off); do alongside the P1 acceptance playtest |
+| P1 | P1.1 skirts wired | ✓ 2026-06-11 — design change vs. plan: skirts are ALWAYS-ON for all 6 faces of LOD1-3 (not neighbor-mask-based) so seams self-heal when neighbors change LOD without remeshing; depth scales with LOD step (2/4); double-skirt guarded via ChunkData.lastSkirtedMesh |
+| P1 | P1.2 region batching fixed | ✓ 2026-06-11 — root cause confirmed (source renderers left on); ChunkRenderer.SetBatched + occlusion-visible flags compose; batches LOD2/3 only; handles LOD transitions incl. LOD4 path and post-deform remesh |
+| P1 | P1.3 Transvoxel go/no-go | ☐ pending playtest of P1.1 skirts |
+| P1 | P1.4 fast-movement hardening | ✓ 2026-06-11 (partial) — activation cap triples at speed>15 m/s or backlog>24; velocity bias ramps to 0.8 at >20 m/s. LOD0-ring-shrink-at-speed REJECTED: speed oscillation would thrash LOD0↔LOD1 remeshes; revisit only if playtest shows LOD0 cost at speed |
 | P2 | P2.1 region save files | ☐ |
 | P2 | P2.2 structure hooks | ☐ |
 | P3 | P3.1–P3.6 liquid system | ☐ |
 | P4 | (gated on profiling) | ☐ |
 | P5 | polish | ☐ |
+
+**Verification log:**
+- 2026-06-11 (P0.1+P0.2+P1.1+P1.2+P1.4): full diff applied to the editor project — compiles clean, 410/410 EditMode tests pass. Runtime acceptance (seam flyby, Frame Debugger draw-call count, 30 m/s flythrough) still needs a manual playtest session.
