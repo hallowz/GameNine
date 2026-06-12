@@ -260,7 +260,7 @@ Candidates, in order of expected value — **do not start until P0–P3 metrics 
 | P1 | P1.2 region batching fixed | ✓ 2026-06-11 — root cause confirmed (source renderers left on); ChunkRenderer.SetBatched + occlusion-visible flags compose; batches LOD2/3 only; handles LOD transitions incl. LOD4 path and post-deform remesh |
 | P1 | P1.3 Transvoxel go/no-go | ☐ pending playtest of P1.1 skirts |
 | P1 | P1.4 fast-movement hardening | ✓ 2026-06-11 (partial) — activation cap triples at speed>15 m/s or backlog>24; velocity bias ramps to 0.8 at >20 m/s. LOD0-ring-shrink-at-speed REJECTED: speed oscillation would thrash LOD0↔LOD1 remeshes; revisit only if playtest shows LOD0 cost at speed |
-| P2 | P2.1 region save files | ☐ |
+| P2 | P2.1 region save files | ✓ 2026-06-11 — design change vs. plan: persists SPARSE EDIT OVERLAYS (voxelIndex→value recorded at the edit sites) instead of diff-vs-regenerated-baseline, which would suffer GPU-vs-CPU float mismatch. `World/Persistence/{ChunkSerializer,RegionFile,WorldPersistence}.cs`; 16³-chunk region files, atomic rewrite, pristine world = zero files; stash on unload, 60s async autosave, sync flush on quit; edited chunks remesh once post-activation via the deformation path. BONUS: fixes pre-existing bug where LOD transitions regenerated density pristine and silently wiped deformation edits. 15 EditMode tests |
 | P2 | P2.2 structure hooks | ☐ |
 | P3 | P3.1–P3.6 liquid system | ☐ |
 | P4 | (gated on profiling) | ☐ |
@@ -268,3 +268,4 @@ Candidates, in order of expected value — **do not start until P0–P3 metrics 
 
 **Verification log:**
 - 2026-06-11 (P0.1+P0.2+P1.1+P1.2+P1.4): full diff applied to the editor project — compiles clean, 410/410 EditMode tests pass. Runtime acceptance (seam flyby, Frame Debugger draw-call count, 30 m/s flythrough) still needs a manual playtest session.
+- 2026-06-11 (P2.1): compiles clean, 425/425 EditMode tests pass (15 new persistence tests). Runtime acceptance (dig → quit → relaunch → tunnel persists) needs a manual playtest; save files land in `%USERPROFILE%/AppData/LocalLow/<company>/<product>/Saves/world_<seed>/region/`.
