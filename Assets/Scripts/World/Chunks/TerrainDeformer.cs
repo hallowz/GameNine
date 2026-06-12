@@ -85,10 +85,11 @@ namespace Voidborne.World.Chunks
                         if (chunk == null)
                             continue;
 
-                        // Modify density
+                        // Modify density — RecordDensityEdit (not SetDensity) so the
+                        // edit persists across save/load (P2.1 sparse edit overlay)
                         float oldDensity = chunk.GetDensity(localX, localY, localZ);
                         float newDensity = oldDensity + intensity * falloff;
-                        chunk.SetDensity(localX, localY, localZ, newDensity);
+                        chunk.RecordDensityEdit(localX, localY, localZ, newDensity);
 
                         dirtyChunks.Add(chunkPos);
 

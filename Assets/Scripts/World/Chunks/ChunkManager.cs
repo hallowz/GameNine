@@ -11,6 +11,7 @@ using Voidborne.World.Biomes;
 using Voidborne.Building;
 using Voidborne.World.Decoration;
 using Voidborne.World.Generation;
+using Voidborne.World.Persistence;
 
 namespace Voidborne.World.Chunks
 {
@@ -378,6 +379,9 @@ namespace Voidborne.World.Chunks
             marchingCubesAdapter = new MarchingCubesAdapter();
             meshBuilder = new ChunkMeshBuilder(marchingCubesAdapter);
 
+            // Chunk edit persistence (P2.1) — world identity derives from the seed
+            WorldPersistence.Initialize(WorldSeed.Seed);
+
             // Initialize effective LOD0 distance to static value
             _effectiveLod0Distance = lod0Distance;
 
@@ -503,6 +507,12 @@ namespace Voidborne.World.Chunks
                 }
                 pendingUV2Jobs.Clear();
 
+                // P2.1: persist all outstanding edits synchronously before teardown —
+                // this is the quit/scene-unload save point
+                foreach (var kvp in chunks)
+                    WorldPersistence.StashChunk(kvp.Value);
+                WorldPersistence.FlushSync();
+
                 // Dispose region batching
                 regionManager.Dispose();
 
@@ -605,6 +615,14 @@ namespace Voidborne.World.Chunks
                 if (!chunks.ContainsKey(chunkPos) || chunks[chunkPos] != data)
                     return;
 
+                // P2.1: re-apply persisted density edits over the freshly generated
+                // field. Must happen BEFORE voxel classification (which copies the
+                // field) and before the empty-chunk early-out (saved edits can give
+                // an originally-empty chunk content, e.g. a player-built bridge).
+                // The GPU meshed the pristine field, so edited chunks remesh once
+                // after activation via needsPostLoadRemesh.
+                bool hadSavedEdits = WorldPersistence.ApplySavedEdits(data);
+
                 // Empty chunks (all air or all solid) have no vertices to color —
                 // skip ore and activate immediately so the player controller
                 // doesn't freeze waiting for a chunk that has nothing to render.
@@ -617,8 +635,20 @@ namespace Voidborne.World.Chunks
                     var        renderer = chunkGO.GetComponent<ChunkRenderer>();
                     renderer.ApplyMesh(null);
                     chunkGO.SetActive(true);
+
+                    if (hadSavedEdits)
+                    {
+                        // Saved edits may carve/add geometry in this "empty" chunk —
+                        // rebuild from the edited field (same path deformation uses)
+                        _singleChunkSet.Clear();
+                        _singleChunkSet.Add(chunkPos);
+                        RegenerateDirtyChunks(_singleChunkSet);
+                    }
                     return;
                 }
+
+                if (hadSavedEdits)
+                    data.needsPostLoadRemesh = true;
 
                 // Schedule voxel classification (biome + ore + terrain type) for all LODs.
                 // Biome data must be populated before mesh activation so vertex colors
@@ -953,6 +983,11 @@ namespace Voidborne.World.Chunks
             // Clean up ChunkData
             if (chunks.TryGetValue(pos, out ChunkData data))
             {
+                // P2.1: snapshot any unsaved edits into the persistence cache
+                // before the ChunkData is discarded (disk write happens on the
+                // next autosave flush, off the main thread)
+                WorldPersistence.StashChunk(data);
+
                 // Destroy the mesh to free memory
                 if (data.mesh != null)
                 {
@@ -990,6 +1025,10 @@ namespace Voidborne.World.Chunks
         private static readonly RuntimeProfiler.Token s_prof = RuntimeProfiler.Register("ChunkManager.Update");
         private static readonly RuntimeProfiler.Token s_profDispatcher = RuntimeProfiler.Register("  CM.Dispatcher");
 
+        // P2.1 autosave cadence
+        private const float AutosaveIntervalSeconds = 60f;
+        private float _lastAutosaveTime;
+
         // Cached face mask to avoid recomputing every frame
         private int lastFaceMask = 0x3F; // all visible initially
         private Vector3 lastCameraFwd;
@@ -1017,6 +1056,17 @@ namespace Voidborne.World.Chunks
 
             // Rebuild dirty chunk regions (throttled internally)
             regionManager.Update();
+
+            // P2.1 autosave: stash loaded edited chunks and write dirty region
+            // files on background tasks
+            if (Time.unscaledTime - _lastAutosaveTime >= AutosaveIntervalSeconds)
+            {
+                _lastAutosaveTime = Time.unscaledTime;
+                foreach (var chunkData in chunks.Values)
+                    if (chunkData.hasUnsavedEdits)
+                        WorldPersistence.StashChunk(chunkData);
+                WorldPersistence.FlushAsync();
+            }
 
             // Occlusion culling: only run every 10 frames and only when camera moves
             if (Time.frameCount % 10 == 0)
@@ -1130,6 +1180,9 @@ namespace Voidborne.World.Chunks
                 {
                     job.chunk.OreField.CopyFrom(job.oreField);
                     job.chunk.BiomeField.CopyFrom(job.biomeField);
+                    // P2.1: classification regenerated pristine ore data — re-apply
+                    // persisted ore edits (mined / auto-miner-depleted voxels)
+                    WorldPersistence.ApplyOreEdits(job.chunk);
                     job.chunk.visibilityGraph = job.visibilityResult[0];
                     pendingOreFinalization.Add(job.chunk);
                 }
@@ -1485,6 +1538,17 @@ namespace Voidborne.World.Chunks
             }
             else if (chunk.lodLevel <= 3)
                 decorationManager?.OnBillboardChunkActivated(chunk);
+
+            // P2.1: the GPU meshed the pristine field but saved edits were applied
+            // on top — rebuild once through the normal deformation path now that
+            // all activation-time jobs for this chunk have completed.
+            if (chunk.needsPostLoadRemesh)
+            {
+                chunk.needsPostLoadRemesh = false;
+                _singleChunkSet.Clear();
+                _singleChunkSet.Add(chunk.chunkPosition);
+                RegenerateDirtyChunks(_singleChunkSet);
+            }
         }
 
         // Reusable buffer for LOD1+ UV2 expansion — avoids per-chunk allocation

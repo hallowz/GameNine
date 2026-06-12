@@ -405,9 +405,9 @@ namespace Voidborne.Player
             bool isTerrainType = oreId >= OreGenerator.SandOreId;
             int requiredTier = isTerrainType ? 0 : Mathf.Clamp(oreId, 1, (int)ToolTier.Void);
 
-            // Clear the ore voxel now that we've mined it
-            chunk.OreField.Set(idx, 0);
-            chunk.isDirty = true;
+            // Clear the ore voxel now that we've mined it — recorded so the
+            // depletion persists across save/load (P2.1)
+            chunk.RecordOreEdit(idx, 0);
 
             if (toolTier >= requiredTier)
             {

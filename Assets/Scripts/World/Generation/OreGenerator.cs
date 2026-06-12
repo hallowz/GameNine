@@ -443,7 +443,8 @@ namespace Voidborne.World.Generation
             int idx = VoxelIndex(lx, ly, lz);
             if (chunk.OreField.Get(idx) == 0) return false;
 
-            chunk.OreField.Set(idx, 0);
+            // RecordOreEdit so auto-miner depletion persists across save/load (P2.1)
+            chunk.RecordOreEdit(idx, 0);
             _depleted.Add(PackVoxel(wx, wy, wz));
             return true;
         }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Voidborne.World.Biomes;
@@ -201,6 +202,8 @@ namespace Voidborne.World.Chunks
 
         /// <summary>
         /// Sets the density value at the given local coordinates.
+        /// NOTE: used by generation fill paths too — gameplay edits that must
+        /// persist across sessions go through RecordDensityEdit instead.
         /// </summary>
         public void SetDensity(int x, int y, int z, float value)
         {
@@ -208,5 +211,58 @@ namespace Voidborne.World.Chunks
             isDirty = true;
         }
 
+        // ------------------------------------------------------------------
+        //  Persistence (terrain overhaul P2.1) — sparse edit overlays.
+        //  Pristine chunks regenerate from seed; only player/machine edits are
+        //  saved, as voxelIndex → value overrides re-applied after generation.
+        // ------------------------------------------------------------------
+
+        /// <summary>Sparse density edits (voxel index → value). Null until first edit.</summary>
+        public Dictionary<int, float> densityEdits;
+
+        /// <summary>Sparse ore field edits, e.g. mined/depleted voxels. Null until first edit.</summary>
+        public Dictionary<int, byte> oreEdits;
+
+        /// <summary>True when edits exist that the persistence cache hasn't snapshotted yet.</summary>
+        public bool hasUnsavedEdits;
+
+        /// <summary>
+        /// Set when saved edits were applied after the GPU meshed the pristine field —
+        /// the chunk needs one remesh after activation to show the edited terrain.
+        /// Consumed by ChunkManager.ActivateChunk.
+        /// </summary>
+        public bool needsPostLoadRemesh;
+
+        /// <summary>True if this chunk has any recorded gameplay edits.</summary>
+        public bool HasEdits =>
+            (densityEdits != null && densityEdits.Count > 0) ||
+            (oreEdits != null && oreEdits.Count > 0);
+
+        /// <summary>
+        /// Sets density AND records the edit for persistence. All gameplay-driven
+        /// density changes (deformation, leveling, explosions) must use this.
+        /// </summary>
+        public void RecordDensityEdit(int x, int y, int z, float value)
+        {
+            int index = x + y * SIZE + z * SIZE * SIZE;
+            densityField[index] = value;
+            isDirty = true;
+            densityEdits ??= new Dictionary<int, float>();
+            densityEdits[index] = value;
+            hasUnsavedEdits = true;
+        }
+
+        /// <summary>
+        /// Sets an ore field value AND records the edit for persistence. All
+        /// gameplay-driven ore changes (mining, auto-miner depletion) must use this.
+        /// </summary>
+        public void RecordOreEdit(int index, byte value)
+        {
+            OreField.Set(index, value);
+            isDirty = true;
+            oreEdits ??= new Dictionary<int, byte>();
+            oreEdits[index] = value;
+            hasUnsavedEdits = true;
+        }
     }
 }
